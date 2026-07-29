@@ -8,10 +8,11 @@ seguidores, 2,1% de engajamento, 3 saves em 30 dias. Não há tráfego suficient
 para um e-book de R$ 297 gerar volume, e o preço alto mata a função mais valiosa
 que estes livros têm hoje — **construir uma lista qualificada**.
 
-A margem não está no e-book. Está na Mentoria Leveza de Viver, que estes livros
-alimentam.
+O que a linha editorial entrega não é margem — é **autoridade e alcance**. Um
+livro circula sozinho, é citado, é presenteado, chega onde nenhum anúncio chega.
+É por isso que ele é vendido a preço de livro e não a preço de curso.
 
-### Escada de valor recomendada
+### Escada dentro da linha editorial
 
 | Etapa | Produto | Preço | Função |
 |---|---|---|---|
@@ -19,8 +20,10 @@ alimentam.
 | 1 | **Vol. 2 — Competências Humanas** | R$ 47 | Transformar leitor em comprador |
 | 1b | *Order bump:* **Vol. 3 — Além dos Condicionamentos** | + R$ 27 no checkout | Aumenta ticket médio ~50% |
 | 2 | **Trilogia Completa — Edição Curadoria** | R$ 97 | Oferta principal da página de vendas |
-| 3 | **Círculo Leveza de Viver** (encontros ao vivo mensais) | R$ 97/mês | Recorrência e relacionamento |
-| 4 | **Mentoria Leveza de Viver** | High-ticket | Onde está a receita real |
+
+Esta escada termina aqui. **Não emenda em outro produto.** Os Ritos Tibetanos, a
+Jornada Respirar Bem e a Mentoria têm funis próprios (ver `00-ecossistema.md`);
+o cross-sell entre linhas acontece depois da entrega, nunca dentro desta página.
 
 > Primeira compra de R$ 47 não é "vender barato". É comprar o dado mais caro do
 > funil: **quem tem cartão na mão e disposição de pagar por este assunto.**
@@ -37,11 +40,14 @@ Justifica o bundle sem inventar entrega nova:
    altíssimo valor percebido, e é o melhor pedaço de texto da trilogia.
 5. Acesso ao grupo de leitura no WhatsApp durante 30 dias.
 
-### Faixa premium (opcional, para a persona secundária)
+### Faixa premium (opcional)
 
-**"Trilogia + Diagnóstico IEH" — R$ 297.** Inclui o Índice de Evolução Humana
-aplicado e uma devolutiva de 30 minutos ao vivo, em grupo. Só ofertar como
-upsell na página de obrigado, nunca como oferta principal.
+**"Trilogia + Manuscrito Comentado" — R$ 197.** Os três volumes mais uma sessão
+gravada em que Vladimir comenta os trechos que mais geraram pergunta, capítulo a
+capítulo. Só como upsell na página de obrigado, nunca como oferta principal.
+
+> O Diagnóstico IEH **não** entra aqui. Ele é ferramenta da Mentoria e perde
+> valor se for distribuído como bônus de e-book.
 
 ---
 
@@ -80,7 +86,7 @@ upsell na página de obrigado, nunca como oferta principal.
         CARRINHO ABERTO — Trilogia Edição Curadoria R$ 97 (7 dias)
                             │
                             ▼
-        COMPRADORES → Círculo Leveza de Viver → Mentoria
+        COMPRADORES → grupo de leitura 30 dias → lista etiquetada "leitor"
         NÃO-COMPRADORES → nutrição semanal → próximo lançamento
 ```
 

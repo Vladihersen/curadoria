@@ -30,10 +30,12 @@ de venda). Todo este kit foi construído em cima dessa constatação.
 | Presença na aula ao vivo | 12% da lista | 25% da lista |
 | Conversão da trilogia R$ 97 | 2% da lista | 5% da lista |
 | Receita do lançamento | R$ 1.500 | R$ 5.000 |
-| Conversas qualificadas para a mentoria | 5 | 20 |
+| Leitores que responderam algum e-mail | 30 | 100 |
 
-> A receita do e-book **não é o placar**. O placar é a linha de baixo: quantas
-> conversas qualificadas para a Mentoria Leveza de Viver saíram disso.
+> A receita não é o único placar desta linha. O outro é o tamanho e a qualidade
+> da lista construída: **quantas pessoas passaram a receber Vladimir toda semana**
+> — e quantas respondem. Essa lista é o ativo que sustenta o ano inteiro, e não
+> pertence a nenhum algoritmo.
 
 ---
 
@@ -85,6 +87,6 @@ dia.
   indefinidamente com a oferta do Vol. 2 por R$ 47. Isso paga o tráfego.
 - **Repetição:** repetir o lançamento da trilogia a cada 90 dias, com a lista
   maior e a copy reescrita a partir das respostas coletadas.
-- **Próximo produto:** o Círculo Leveza de Viver (recorrência mensal) deve ser
-  oferecido primeiro a quem comprou a trilogia — é a ponte natural para a
-  mentoria.
+- **Cross-sell, e só depois:** 30 dias após a compra, quem abriu os três volumes
+  recebe **um** convite para a Mentoria. Um convite, uma vez, fora da página de
+  vendas da trilogia. As regras estão em `../00-ecossistema.md`.

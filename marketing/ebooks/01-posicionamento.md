@@ -46,7 +46,7 @@ O que ela quer:
 Homens e mulheres 35–50 em cargos de decisão, financeiramente resolvidos e
 existencialmente insatisfeitos. Segmento menor no perfil hoje, mas de maior
 ticket. **Não escrever para ele no topo do funil** — ele entra pelos mesmos
-conteúdos e se autosseleciona na página de vendas e na mentoria.
+conteúdos e se autosseleciona na página de vendas.
 
 ---
 

@@ -1,52 +1,42 @@
-# Marketing — Trilogia *A Revolução de Ser Feliz*
+# Marketing — Ecossistema Vladimir Hersen
 
-Kit completo de marketing para os três e-books de Vladimir Hersen, Curador de
-Evolução Humana. Todo o material foi escrito a partir do conteúdo real dos
-volumes (Manifesto, contracapas, capítulos) e dos dados reais do perfil
-@vladimir.hersen.
+Quatro produtos distintos, quatro linhas de marketing distintas. Cada um tem
+público, promessa, preço, funil e calendário próprios. Não são etapas de um
+mesmo funil.
 
-## Os produtos
-
-| Vol. | Título | Subtítulo | Papel no funil |
+| Pasta | Produto | Formato | Preço |
 |---|---|---|---|
-| 1 | **O Despertar** | Compreendendo o Mundo que Está Surgindo | Isca / porta de entrada (gratuito) |
-| 2 | **Competências Humanas para a Era da Consciência** | Cultivando os Valores Humanos que o Futuro Tornou Indispensáveis | Produto de entrada pago |
-| 3 | **Além dos Condicionamentos** | Descobrindo Quem Você É Além das Histórias que Conta Sobre Si Mesmo | Aprofundamento / bundle |
+| [`ebooks/`](ebooks/) | **Trilogia A Revolução de Ser Feliz** | 3 e-books (PDF) | Vol. 1 gratuito · Vol. 2 R$ 47 · trilogia R$ 97 |
+| [`mentoria/`](mentoria/) | **Mentoria Leveza de Viver** | 12 lives · 3 módulos | R$ 497 |
+| [`ritos-tibetanos/`](ritos-tibetanos/) | **Os 12 Ritos Tibetanos** | Workshop + curso online | R$ 197–230 (presencial) · R$ 297 (online) |
+| [`respirar-bem/`](respirar-bem/) | **Jornada Respirar Bem** | Curso, 2 módulos × 8 aulas | R$ 397 |
 
-## Arquivos
+**Comece por [`00-ecossistema.md`](00-ecossistema.md)** — é onde está o mapa das
+quatro linhas, o que diferencia cada uma, e o calendário de lançamento do ano
+inteiro. Sem ele, os quatro produtos competem entre si pelo mesmo espaço no feed.
 
-| Arquivo | O que contém |
-|---|---|
-| [`01-posicionamento.md`](01-posicionamento.md) | Promessa central, persona, inimigo comum, diferenciação, mensagens-chave por volume |
-| [`02-oferta-e-funil.md`](02-oferta-e-funil.md) | Preços recomendados, bundles, order bump, funil completo do post frio à mentoria |
-| [`03-copy-paginas.md`](03-copy-paginas.md) | Copy pronta: página de captura (Vol 1), página de vendas (Trilogia), checkout, obrigado |
-| [`04-instagram-30-dias.md`](04-instagram-30-dias.md) | Calendário de 30 dias, 3 roteiros de Reel, 3 roteiros de carrossel, legendas prontas, banco de hooks |
-| [`05-emails.md`](05-emails.md) | Sequência de boas-vindas (5 e-mails) + sequência de lançamento (7 e-mails) |
-| [`06-dm-whatsapp-anuncios.md`](06-dm-whatsapp-anuncios.md) | Scripts de DM/WhatsApp, textos de anúncio Meta, criativos sugeridos |
-| [`07-metricas.md`](07-metricas.md) | Metas realistas por etapa, o que medir semanalmente, gatilhos de correção de rota |
+## Fontes
 
-## Premissas assumidas
+Todo o material foi construído a partir dos documentos reais do Drive:
 
-Estas decisões foram tomadas para o kit ficar utilizável de ponta a ponta. Todas
-podem ser trocadas sem refazer o resto do material:
+- `Mentoria_Leveza_de_Viver_Estrutura_Oficial` — posicionamento, 12 lives, avatar "Corredor Exausto"
+- `Perfil Público Alvo da Mentoria Leveza de Viver` — perfis A, B e C; preço R$ 497; ciclo de decisão de 3 a 8 semanas
+- `Manual Consolidado: Série Tibetana de Rejuvenescimento` — os 12 ritos, teoria e contraindicações
+- `1º lote Workshop Ritos` — preços praticados (R$ 230 / R$ 197) e copy anterior
+- `Resumo do Conteúdo Módulo 1 e 2 - Jornada Respirar Bem` — 16 aulas descritas
+- `Depoimentos Jornada Respirar Bem` — depoimento de Guilherme Sá
+- Volumes 1, 2 e 3 de *A Revolução de Ser Feliz* — manifesto, contracapas, capítulos
+- Dados do perfil @vladimir.hersen (Windsor.ai, junho/2026)
 
-1. **Volume 1 é gratuito** e serve para construir lista de e-mail/WhatsApp. Os
-   Volumes 2 e 3 são pagos.
-2. **O objetivo primário dos e-books não é a receita dos e-books** — é qualificar
-   e aquecer para a Mentoria Leveza de Viver. Preço de entrada baixo, margem no
-   back-end.
-3. **Instagram é o canal principal** (é onde existe audiência real hoje), com
-   e-mail como canal de conversão.
-4. O lançamento cabe em **6 semanas**: 4 de aquecimento + 1 de carrinho aberto +
-   1 de pós.
+## Pendências
 
-## Observação sobre a marca
-
-O Volume 2 define os **3Gs como Governar, Gerenciar e Guiar** e os **3Is como
-Inspiração, Intuição e Intuição Ética**. O guia de marca da Curadoria de Evolução
-Humana usa 3Gs = Gentileza, Gratidão e Generosidade / 3Is = Intencional,
-Incondicional e Imparcial. São duas definições diferentes com o mesmo nome.
-
-Neste kit foi usada **a definição do livro** sempre que a peça fala do conteúdo do
-Volume 2. Vale unificar antes do lançamento — a mesma sigla com dois significados
-confunde quem acompanha o perfil e lê o livro.
+1. **O site `vladimirhersen.com.br` não foi lido.** A allowlist de egress deste
+   ambiente bloqueia o host. Adicione-o em *Environments → Network access* para
+   eu conferir preços, URLs e textos já publicados. Enquanto isso, os preços de
+   Respirar Bem e da versão online dos Ritos são **propostas**, não valores
+   confirmados.
+2. **Conflito de sigla dos 3Gs/3Is** entre o Volume 2 e o guia de marca — ver
+   `ebooks/01-posicionamento.md`.
+3. **Nome do ecossistema**: os documentos usam "Curadoria de Evolução Humana",
+   "Curadoria Mente Soberana" e "Curadoria da Soberania" alternadamente. O guia
+   visual determina **Curadoria de Evolução Humana**. É o que está usado aqui.
