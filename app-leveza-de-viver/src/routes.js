@@ -73,16 +73,22 @@ function parseMessages(value) {
   });
 }
 
+// Sem isto, um "\nAssistente: ..." dentro do texto do usuário forja um turno
+// falso no prompt e o modelo passa a tratá-lo como fala própria.
+function neutralizarTurnos(texto) {
+  return texto.replace(/\r?\n/g, '\n  ').replace(/^\s*(Usuário|Assistente)\s*:/gim, '$1 —');
+}
+
 // Mensagens "system" viram preâmbulo — rotulá-las como "Assistente" corrompia o prompt.
 function buildChatPrompt(messages) {
   const preamble = messages
     .filter((m) => m.role === 'system')
-    .map((m) => m.content)
+    .map((m) => neutralizarTurnos(m.content))
     .join('\n');
 
   const turns = messages
     .filter((m) => m.role !== 'system')
-    .map((m) => `${ROLE_LABELS[m.role]}: ${m.content}`);
+    .map((m) => `${ROLE_LABELS[m.role]}: ${neutralizarTurnos(m.content)}`);
 
   if (turns.length === 0) {
     throw new ValidationError('É necessária ao menos uma mensagem com role "user" ou "assistant".');

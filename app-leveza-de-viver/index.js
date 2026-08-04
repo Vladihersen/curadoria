@@ -20,6 +20,9 @@ app.use(express.json({ limit: '256kb' }));
 // O app cliente chama esta API pelo navegador — sem CORS o preflight barra tudo.
 app.use((req, res, next) => {
   res.set('Access-Control-Allow-Origin', CORS_ORIGIN);
+  // Com origem específica a resposta varia por origem; sem Vary um cache
+  // intermediário serviria a mesma resposta para outra origem.
+  if (CORS_ORIGIN !== '*') res.set('Vary', 'Origin');
   res.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
