@@ -244,3 +244,36 @@ horário e é lembrada (`cf_turnos_recolhidos`).
 `teste-dia-e-lista.mjs` cobre os três: a virada do dia limpando as marcações
 sem apagar o registro de ontem, a exclusão do histórico com a marca de
 intenção, e o recolher/mostrar sobrevivendo a um recarregamento.
+
+---
+
+# Registro dos remédios "se necessário"
+
+Marcar um SOS no mural guardava apenas o **índice** do remédio na lista daquele
+horário — sem hora, sem nome e sem histórico. Dois problemas:
+
+1. **O "✓ Marcado" não era um registro.** Ele sumia na virada do dia sem deixar
+   rastro. Para um remédio de resgate, é justamente o contrário do que importa:
+   o médico precisa saber *quando* e *quantas vezes* ele foi preciso.
+2. **O índice aponta para o remédio errado.** Acrescentar ou remover um remédio
+   daquele horário desloca os índices, e a marca passava a valer para outro
+   medicamento.
+
+Agora cada toma vira um registro com nome, quantidade, horário e data, guardado
+em `cf_sos_log_AAAA-MM-DD` e mantido depois — a chave por dia é o histórico. O
+selo no mural passou de "✓ Marcado" para **"✓ Tomado às 19:13"**, com
+"2ª vez hoje" quando se repete. Desmarcar remove a última toma daquele remédio
+(é a correção de quem marcou sem querer), não o histórico inteiro.
+
+O formato antigo (`cf_sos_<data>`) continua sendo gravado em paralelo, para que
+nada do que já está marcado hoje se perca na atualização.
+
+O histórico aparece em dois lugares que faltavam:
+
+- **Pasta → Memória do Cuidado**: as tomas dos últimos 30 dias, agrupadas por
+  dia, com horário de cada uma.
+- **Relatório médico**: as tomas dos últimos 7 dias, para a consulta.
+
+`teste-sos.mjs` cobre os cinco casos: registrar com hora, contar as vezes do
+dia, sobreviver a uma mudança de ordem na lista, aparecer na Pasta e no
+relatório, e a virada do dia reabrindo o mural sem apagar o histórico anterior.

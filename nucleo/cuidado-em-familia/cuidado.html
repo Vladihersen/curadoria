@@ -1053,6 +1053,17 @@
                 Nenhum remédio encerrado no histórico ainda.
               </div>
 </div>
+<!-- HISTÓRICO DOS REMÉDIOS "SE NECESSÁRIO" -->
+<div style="margin-bottom: 14px; border-bottom: 1px solid var(--borda-suave); padding-bottom: 12px;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+<div style="font-size: 13px; font-weight: 700; color: var(--mineral);">⚡ Remédios "Se Necessário" — quando foram precisos</div>
+<span id="badge-sos-historico" style="font-size:11px; font-weight:700; color:#7E22CE;">0 tomas</span>
+</div>
+<div style="font-size:11px; color:var(--cinza-frio); margin-bottom:8px;">
+                Cada vez que um remédio de resgate (dor, febre, crise) foi dado, com o horário. É o que o médico precisa ver para saber com que frequência ele tem sido necessário.
+              </div>
+<div id="lista-sos-historico" style="font-size:12px;"></div>
+</div>
 <!-- CUIDADORAS ANTERIORES -->
 <div style="margin-bottom: 14px; border-bottom: 1px solid var(--borda-suave); padding-bottom: 12px;">
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
@@ -2453,8 +2464,46 @@
       renderizarMedicamentos();
     }
 
+    // ---- REGISTRO DOS REMÉDIOS "SE NECESSÁRIO" -------------------------
+    // Marcar um SOS guardava apenas o ÍNDICE do remédio na lista do dia, sem
+    // hora e sem histórico: o "✓ Marcado" sumia na virada do dia sem deixar
+    // rastro, e o médico não tinha como saber quando nem quantas vezes aquele
+    // remédio foi preciso — que é justamente o que importa num remédio de
+    // resgate. Pior, o índice muda se um remédio for acrescentado ou removido
+    // daquele horário, e a marca passava a apontar para outro remédio.
+    //
+    // Agora cada toma vira um registro com nome, horário e data, guardado por
+    // dia e mantido depois. O formato antigo continua sendo gravado em
+    // paralelo, para nada do que já está marcado hoje se perder.
+    function chaveSosLog(data) {
+      const d = data || new Date();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return 'cf_sos_log_' + d.getFullYear() + '-' + mm + '-' + dd;
+    }
+
+    function lerSosLog(data) {
+      try {
+        const v = JSON.parse(localStorage.getItem(chaveSosLog(data)) || '[]');
+        return Array.isArray(v) ? v : [];
+      } catch (e) { return []; }
+    }
+
+    function gravarSosLog(lista, data) {
+      try { localStorage.setItem(chaveSosLog(data), JSON.stringify(lista)); } catch (e) {}
+    }
+
+    // Quantas vezes este remédio já foi tomado hoje.
+    function tomasSosHoje(nome) {
+      const alvo = (nome || '').trim().toLowerCase();
+      return lerSosLog().filter(r => (r.nome || '').trim().toLowerCase() === alvo);
+    }
+
     function aoAlternarRemedioSos(turno, idx, estaMarcado) {
       verificarViradaDoDia();
+      const med = (medicamentos[turno] || [])[idx];
+      const nome = med ? med.nome : '';
+
       if (!remediosSosTomadosHoje[turno]) remediosSosTomadosHoje[turno] = [];
       if (estaMarcado) {
         if (!remediosSosTomadosHoje[turno].includes(idx)) remediosSosTomadosHoje[turno].push(idx);
@@ -2462,7 +2511,31 @@
         remediosSosTomadosHoje[turno] = remediosSosTomadosHoje[turno].filter(i => i !== idx);
       }
       try { localStorage.setItem('cf_sos_' + new Date().toDateString(), JSON.stringify(remediosSosTomadosHoje)); } catch(e) {}
+
+      const agora = new Date();
+      const log = lerSosLog();
+      if (estaMarcado) {
+        log.push({
+          nome: nome,
+          turno: turno,
+          qtd: med ? med.qtd : '',
+          hora: agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0'),
+          em: agora.toISOString()
+        });
+        gravarSosLog(log);
+      } else {
+        // Desmarcar tira a última toma registrada daquele remédio — é uma
+        // correção de quem marcou sem querer, não um apagar tudo.
+        const alvo = (nome || '').trim().toLowerCase();
+        for (let i = log.length - 1; i >= 0; i--) {
+          if ((log[i].nome || '').trim().toLowerCase() === alvo) { log.splice(i, 1); break; }
+        }
+        gravarSosLog(log);
+      }
+
       renderizarMedicamentos();
+      renderizarHistoricoSos();
+      agendarSincronizacao();
     }
 
     window.onload = function() {
@@ -2788,6 +2861,7 @@
         try { medicamentosEncerrados = JSON.parse(encSalvos); } catch(e) { medicamentosEncerrados = []; }
       }
       renderizarEncerrados();
+      renderizarHistoricoSos();
 
       // Cuidadoras Anteriores
       const cuidSalvas = localStorage.getItem('cf_cuid_anteriores');
@@ -3496,7 +3570,12 @@
             let badgeStatus = '';
             if (isSos) {
               badgeStatus = `<span style="display:inline-block; font-size:10px; background:#F3E8FF; color:#7E22CE; border-radius:4px; padding:1px 6px; font-weight:700; margin-top:2px;">⚡ Se necessário</span>` + 
-                (isSosTomado ? `<span style="display:inline-block; font-size:10px; background:#EBF6F2; color:#127558; border-radius:4px; padding:1px 6px; font-weight:700; margin-left:4px;">✓ Marcado</span>` : `<span style="display:inline-block; font-size:10px; color:#718096; margin-left:4px;">(desmarcado por padrão)</span>`);
+                (isSosTomado ? (() => {
+                  const tomas = tomasSosHoje(m.nome);
+                  const ultima = tomas.length ? tomas[tomas.length - 1].hora : '';
+                  const vezes = tomas.length > 1 ? ` • ${tomas.length}ª vez hoje` : '';
+                  return `<span style="display:inline-block; font-size:10px; background:#EBF6F2; color:#127558; border-radius:4px; padding:1px 6px; font-weight:700; margin-left:4px;">✓ Tomado${ultima ? ' às ' + ultima : ''}${vezes}</span>`;
+                })() : `<span style="display:inline-block; font-size:10px; color:#718096; margin-left:4px;">(desmarcado por padrão)</span>`);
             } else if (isDesm) {
               badgeStatus = `<span style="display:inline-block; font-size:11px; background:#FDECEA; color:#C0392B; border-radius:4px; padding:2px 6px; font-weight:700; margin-top:3px;">✕ NÃO SERÁ TOMADO</span>`;
             }
@@ -3564,6 +3643,49 @@
       } catch (e) {}
       renderizarEncerrados();
       agendarSincronizacao();
+    }
+
+    // Histórico das tomas "se necessário" dos últimos dias, do mais recente
+    // para o mais antigo.
+    function renderizarHistoricoSos(diasParaTras) {
+      const box = document.getElementById('lista-sos-historico');
+      const badge = document.getElementById('badge-sos-historico');
+      if (!box) return;
+
+      const dias = [];
+      const limite = diasParaTras || 30;
+      let totalTomas = 0;
+      for (let i = 0; i < limite; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const registros = lerSosLog(d);
+        if (registros.length === 0) continue;
+        totalTomas += registros.length;
+        dias.push({ data: d, registros: registros });
+      }
+
+      if (badge) badge.innerText = totalTomas + (totalTomas === 1 ? ' toma' : ' tomas');
+
+      if (dias.length === 0) {
+        box.innerHTML = '<span style="color:var(--cinza-frio);">Nenhum remédio "se necessário" foi preciso até agora.</span>';
+        return;
+      }
+
+      const hojeStr = new Date().toDateString();
+      box.innerHTML = dias.map(dia => {
+        const ehHoje = dia.data.toDateString() === hojeStr;
+        const rotuloData = ehHoje ? 'Hoje' : dia.data.toLocaleDateString('pt-BR');
+        const linhas = dia.registros
+          .slice()
+          .sort((a, b) => (a.hora || '').localeCompare(b.hora || ''))
+          .map(r => `<div style="padding:2px 0;">• <strong>${escaparHtml(r.nome || 'Remédio')}</strong>${r.qtd ? ' (' + escaparHtml(r.qtd) + ')' : ''} — às ${escaparHtml(r.hora || '--:--')}</div>`)
+          .join('');
+        return `
+          <div style="margin-bottom:8px; padding-left:8px; border-left:3px solid #9A84CA;">
+            <div style="font-weight:700; color:var(--azul-noite); font-size:12px;">${rotuloData} — ${dia.registros.length}${dia.registros.length === 1 ? ' toma' : ' tomas'}</div>
+            <div style="color:var(--mineral);">${linhas}</div>
+          </div>`;
+      }).join('');
     }
 
     function renderizarEncerrados() {
@@ -4838,6 +4960,8 @@
         escarasNaoAplica: localStorage.getItem('cf_escaras_na') || '',
         configAgua: configAgua,
         esvaziadosDeProposito: lerEsvaziadosDePropósito(),
+        sosLogHoje: lerSosLog(),
+        sosLogHojeChave: chaveSosLog(),
         escarasHoje: (() => { try { return JSON.parse(localStorage.getItem(chaveEscarasHoje()) || '[]'); } catch (e) { return []; } })(),
         escarasHojeChave: chaveEscarasHoje()
       };
@@ -4898,6 +5022,9 @@
       if (dados.configAgua && typeof dados.configAgua === 'object') {
         configAgua = { ...configAgua, ...dados.configAgua };
         try { localStorage.setItem('cf_config_agua', JSON.stringify(configAgua)); } catch (e) {}
+      }
+      if (Array.isArray(dados.sosLogHoje) && dados.sosLogHojeChave === chaveSosLog()) {
+        try { localStorage.setItem(chaveSosLog(), JSON.stringify(dados.sosLogHoje)); } catch (e) {}
       }
       if (Array.isArray(dados.escarasHoje) && dados.escarasHojeChave === chaveEscarasHoje()) {
         try { localStorage.setItem(chaveEscarasHoje(), JSON.stringify(dados.escarasHoje)); } catch (e) {}
@@ -5205,6 +5332,23 @@
           relMeds += `• ${m.nome} (${m.qtd} — ${TURNO_POR_KEY[t] ? TURNO_POR_KEY[t].rotulo : t})<br>`;
         });
       });
+      // As tomas "se necessário" dos últimos 7 dias entram no relatório: para
+      // o médico, com que frequência o resgate foi preciso diz tanto quanto a
+      // lista de uso contínuo.
+      let relSos = '';
+      let totalSos = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const registros = lerSosLog(d);
+        if (!registros.length) continue;
+        totalSos += registros.length;
+        const rotulo = (i === 0) ? 'Hoje' : d.toLocaleDateString('pt-BR');
+        relSos += `<strong>${rotulo}:</strong> ` + registros.map(r => `${escaparHtml(r.nome)} (${escaparHtml(r.hora || '')})`).join(', ') + '<br>';
+      }
+      if (totalSos > 0) {
+        relMeds += `<br><strong style="color:#7E22CE;">⚡ Se necessário — últimos 7 dias (${totalSos} ${totalSos === 1 ? 'toma' : 'tomas'}):</strong><br>` + relSos;
+      }
       document.getElementById('rel-lista-meds').innerHTML = total > 0 ? relMeds : "Nenhum remédio cadastrado.";
       document.getElementById('modal-relatorio').classList.add('active');
     }

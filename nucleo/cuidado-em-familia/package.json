@@ -9,7 +9,8 @@
     "test:preservacao": "node teste-preservacao.mjs",
     "test:worker-antigo": "node teste-worker-antigo.mjs",
     "test:servidor": "node teste-servidor.mjs",
-    "test:dia": "node teste-dia-e-lista.mjs"
+    "test:dia": "node teste-dia-e-lista.mjs",
+    "test:sos": "node teste-sos.mjs"
   },
   "devDependencies": {
     "playwright": "^1.48.0"
