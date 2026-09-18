@@ -2587,7 +2587,22 @@
     function normalizarTurno(t, textoExtra) {
       const v = (t || '').toString().trim().toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\s-]+/g, '_');
-      if (CHAVES_TURNO.indexOf(v) !== -1) return v;
+
+      if (CHAVES_TURNO.indexOf(v) !== -1) {
+        // A IA do servidor pode ter sido instruída a responder apenas com os
+        // três turnos antigos. Quando ela devolve um deles mas a posologia
+        // lida da receita aponta claramente um horário que não existia nesse
+        // vocabulário ("em jejum", "ao deitar", "antes do almoço", "se tiver
+        // dor"), quem vale é a receita — senão o remédio cairia na manhã só
+        // porque a IA não tinha como dizer outra coisa.
+        if (TURNOS_CLASSICOS.indexOf(v) !== -1) {
+          const doTexto = interpretarHorarios(textoExtra).shiftKeys
+            .filter(k => TURNOS_CLASSICOS.indexOf(k) === -1);
+          if (doTexto.length) return doTexto[0];
+        }
+        return v;
+      }
+
       return turnoPrincipalDaReceita(t, null)
           || turnoPrincipalDaReceita(textoExtra, null)
           || 'manha';

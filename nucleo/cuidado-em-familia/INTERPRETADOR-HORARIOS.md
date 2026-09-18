@@ -125,3 +125,26 @@ A varredura estática aponta referências a elementos que não existem
 São anteriores a esta mudança e não quebram nada: estão todas protegidas por
 `if (elemento)`, e as funções de alarme começam com `return;` porque foram
 desativadas de propósito. Ficam registradas aqui como limpeza futura.
+
+## Compatibilidade com o worker publicado
+
+O `wrangler.toml` importa o HTML como texto (`[[rules]] type = "Text"`), então
+publicar o mural novo é só substituir o `cuidado.html`: o `cuidado-worker.js`
+não precisa mudar.
+
+A leitura da receita pela IA, porém, acontece no worker. Se o prompt dele foi
+escrito quando só existiam três turnos, a IA devolve `manha`/`almoco`/`noite`
+para tudo — e um remédio "em jejum" chegaria marcado como manhã. Por isso
+`normalizarTurno()` confere a posologia lida da receita: quando a IA devolve um
+dos três turnos antigos mas o texto aponta claramente um horário que não existia
+naquele vocabulário ("em jejum", "ao deitar", "antes do almoço", "se tiver
+dor"), quem vale é a receita. Onde a IA teve escolha real, a resposta dela é
+respeitada.
+
+`teste-worker-antigo.mjs` cobre exatamente esse caso: simula o worker antigo
+devolvendo só os três turnos e confere que os seis remédios caem no horário
+certo.
+
+A correção definitiva é ensinar os 10 `shiftKey` ao prompt do
+`cuidado-worker.js` — fica para um passo seguinte, e não é necessária para
+publicar.
