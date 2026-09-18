@@ -2405,7 +2405,44 @@
       if (sSalvos) remediosSosTomadosHoje = JSON.parse(sSalvos);
     } catch(e) { remediosSosTomadosHoje = {}; }
 
+    // Guarda de qual dia o que está na tela pertence.
+    let diaEmExibicao = new Date().toDateString();
+
+    function recarregarEstadoDoDia() {
+      const hoje = new Date().toDateString();
+      remediosDesmarcadosHoje = {};
+      remediosSosTomadosHoje = {};
+      try {
+        const d = localStorage.getItem('cf_desm_' + hoje);
+        if (d) remediosDesmarcadosHoje = JSON.parse(d) || {};
+      } catch (e) { remediosDesmarcadosHoje = {}; }
+      try {
+        const so = localStorage.getItem('cf_sos_' + hoje);
+        if (so) remediosSosTomadosHoje = JSON.parse(so) || {};
+      } catch (e) { remediosSosTomadosHoje = {}; }
+      diaEmExibicao = hoje;
+    }
+
+    // Chamada sempre que o app volta para a frente e a cada minuto: se o dia
+    // virou, o mural recomeça limpo, com todas as doses em aberto.
+    function verificarViradaDoDia() {
+      const hoje = new Date().toDateString();
+      if (hoje === diaEmExibicao) return false;
+
+      recarregarEstadoDoDia();
+      try { verificarCoposAgua(); } catch (e) {}
+      renderizarMedicamentos();
+      try { renderizarRecipientesAgua(); } catch (e) {}
+      try { renderizarEscarasHoje(); } catch (e) {}
+      try { verificarAlarmesDeEsquecimento(); } catch (e) {}
+      return true;
+    }
+
     function aoAlternarRemedioDose(turno, idx, estaMarcado) {
+      // Antes de gravar, confirma que ainda é o mesmo dia — sem isto, a
+      // primeira marcação depois da meia-noite gravaria o estado de ontem
+      // inteiro sob a chave de hoje.
+      verificarViradaDoDia();
       if (!remediosDesmarcadosHoje[turno]) remediosDesmarcadosHoje[turno] = [];
       if (!estaMarcado) {
         if (!remediosDesmarcadosHoje[turno].includes(idx)) remediosDesmarcadosHoje[turno].push(idx);
@@ -2417,6 +2454,7 @@
     }
 
     function aoAlternarRemedioSos(turno, idx, estaMarcado) {
+      verificarViradaDoDia();
       if (!remediosSosTomadosHoje[turno]) remediosSosTomadosHoje[turno] = [];
       if (estaMarcado) {
         if (!remediosSosTomadosHoje[turno].includes(idx)) remediosSosTomadosHoje[turno].push(idx);
@@ -3364,8 +3402,10 @@
         ul.innerHTML = '';
 
         const lista = medicamentos[turno] || [];
+        // Num cartão recolhido nada da lista aparece — nem o aviso de vazio.
+        const estaRecolhido = turnoEstaRecolhido(turno);
         if (lista.length === 0) {
-          empty.style.display = 'block';
+          empty.style.display = estaRecolhido ? 'none' : 'block';
           badge.innerText = "0 remédios";
           if (copinho) copinho.style.display = 'none';
         } else {
@@ -3488,6 +3528,44 @@
       agendarSincronizacao();
     }
 
+    // Apaga um remédio suspenso do histórico de vez. Diferente de "reativar",
+    // isto não tem volta: o registro sai da memória permanente da família, que
+    // é justamente o que serve de consulta para o médico. Por isso confirma
+    // antes, dizendo o nome do remédio.
+    // Campos que a pessoa esvaziou de propósito. A proteção do servidor
+    // recusa um array vazio vindo de um aparelho com estado incompleto — o que
+    // é certo —, e esta lista é o que distingue "veio vazio por engano" de
+    // "a família apagou mesmo".
+    function lerEsvaziadosDePropósito() {
+      try {
+        const v = JSON.parse(localStorage.getItem('cf_esvaziados_de_proposito') || '[]');
+        return Array.isArray(v) ? v : [];
+      } catch (e) { return []; }
+    }
+
+    function marcarEsvaziadoDePropósito(campo) {
+      const atuais = lerEsvaziadosDePropósito();
+      if (atuais.indexOf(campo) === -1) atuais.push(campo);
+      try { localStorage.setItem('cf_esvaziados_de_proposito', JSON.stringify(atuais)); } catch (e) {}
+    }
+
+    function excluirMedicamentoEncerrado(idx) {
+      const med = medicamentosEncerrados[idx];
+      if (!med) return;
+      const ok = confirm('Apagar "' + med.nome + '" do histórico?\n\n'
+        + 'Ele sai da Memória do Cuidado e não poderá mais ser reativado nem mostrado ao médico.\n\n'
+        + 'Esta ação não tem volta.');
+      if (!ok) return;
+
+      medicamentosEncerrados.splice(idx, 1);
+      try {
+        localStorage.setItem('cf_meds_encerrados', JSON.stringify(medicamentosEncerrados));
+        if (medicamentosEncerrados.length === 0) marcarEsvaziadoDePropósito('medicamentosEncerrados');
+      } catch (e) {}
+      renderizarEncerrados();
+      agendarSincronizacao();
+    }
+
     function renderizarEncerrados() {
       const ul = document.getElementById('lista-meds-encerrados');
       const empty = document.getElementById('empty-encerrados');
@@ -3510,9 +3588,14 @@
               <span class="med-name" style="color:var(--mineral); text-decoration: line-through;">${escaparHtml(m.nome)}</span>
               <span class="med-sub">Encerrado em ${escaparHtml(m.dataEncerramento)} • Motivo: ${escaparHtml(m.motivo)}</span>
             </div>
-            <button style="background:#EAF6F7; border:1px solid var(--teal-vital); color:var(--teal-deep); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="reativarMedicamento(${idx})" title="Voltar a tomar">
-              🔄 Reativar
-            </button>
+            <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
+              <button style="background:#EAF6F7; border:1px solid var(--teal-vital); color:var(--teal-deep); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="reativarMedicamento(${idx})" title="Voltar a tomar">
+                🔄 Reativar
+              </button>
+              <button class="admin-only" style="background:#FDECEA; border:1px solid #E7A9A0; color:#C0392B; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="excluirMedicamentoEncerrado(${idx})" title="Apagar do histórico definitivamente">
+                🗑️ Excluir
+              </button>
+            </div>
           `;
           ul.appendChild(li);
         });
@@ -3669,6 +3752,22 @@
       renderizarMedicamentos();
     }
 
+    let turnosRecolhidos = {};
+    try {
+      const r = JSON.parse(localStorage.getItem('cf_turnos_recolhidos') || '{}');
+      if (r && typeof r === 'object' && !Array.isArray(r)) turnosRecolhidos = r;
+    } catch (e) { turnosRecolhidos = {}; }
+
+    function turnoEstaRecolhido(key) {
+      return turnosRecolhidos[key] === true;
+    }
+
+    function alternarListaTurno(key) {
+      turnosRecolhidos[key] = !turnoEstaRecolhido(key);
+      try { localStorage.setItem('cf_turnos_recolhidos', JSON.stringify(turnosRecolhidos)); } catch (e) {}
+      renderizarMedicamentos();
+    }
+
     function turnoDeveAparecer(t) {
       if (mostrarTurnosVazios) return true;
       if (turnoEstaAtivo(t.key)) return true;
@@ -3689,6 +3788,7 @@
         const ehSos = (t.key === 'extra_sos');
         const hora = horarioDoTurno(t.key);
         const titulo = t.icone + ' ' + t.rotulo + (hora ? ' (' + hora + ')' : '');
+        const recolhido = turnoEstaRecolhido(t.key);
         return `
 <div class="card${t.key === 'manha' ? ' vital' : ''}" id="card-${t.key}" style="border-left: 5px solid ${t.cor};">
   <div class="card-header">
@@ -3696,15 +3796,19 @@
     <div style="display:flex; align-items:center; gap:8px;">
       <span id="badge-contagem-${t.key}" style="display:none;">0 remédios</span>
       <button class="btn-audio-pill" onclick="falarMedicamentosTurno('${t.key}')" title="Ouvir remédios deste horário">🔊</button>
+      <button onclick="alternarListaTurno('${t.key}')" title="${recolhido ? 'Mostrar a lista de remédios' : 'Esconder a lista para o mural ficar limpo'}" style="background:none; border:1px solid var(--borda-suave); color:var(--mineral); border-radius:50%; width:30px; height:30px; font-size:13px; line-height:1; cursor:pointer; flex-shrink:0;">
+        ${recolhido ? '👁️' : '▾'}
+      </button>
     </div>
   </div>
   <div id="copinho-${t.key}" style="display:none; background:#FFFDF5; border:1.5px solid var(--ouro-borda); border-radius:10px; padding:8px 10px; text-align:center; margin-bottom:12px;"></div>
-  <ul class="med-list" id="lista-${t.key}"></ul>
-  <div id="empty-${t.key}" style="font-size:13px; color:var(--cinza-frio); text-align:center; padding:12px 0;">${t.vazio}</div>
+  <ul class="med-list" id="lista-${t.key}" style="${recolhido ? 'display:none;' : ''}"></ul>
+  <div id="empty-${t.key}" style="font-size:13px; color:var(--cinza-frio); text-align:center; padding:12px 0; ${recolhido ? 'display:none;' : ''}">${t.vazio}</div>
+  ${recolhido ? `<div onclick="alternarListaTurno('${t.key}')" style="text-align:center; font-size:12px; color:var(--teal-deep); font-weight:700; padding:8px; border:1px dashed var(--borda-suave); border-radius:8px; margin-bottom:10px; cursor:pointer;">👁️ Ver a lista de remédios deste horário</div>` : ''}
   <button class="btn-main btn-emerald" id="btn-confirmar-${t.key}" onclick="alternarTomadaTurno('${t.key}')"${ehSos ? '' : ''}>
     ✓ Confirmar ${t.rotulo}
   </button>
-  <button class="admin-only" id="btn-add-${t.key}" onclick="abrirModalAdicionarMed('${t.key}')" style="display:${isAdmin ? 'block' : 'none'}; width:100%; margin-top:8px; background:transparent; color:var(--teal-deep); border:1.5px dashed var(--teal-vital); border-radius:8px; padding:8px; font-size:12px; font-weight:700; cursor:pointer;">
+  <button class="admin-only" id="btn-add-${t.key}" onclick="abrirModalAdicionarMed('${t.key}')" style="display:${(isAdmin && !recolhido) ? 'block' : 'none'}; width:100%; margin-top:8px; background:transparent; color:var(--teal-deep); border:1.5px dashed var(--teal-vital); border-radius:8px; padding:8px; font-size:12px; font-weight:700; cursor:pointer;">
     + Adicionar remédio neste horário
   </button>
   <div id="status-${t.key}" style="display:none !important;">
@@ -3795,6 +3899,7 @@
     }
 
     function confirmarTomadaTurno(turno) {
+      verificarViradaDoDia();
       const lista = medicamentos[turno] || [];
       if (lista.length === 0) {
         alert("Nenhum remédio cadastrado neste horário.");
@@ -4686,6 +4791,9 @@
     // vencido a cada minuto enquanto o app estiver aberto.
     setInterval(function() {
       if (document.querySelector('.modal-overlay.active')) return;
+      // A virada do dia vem primeiro: de nada adianta checar o alarme de
+      // esquecimento contra as marcações de ontem.
+      verificarViradaDoDia();
       verificarAlarmesDeEsquecimento();
       verificarAlertaTemporariosVencidos();
     }, 60000);
@@ -4729,6 +4837,7 @@
         acompanhaAgua: localStorage.getItem('cf_acompanha_agua') || '',
         escarasNaoAplica: localStorage.getItem('cf_escaras_na') || '',
         configAgua: configAgua,
+        esvaziadosDeProposito: lerEsvaziadosDePropósito(),
         escarasHoje: (() => { try { return JSON.parse(localStorage.getItem(chaveEscarasHoje()) || '[]'); } catch (e) { return []; } })(),
         escarasHojeChave: chaveEscarasHoje()
       };
@@ -4960,7 +5069,10 @@
     }
 
     document.addEventListener('visibilitychange', function() {
-      if (document.visibilityState === 'hidden') flushSincronizacaoAgora();
+      if (document.visibilityState === 'hidden') { flushSincronizacaoAgora(); return; }
+      // Voltando para a frente: o celular pode ter passado a noite com o app
+      // aberto. Este é o momento em que a pessoa realmente olha o mural.
+      verificarViradaDoDia();
     });
     window.addEventListener('pagehide', flushSincronizacaoAgora);
 

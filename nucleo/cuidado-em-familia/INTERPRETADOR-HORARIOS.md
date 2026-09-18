@@ -202,3 +202,45 @@ horários novos não serem apagados.
 
 **Publicar estas correções exige subir o `cuidado-worker.js` também**, não só o
 `cuidado.html`. O `wrangler deploy` envia os dois de uma vez.
+
+---
+
+# Virada do dia, exclusão do histórico e lista recolhível
+
+### O dia não virava
+
+O estado do dia (doses desmarcadas, SOS marcados) era lido **uma única vez**,
+quando o app carregava. Num celular com o app aberto a noite toda, à meia-noite
+nada era relido: o mural amanhecia com as marcações da véspera e — pior — a
+gravação seguinte salvava o estado de ontem sob a chave de HOJE, carimbando o
+dia novo com a rotina do dia anterior.
+
+`verificarViradaDoDia()` compara o dia da tela com o dia de agora e, se mudou,
+recarrega tudo limpo. É chamada quando o app volta para a frente
+(`visibilitychange` — o momento em que a pessoa de fato olha o mural), a cada
+minuto, e antes de qualquer gravação de marcação ou confirmação. O registro dos
+dias anteriores continua intacto: cada dia tem a sua própria chave.
+
+### Excluir um remédio suspenso
+
+Os remédios encerrados só ofereciam "Reativar". Agora há também "Excluir", com
+confirmação nomeando o remédio — isso apaga histórico clínico, que é o que a
+família mostra ao médico, então não pode sair por um toque errado.
+
+Isso esbarrava na proteção do servidor: apagar o **último** suspenso manda um
+array vazio, e a proteção o restauraria, fazendo a exclusão voltar sozinha na
+sincronização seguinte. O app passou a enviar `esvaziadosDeProposito`, a lista
+dos campos que a pessoa esvaziou deliberadamente, e o servidor pula a proteção
+só para esses campos. Um aparelho com estado incompleto continua sem conseguir
+apagar nada.
+
+### Lista recolhível por horário
+
+Um mural com oito remédios na manhã vira uma rolagem longa. Cada cartão ganhou
+um botão que esconde a lista, deixando à vista o que quem está dando o remédio
+precisa: quantos comprimidos separar e o botão de confirmar. A escolha é por
+horário e é lembrada (`cf_turnos_recolhidos`).
+
+`teste-dia-e-lista.mjs` cobre os três: a virada do dia limpando as marcações
+sem apagar o registro de ontem, a exclusão do histórico com a marca de
+intenção, e o recolher/mostrar sobrevivendo a um recarregamento.

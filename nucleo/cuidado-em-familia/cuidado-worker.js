@@ -258,7 +258,13 @@ function mesclarDadosFamiliaComSeguranca(atual, recebido) {
     resultado.medicamentos = atual.medicamentos;
   }
   const camposArray = ["medicamentosEncerrados", "fotosReceitas", "examesSalvos", "vacinasSalvas", "chatMensagens", "historicoDoses", "profissionaisMultidisciplinares", "sinaisVitaisHistorico", "turnosAtivos"];
+  // Lista que o aparelho manda dizendo quais campos a pessoa esvaziou DE
+  // PROPÓSITO (ex.: apagou o último remédio suspenso do histórico). Sem isto,
+  // a proteção abaixo desfaria a exclusão que a família pediu, e o item
+  // reapareceria sozinho na próxima sincronização.
+  const esvaziadosDeProposito = Array.isArray(recebido.esvaziadosDeProposito) ? recebido.esvaziadosDeProposito : [];
   for (const campo of camposArray) {
+    if (esvaziadosDeProposito.indexOf(campo) !== -1) continue;
     const novo = recebido[campo];
     const antigo = atual[campo];
     if (novo !== void 0 && Array.isArray(novo) && novo.length === 0 && Array.isArray(antigo) && antigo.length > 0) {
