@@ -1,0 +1,12 @@
+{
+  "name": "cuidado-em-familia",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node teste-parser.mjs",
+    "test:mural": "node teste-mural.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}
