@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "test": "node teste-parser.mjs",
-    "test:mural": "node teste-mural.mjs"
+    "test:mural": "node teste-mural.mjs",
+    "test:auditoria": "node teste-auditoria.mjs",
+    "test:preservacao": "node teste-preservacao.mjs"
   },
   "devDependencies": {
     "playwright": "^1.48.0"

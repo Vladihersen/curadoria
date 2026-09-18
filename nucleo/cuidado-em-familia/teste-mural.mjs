@@ -82,7 +82,9 @@ console.log('remédios intactos    :', depoisConfirmar.meds.manha.length, 'na ma
 const page2 = await ctx.newPage();
 page2.on('pageerror', e => erros.push('PAGEERROR2: ' + e.message));
 await page2.goto('http://localhost:8799/');
-await page2.evaluate(() => { localStorage.clear(); localStorage.setItem('cf_configurado','true'); });
+// Família nova que terminou o cadastro sem escolher nenhum período: a escolha
+// vazia fica gravada, e o mural precisa abrir em branco.
+await page2.evaluate(() => { localStorage.clear(); localStorage.setItem('cf_configurado','true'); localStorage.setItem('cf_turnos_ativos','[]'); });
 await page2.reload();
 await page2.waitForTimeout(1200);
 const r3 = await page2.evaluate(() => ({
