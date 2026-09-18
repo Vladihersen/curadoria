@@ -7,7 +7,8 @@
     "test:mural": "node teste-mural.mjs",
     "test:auditoria": "node teste-auditoria.mjs",
     "test:preservacao": "node teste-preservacao.mjs",
-    "test:worker-antigo": "node teste-worker-antigo.mjs"
+    "test:worker-antigo": "node teste-worker-antigo.mjs",
+    "test:servidor": "node teste-servidor.mjs"
   },
   "devDependencies": {
     "playwright": "^1.48.0"

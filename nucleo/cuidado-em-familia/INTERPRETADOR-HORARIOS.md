@@ -148,3 +148,57 @@ certo.
 A correção definitiva é ensinar os 10 `shiftKey` ao prompt do
 `cuidado-worker.js` — fica para um passo seguinte, e não é necessária para
 publicar.
+
+---
+
+# Correções no servidor (`cuidado-worker.js`)
+
+O prompt que lê a receita **já conhecia os 10 horários** — nada a corrigir ali.
+Mas a leitura do arquivo revelou três defeitos no servidor que, juntos, causam
+perda de dados da família. Os três são anteriores a esta mudança.
+
+### 1. A proteção contra perda de dados nunca era chamada
+
+`mesclarDadosFamiliaComSeguranca()` existe justamente para impedir que um
+aparelho com estado incompleto apague dados reais — o comentário dela diz que
+isso "já apagou remédios reais de verdade". Só que ela estava **definida e nunca
+usada**: `/api/familia/salvar` gravava `JSON.stringify(recebido)` direto por
+cima do registro da família.
+
+Agora `/salvar` lê o que está gravado e mescla. `/criar` também, porque o
+`ON CONFLICT DO UPDATE` dele consegue sobrescrever uma família existente.
+
+### 2. A proteção só enxergava três turnos
+
+`medicamentosTemItensServidor()` checava apenas `manha`, `almoco` e `noite`.
+Uma família com remédios só em jejum, ao deitar ou SOS era considerada "sem
+remédio nenhum" — e a proteção acima virava do avesso, justamente no caso que
+os 10 horários tornam comum. Passou a percorrer todas as chaves, inclusive as
+que vierem no futuro.
+
+### 3. `/api/familia/estado` estava declarada duas vezes
+
+A segunda declaração, a que atende `?codigo=`, vinha depois de uma que sempre
+responde — então **nunca executava**. O app chama exatamente com `?codigo=`
+(`carregarEstadoFamilia`), recebia a resposta da rota por sessão, que tem outro
+formato (sem `sucesso`), e descartava tudo em silêncio: a sincronização entre
+aparelhos nunca carregava nada.
+
+A busca por código passou para o início da rota, e o bloco morto foi removido.
+
+**Juntos**, o 1 e o 3 explicam o relatado: um aparelho grava um estado
+incompleto por cima do registro bom, e nenhum aparelho consegue carregar de
+volta o que estava certo.
+
+`teste-servidor.mjs` extrai essas funções do worker publicado e cobre os quatro
+casos: reconhecer remédios em qualquer horário, um aparelho zerado não apagar
+nada, uma alteração de verdade continuar passando, e remédios que existem só em
+horários novos não serem apagados.
+
+> Nota: `turnosAtivos` entrou na lista de campos protegidos. O efeito colateral
+> é que desmarcar **todos** os períodos de uma vez não se propaga para os outros
+> aparelhos da família. Foi uma escolha consciente: proteger o mural de ficar em
+> branco vale mais do que sincronizar uma ação rara.
+
+**Publicar estas correções exige subir o `cuidado-worker.js` também**, não só o
+`cuidado.html`. O `wrangler deploy` envia os dois de uma vez.
