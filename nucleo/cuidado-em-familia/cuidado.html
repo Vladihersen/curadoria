@@ -298,6 +298,27 @@
     }
     .cup.filled .cup-water { height: 85%; }
 
+    /* Botão de recolher/mostrar um bloco. Do mesmo tamanho do botão de áudio:
+       o círculo pequeno de antes era pequeno demais para enxergar e acertar
+       com o dedo. */
+    .btn-recolher {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1.5px solid var(--borda-suave);
+      background: #FFF;
+      color: var(--mineral);
+      font-size: 19px;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .btn-recolher:active { background: #F0F4F3; }
+
     .escaras-container {
       background: #F4F7F6;
       border: 1.5px solid #D5DFDC;
@@ -710,8 +731,16 @@
 <div class="card-title">
                 🩺 Sinais Vitais de Hoje
               </div>
-<span style="font-size: 12px; font-weight: 700; color: #0A8F9D;">Controle Diário</span>
+<div style="display:flex; align-items:center; gap:8px;">
+<span id="resumo-sinais" style="font-size: 12px; font-weight: 700; color: #0A8F9D;">Controle Diário</span>
+<button class="btn-recolher" id="btn-recolher-sinais" onclick="alternarBloco('sinais')" title="Esconder ou mostrar este bloco">▲</button>
 </div>
+</div>
+<label style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--cinza-frio); margin-bottom:10px; cursor:pointer;">
+<input id="chk-sinais-na" onchange="alternarSinaisNaoAplica()" style="width:17px; height:17px; accent-color:var(--teal-vital); cursor:pointer;" type="checkbox"/>
+            Não se aplica — não medimos pressão, glicose ou oxigênio
+          </label>
+<div id="box-sinais-conteudo">
 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; margin-bottom: 14px;">
 <div style="background: #FFF; padding: 10px 6px; border-radius: 8px; border: 1px solid var(--borda-suave);">
 <div style="font-size: 11px; color: var(--cinza-frio); font-weight: 700;">PRESSÃO (PA)</div>
@@ -733,6 +762,7 @@
               ✏️ Registrar Pressão, Glicose e SpO2 de Hoje
             </button>
 </div>
+</div>
 <!-- HIDRATAÇÃO & CONFORTO FÍSICO -->
 <div class="card emerald" id="card-agua" style="width:100%; clear:both; margin-bottom:18px;">
 <div class="card-header">
@@ -749,24 +779,31 @@
 <!-- Renderizado dinamicamente via JS -->
 </div>
 </div>
-<!-- CUIDADO COM ESCARAS: só aparece para quem respondeu que a pessoa tem
-     feridas de pressão. A mudança de posição é registrada por turno, do mesmo
-     jeito que as doses. -->
-<div class="card" id="card-escaras" style="display:none; width:100%; clear:both; margin-bottom:18px; border-left:5px solid #B07D3A;">
+<!-- MUDANÇA DE POSIÇÃO / PREVENÇÃO DE ESCARAS
+     Aparece para todos, porque quem tem alguém acamado em casa muitas vezes
+     não sabe que virar de 2 em 2 horas é o que evita a ferida. Quem não
+     precisa marca "não se aplica" e o bloco encolhe para uma linha. -->
+<div class="card" id="card-escaras" style="width:100%; clear:both; margin-bottom:18px; border-left:5px solid #B07D3A;">
 <div class="card-header">
-<div class="card-title" style="color:#7D5D18;">🛏️ Cuidado com Escaras</div>
+<div class="card-title" style="color:#7D5D18;">🛏️ Mudança de Posição</div>
+<div style="display:flex; align-items:center; gap:8px;">
 <span id="txt-escaras-hoje" style="font-size:12px; font-weight:700; color:#7D5D18;">0 mudanças hoje</span>
+<button class="btn-recolher" id="btn-recolher-escaras" onclick="alternarBloco('escaras')" title="Esconder ou mostrar este bloco">▲</button>
+</div>
 </div>
 <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--cinza-frio); margin-bottom:8px; cursor:pointer;">
 <input id="chk-escaras-na" onchange="alternarEscarasNaoAplica()" style="width:17px; height:17px; accent-color:var(--teal-vital); cursor:pointer;" type="checkbox"/>
-      Não se aplica a esta pessoa
+      Não se aplica — a pessoa anda e muda de posição sozinha
     </label>
 <div id="box-escaras-conteudo">
-<p style="font-size:12px; color:var(--cinza-frio); margin-bottom:10px;">
-        Mudar de posição a cada 2 horas evita feridas. Toque ao virar:
+<p style="font-size:12px; color:var(--cinza-frio); margin-bottom:6px; line-height:1.5;">
+        Quem fica muito tempo deitado na mesma posição desenvolve feridas de
+        pressão (escaras) em poucas horas. <strong>Virar de 2 em 2 horas</strong>
+        — alternando entre um lado, as costas e o outro lado — é o que previne.
       </p>
+<div id="aviso-proxima-virada" style="display:none; font-size:12px; font-weight:700; border-radius:8px; padding:8px 10px; margin-bottom:8px;"></div>
 <div class="escaras-container">
-<button class="escaras-btn" onclick="registrarMudancaPosicao()" type="button">🔄 Registrei uma mudança de posição</button>
+<button class="escaras-btn" onclick="registrarMudancaPosicao()" type="button">🔄 Acabei de mudar a posição</button>
 <div id="lista-escaras-hoje" style="font-size:12px; color:var(--mineral);"></div>
 </div>
 </div>
@@ -928,14 +965,19 @@
 <div class="card vital" id="card-gestao-prescricao" style="width:100%; clear:both; margin-bottom:18px;">
 <div class="card-header">
 <div class="card-title" style="color: var(--teal-deep);">💊 Gestão da Prescrição Médica</div>
+<div style="display:flex; align-items:center; gap:8px;">
 <button class="admin-only" onclick="abrirModalAdicionarMed('manha')" style="background: var(--teal-vital); color: #FFF; border: none; border-radius: 6px; padding: 6px 12px; font-size: 11px; font-weight: 700; cursor:pointer;">
-      + Adicionar Medicamento
+      + Adicionar
     </button>
+<button class="btn-recolher" id="btn-recolher-gestao" onclick="alternarBloco('gestao')" title="Esconder ou mostrar este bloco">▲</button>
 </div>
+</div>
+<div id="box-gestao-conteudo">
 <p style="font-size: 12px; color: var(--cinza-frio); margin-bottom: 12px;">
     Ambiente de administração para cadastrar novas fórmulas, alterar dosagens ou encerrar remédios com calma:
   </p>
 <div id="lista-resumo-prescricao-pasta" style="display:flex; flex-direction:column; gap:8px;"></div>
+</div>
 </div>
 <!-- FICHA DE EMERGÊNCIA MÉDICA -->
 <div class="card coral">
@@ -2839,6 +2881,8 @@
       restaurarCoposAgua();
       restaurarConfirmacoesTurno();
       restaurarEscarasNaoAplica();
+      aplicarSinaisNaoAplica();
+      aplicarTodosOsBlocos();
       aplicarPreferenciasDeAcompanhamento();
 
       // Remédios
@@ -3918,8 +3962,8 @@
     <div style="display:flex; align-items:center; gap:8px;">
       <span id="badge-contagem-${t.key}" style="display:none;">0 remédios</span>
       <button class="btn-audio-pill" onclick="falarMedicamentosTurno('${t.key}')" title="Ouvir remédios deste horário">🔊</button>
-      <button onclick="alternarListaTurno('${t.key}')" title="${recolhido ? 'Mostrar a lista de remédios' : 'Esconder a lista para o mural ficar limpo'}" style="background:none; border:1px solid var(--borda-suave); color:var(--mineral); border-radius:50%; width:30px; height:30px; font-size:13px; line-height:1; cursor:pointer; flex-shrink:0;">
-        ${recolhido ? '👁️' : '▾'}
+      <button class="btn-recolher" onclick="alternarListaTurno('${t.key}')" title="${recolhido ? 'Mostrar a lista de remédios' : 'Esconder a lista para o mural ficar limpo'}" aria-label="${recolhido ? 'Mostrar lista' : 'Esconder lista'}">
+        ${recolhido ? '👁️' : '▲'}
       </button>
     </div>
   </div>
@@ -4354,6 +4398,10 @@
       const naoAplica = chk && chk.checked;
       if (box) box.style.display = naoAplica ? 'none' : 'block';
       try { localStorage.setItem('cf_escaras_na', naoAplica ? 'true' : 'false'); } catch(e) {}
+      const resumoEscaras = document.getElementById('txt-escaras-hoje');
+      if (naoAplica) { if (resumoEscaras) resumoEscaras.innerText = 'Não se aplica'; }
+      else renderizarEscarasHoje();
+      aplicarBloco('escaras');
       agendarSincronizacao();
     }
 
@@ -4381,22 +4429,55 @@
       const txt = document.getElementById('txt-escaras-hoje');
       if (txt) txt.innerText = lista.length + (lista.length === 1 ? ' mudança hoje' : ' mudanças hoje');
       const box = document.getElementById('lista-escaras-hoje');
-      if (!box) return;
-      box.innerHTML = lista.length === 0
-        ? '<span style="color:var(--cinza-frio);">Nenhuma mudança registrada hoje ainda.</span>'
-        : 'Horários de hoje: <strong>' + lista.join(' · ') + '</strong>';
+      if (box) {
+        box.innerHTML = lista.length === 0
+          ? '<span style="color:var(--cinza-frio);">Nenhuma mudança registrada hoje ainda.</span>'
+          : 'Horários de hoje: <strong>' + lista.join(' · ') + '</strong>';
+      }
+
+      // Conta o tempo desde a última virada. Passou das 2 horas, o aviso fica
+      // vermelho — é o intervalo em que a ferida começa a se formar.
+      const aviso = document.getElementById('aviso-proxima-virada');
+      if (!aviso) return;
+      if (lista.length === 0) {
+        aviso.style.display = 'block';
+        aviso.style.background = '#FFF8E8';
+        aviso.style.color = '#7D5D18';
+        aviso.innerText = '⏳ Nenhuma virada registrada hoje. A primeira marca o início da contagem.';
+        return;
+      }
+
+      const ultima = lista[lista.length - 1];
+      const partes = String(ultima).split(':');
+      const quando = new Date();
+      quando.setHours(Number(partes[0]) || 0, Number(partes[1]) || 0, 0, 0);
+      const minutos = Math.max(0, Math.round((Date.now() - quando.getTime()) / 60000));
+      const h = Math.floor(minutos / 60);
+      const m = minutos % 60;
+      const decorrido = (h > 0 ? h + 'h' : '') + (m > 0 || h === 0 ? (h > 0 ? String(m).padStart(2, '0') : m + ' min') : '');
+
+      aviso.style.display = 'block';
+      if (minutos >= 120) {
+        aviso.style.background = '#FDECEA';
+        aviso.style.color = '#C0392B';
+        aviso.innerText = '⚠️ Já faz ' + decorrido + ' desde a última mudança (às ' + ultima + '). Está na hora de virar.';
+      } else {
+        const faltam = 120 - minutos;
+        aviso.style.background = '#EAF5F1';
+        aviso.style.color = '#127558';
+        aviso.innerText = '✓ Última mudança às ' + ultima + ' (há ' + decorrido + '). Próxima em cerca de ' + faltam + ' min.';
+      }
     }
 
     // Mostra no mural só o que a família disse que acompanha. Um bloco que já
     // tem dado registrado nunca é escondido — some da tela só o que está
     // realmente vazio, para ninguém perder informação sem perceber.
     function aplicarPreferenciasDeAcompanhamento() {
-      const cardSinais = document.getElementById('card-sinais-vitais');
-      if (cardSinais) {
-        const temDado = ['cf_pa', 'cf_gli', 'cf_spo2'].some(k => localStorage.getItem(k));
-        const acompanha = localStorage.getItem('cf_acompanha_sinais') !== 'false';
-        cardSinais.style.display = (acompanha || temDado) ? 'block' : 'none';
-      }
+      // Sinais vitais e mudança de posição não somem mais por inteiro: o
+      // cartão fica, encolhido para uma linha com o "não se aplica" marcado.
+      // Sumir de vez escondia da família uma coisa que ela talvez precise
+      // descobrir que existe — no caso das escaras, isso importa.
+      aplicarSinaisNaoAplica();
 
       const cardAgua = document.getElementById('card-agua');
       if (cardAgua) {
@@ -4406,26 +4487,103 @@
         cardAgua.style.display = (acompanha || bebeu) ? 'block' : 'none';
       }
 
-      const cardEscaras = document.getElementById('card-escaras');
-      if (cardEscaras) {
-        let temRegistro = false;
-        try { temRegistro = (JSON.parse(localStorage.getItem(chaveEscarasHoje()) || '[]') || []).length > 0; } catch (e) {}
-        // Só aparece para quem respondeu que a pessoa TEM escaras, ou que já
-        // registrou alguma mudança de posição. Quem nunca respondeu (inclusive
-        // quem já usava o app antes desta versão) não ganha um cartão novo na
-        // tela sem ter pedido.
-        const respondeu = localStorage.getItem('cf_escaras_na');
-        cardEscaras.style.display = (respondeu === 'false' || temRegistro) ? 'block' : 'none';
-        renderizarEscarasHoje();
+      // O cartão de mudança de posição aparece para todos: quem não precisa
+      // marca "não se aplica" e ele encolhe para uma linha.
+      renderizarEscarasHoje();
+      aplicarTodosOsBlocos();
+    }
+
+    // ---- BLOCOS RECOLHÍVEIS (sinais vitais, escaras, gestão) -----------
+    // Mesmo mecanismo dos cartões do mural: a escolha fica gravada por bloco.
+    // "ocultoPor" é o "não se aplica" de cada bloco, quando existe. Ele tem
+    // prioridade sobre o recolher: sem isso os dois disputam o mesmo elemento
+    // e o recolher reabria o que o "não se aplica" tinha fechado.
+    const BLOCOS_RECOLHIVEIS = {
+      sinais: {
+        conteudo: 'box-sinais-conteudo',
+        botao: 'btn-recolher-sinais',
+        ocultoPor: () => {
+          const temDado = ['cf_pa', 'cf_gli', 'cf_spo2'].some(k => localStorage.getItem(k));
+          const naoAplica = (localStorage.getItem('cf_sinais_na') === 'true')
+            || (localStorage.getItem('cf_acompanha_sinais') === 'false');
+          return naoAplica && !temDado;
+        }
+      },
+      escaras: {
+        conteudo: 'box-escaras-conteudo',
+        botao: 'btn-recolher-escaras',
+        ocultoPor: () => localStorage.getItem('cf_escaras_na') === 'true'
+      },
+      gestao: { conteudo: 'box-gestao-conteudo', botao: 'btn-recolher-gestao' }
+    };
+
+    let blocosRecolhidos = {};
+    try {
+      const b = JSON.parse(localStorage.getItem('cf_blocos_recolhidos') || '{}');
+      if (b && typeof b === 'object' && !Array.isArray(b)) blocosRecolhidos = b;
+    } catch (e) { blocosRecolhidos = {}; }
+
+    function aplicarBloco(nome) {
+      const cfg = BLOCOS_RECOLHIVEIS[nome];
+      if (!cfg) return;
+      const box = document.getElementById(cfg.conteudo);
+      const btn = document.getElementById(cfg.botao);
+      let naoSeAplica = false;
+      try { naoSeAplica = !!(cfg.ocultoPor && cfg.ocultoPor()); } catch (e) {}
+      const recolhido = naoSeAplica || (blocosRecolhidos[nome] === true);
+      if (box) box.style.display = recolhido ? 'none' : 'block';
+      if (btn) {
+        // Marcado "não se aplica", o botão de recolher não faz sentido.
+        btn.style.display = naoSeAplica ? 'none' : 'inline-flex';
+        btn.innerHTML = (blocosRecolhidos[nome] === true) ? '👁️' : '▲';
+        btn.title = (blocosRecolhidos[nome] === true) ? 'Mostrar este bloco' : 'Esconder este bloco';
       }
+    }
+
+    function alternarBloco(nome) {
+      blocosRecolhidos[nome] = !(blocosRecolhidos[nome] === true);
+      try { localStorage.setItem('cf_blocos_recolhidos', JSON.stringify(blocosRecolhidos)); } catch (e) {}
+      aplicarBloco(nome);
+    }
+
+    function aplicarTodosOsBlocos() {
+      Object.keys(BLOCOS_RECOLHIVEIS).forEach(aplicarBloco);
+    }
+
+    // ---- SINAIS VITAIS: "não se aplica" --------------------------------
+    function alternarSinaisNaoAplica() {
+      const chk = document.getElementById('chk-sinais-na');
+      const naoAplica = !!(chk && chk.checked);
+      try {
+        localStorage.setItem('cf_sinais_na', naoAplica ? 'true' : 'false');
+        // Mantém em dia a resposta dada no cadastro, para as duas telas
+        // contarem a mesma história.
+        localStorage.setItem('cf_acompanha_sinais', naoAplica ? 'false' : 'true');
+      } catch (e) {}
+      aplicarSinaisNaoAplica();
+      agendarSincronizacao();
+    }
+
+    function aplicarSinaisNaoAplica() {
+      // Se houver medida registrada, o bloco não some: esconder um valor que
+      // alguém anotou seria perder informação sem avisar.
+      const temDado = ['cf_pa', 'cf_gli', 'cf_spo2'].some(k => localStorage.getItem(k));
+      const naoAplica = (localStorage.getItem('cf_sinais_na') === 'true')
+        || (localStorage.getItem('cf_acompanha_sinais') === 'false');
+      const chk = document.getElementById('chk-sinais-na');
+      if (chk) chk.checked = naoAplica;
+      const resumo = document.getElementById('resumo-sinais');
+      if (resumo) resumo.innerText = (naoAplica && !temDado) ? 'Não se aplica' : 'Controle Diário';
+      aplicarBloco('sinais');
     }
 
     function restaurarEscarasNaoAplica() {
       const naoAplica = localStorage.getItem('cf_escaras_na') === 'true';
       const chk = document.getElementById('chk-escaras-na');
-      const box = document.getElementById('box-escaras-conteudo');
       if (chk) chk.checked = naoAplica;
-      if (box) box.style.display = naoAplica ? 'none' : 'block';
+      const resumo = document.getElementById('txt-escaras-hoje');
+      if (naoAplica && resumo) resumo.innerText = 'Não se aplica';
+      aplicarBloco('escaras');
     }
 
     // MEMÓRIA: CUIDADORAS E CIRURGIAS
@@ -4918,6 +5076,8 @@
       verificarViradaDoDia();
       verificarAlarmesDeEsquecimento();
       verificarAlertaTemporariosVencidos();
+      // Mantém vivo o "faz X desde a última virada".
+      try { if (localStorage.getItem('cf_escaras_na') !== 'true') renderizarEscarasHoje(); } catch (e) {}
     }, 60000);
 
     function coletarDadosFamilia() {

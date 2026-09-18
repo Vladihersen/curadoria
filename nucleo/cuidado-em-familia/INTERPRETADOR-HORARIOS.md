@@ -277,3 +277,45 @@ O histórico aparece em dois lugares que faltavam:
 `teste-sos.mjs` cobre os cinco casos: registrar com hora, contar as vezes do
 dia, sobreviver a uma mudança de ordem na lista, aparecer na Pasta e no
 relatório, e a virada do dia reabrindo o mural sem apagar o histórico anterior.
+
+---
+
+# Blocos recolhíveis e "não se aplica"
+
+### O botão de recolher era pequeno demais
+
+Era um círculo de 30px com um "▾" de 13px — não dava para enxergar nem acertar
+com o dedo. Virou `.btn-recolher`, de 42px, maior que o botão de áudio ao lado.
+
+### Sinais vitais e mudança de posição ganham "não se aplica"
+
+Nenhum dos dois some mais por inteiro: o cartão fica, encolhido para uma linha
+com a caixa marcada. Sumir de vez esconderia da família uma coisa que ela talvez
+precise **descobrir que existe** — no caso das escaras, isso importa.
+
+Um bloco que já tem dado registrado nunca encolhe. Esconder uma pressão que
+alguém anotou seria perder informação sem avisar.
+
+### Mudança de posição (prevenção de escaras)
+
+O cartão passou a aparecer para todos, com a orientação explícita: virar de 2 em
+2 horas, alternando entre um lado, as costas e o outro lado. Um aviso conta o
+tempo desde a última virada e fica vermelho ao passar das 2 horas — é o
+intervalo em que a ferida começa a se formar. O contador é atualizado a cada
+minuto junto com o resto do app.
+
+### Gestão da Prescrição recolhível
+
+Mesmo botão dos outros blocos, com a escolha lembrada.
+
+### Uma armadilha que o teste pegou
+
+"Não se aplica" e "recolher" mexiam no mesmo elemento e disputavam entre si: o
+recolher reabria o que o "não se aplica" tinha fechado, e a escolha não
+sobrevivia a um recarregamento. Agora cada bloco declara um `ocultoPor`, e o
+"não se aplica" tem prioridade — quando ele está ligado, o botão de recolher
+nem aparece.
+
+`teste-blocos.mjs` cobre os quatro pedidos: tamanho do botão comparado ao de
+áudio, o "não se aplica" dos dois blocos (inclusive persistindo e não escondendo
+dado já anotado), o aviso das 2 horas, e o recolher da Gestão da Prescrição.
