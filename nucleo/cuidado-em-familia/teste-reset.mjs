@@ -81,5 +81,27 @@ const recebeu = await aba3.evaluate(()=>{ try { return (JSON.parse(localStorage.
 if (recebeu > 0) console.log('  ✓ um aparelho novo com o código da família recebe os remédios (' + recebeu + ')');
 else { falhas++; console.log('  ✗ a sincronização parou de funcionar (recebeu ' + recebeu + ')'); }
 
+// ---- O reset é SÓ do aparelho -------------------------------------------
+// Regra dura: zerar o próprio celular nunca pode apagar os remédios da pessoa
+// cuidada no aparelho de mais ninguém. Um irmão que zera o celular dele não
+// pode deixar a cuidadora sem a lista.
+console.log('\n3. Zerar um aparelho não apaga os dados dos outros');
+const registroDepois = familias['familia01'];
+if (!registroDepois) { falhas++; console.log('  ✗ o registro da família SUMIU do servidor'); }
+else console.log('  ✓ o registro da família continua no servidor');
+const medsDepois = registroDepois?.medicamentos?.manha?.length || 0;
+if (medsDepois !== 2) { falhas++; console.log('  ✗ os remédios da família mudaram: ' + medsDepois + ' (eram 2)'); }
+else console.log('  ✓ os remédios da família continuam intactos (2)');
+
+// E um familiar que nunca zerou nada continua enxergando tudo.
+const abaIrma = await (await b.newContext()).newPage();
+await abaIrma.goto('http://localhost:8851/');
+await abaIrma.evaluate(()=>{ localStorage.clear(); localStorage.setItem('cf_configurado','true');
+  localStorage.setItem('cf_codigo_familia','familia01'); });
+await abaIrma.reload(); await abaIrma.waitForTimeout(10000);
+const veemOsRemedios = await abaIrma.evaluate(()=>{ try { return (JSON.parse(localStorage.getItem('cf_medicamentos')||'{}').manha||[]).map(m=>m.nome); } catch(e){ return []; } });
+if (veemOsRemedios.length === 2) console.log('  ✓ outro familiar continua recebendo: ' + veemOsRemedios.join(', '));
+else { falhas++; console.log('  ✗ outro familiar ficou sem os remédios: ' + JSON.stringify(veemOsRemedios)); }
+
 console.log(falhas===0 ? '\n✅ todas as verificações passaram' : `\n❌ ${falhas} falha(s)`);
 await b.close(); srv.close(); process.exit(falhas?1:0);

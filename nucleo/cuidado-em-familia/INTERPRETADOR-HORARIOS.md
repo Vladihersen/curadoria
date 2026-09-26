@@ -350,7 +350,18 @@ aparelho novo, com o código da família, continua recebendo os remédios. O
 servidor falso do teste reproduz a mescla protetora do worker, senão mediria um
 servidor que o app real não tem.
 
-> Nota: zerar limpa o aparelho e o desliga da família, mas **não apaga o
-> registro compartilhado no servidor** — os outros familiares continuam com os
-> dados deles. Quem quiser recomeçar do zero de verdade usa um código de
-> família novo, que é o que o app gera após o reset.
+## O alcance do Zerar é só o aparelho
+
+Regra dura, agora garantida por teste: **zerar o próprio celular nunca apaga os
+remédios da pessoa cuidada no aparelho de mais ninguém.** Um irmão que zera o
+celular dele não pode deixar a cuidadora sem a lista.
+
+O reset limpa este aparelho e o desliga da família (passa a usar um código de
+família novo), mas não toca no registro compartilhado no servidor. O aviso na
+tela diz isso com todas as letras, porque "apagar TODOS os dados" sem dizer de
+onde assusta quem cuida e esconde o que de fato acontece.
+
+`teste-reset.mjs` cobre os três lados: o reset não é desfeito pela outra aba, a
+sincronização normal continua funcionando, e depois do reset o registro da
+família segue no servidor com os remédios intactos — com outro familiar ainda
+recebendo a lista.

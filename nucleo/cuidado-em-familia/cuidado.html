@@ -1996,7 +1996,17 @@
     }
 
     async function executarResetTotal() {
-      if (!confirm("Tem certeza que deseja apagar TODOS os dados (remédios, histórico, fotos de receita e sinais vitais) e começar do zero?\n\nEsta ação não pode ser desfeita.")) {
+      // O aviso diz exatamente o alcance da ação: apaga ESTE aparelho e o
+      // desliga da família. O registro compartilhado continua de pé para os
+      // outros familiares — zerar o próprio celular nunca pode apagar os
+      // remédios da pessoa cuidada no aparelho de mais ninguém.
+      if (!confirm(
+        "Apagar TODOS os dados DESTE APARELHO e começar do zero?\n\n"
+        + "Serão apagados daqui: remédios, histórico, fotos de receita e sinais vitais. "
+        + "Este aparelho também sai da família compartilhada.\n\n"
+        + "Os outros familiares NÃO são afetados: continuam com os dados deles normalmente.\n\n"
+        + "Esta ação não pode ser desfeita neste aparelho."
+      )) {
         return;
       }
 
