@@ -64,13 +64,23 @@ await p.evaluate(()=>registrarMudancaPosicao());
 await p.waitForTimeout(300);
 ok('após registrar, mostra a contagem', /Última mudança/.test(await p.evaluate(()=>document.getElementById('aviso-proxima-virada')?.innerText||'')),
    await p.evaluate(()=>document.getElementById('aviso-proxima-virada')?.innerText||''));
-// simula 3 horas atrás
-await p.evaluate(()=>{ const h=new Date(); h.setHours(h.getHours()-3);
-  localStorage.setItem(chaveEscarasHoje(), JSON.stringify([h.getHours().toString().padStart(2,'0')+':'+h.getMinutes().toString().padStart(2,'0')]));
-  renderizarEscarasHoje(); });
-await p.waitForTimeout(200);
-const av = await p.evaluate(()=>document.getElementById('aviso-proxima-virada')?.innerText||'');
+// Simula 3 horas atrás. O relógio da página é fixado às 15:00 porque, se o
+// teste rodar perto da meia-noite, "3 horas atrás" cai no dia anterior e o
+// horário guardado ficaria no futuro em relação ao dia de hoje.
+const pRelogio = await (await b.newContext({viewport:{width:420,height:900}})).newPage();
+await pRelogio.clock.install({ time: new Date('2026-09-26T15:00:00') });
+await pRelogio.goto('http://localhost:8840/');
+await pRelogio.evaluate(()=>{ localStorage.clear(); localStorage.setItem('cf_configurado','true'); });
+await pRelogio.reload(); await pRelogio.waitForTimeout(1200);
+await pRelogio.evaluate(()=>{
+  localStorage.setItem(chaveEscarasHoje(), JSON.stringify(['12:00']));  // 3h antes das 15:00
+  renderizarEscarasHoje();
+});
+await pRelogio.waitForTimeout(200);
+const av = await pRelogio.evaluate(()=>document.getElementById('aviso-proxima-virada')?.innerText||'');
 ok('passou de 2h, avisa que está na hora', /está na hora de virar/i.test(av), av);
+ok('mostra quanto tempo faz', /Já faz 3h /.test(av), av);
+await pRelogio.close();
 await p.evaluate(()=>{ document.getElementById('chk-escaras-na').checked = true; alternarEscarasNaoAplica(); });
 await p.waitForTimeout(300);
 ok('"não se aplica" encolhe o bloco', await p.evaluate(()=>document.getElementById('box-escaras-conteudo')?.offsetParent === null));

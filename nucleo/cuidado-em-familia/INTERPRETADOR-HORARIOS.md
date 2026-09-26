@@ -319,3 +319,38 @@ nem aparece.
 `teste-blocos.mjs` cobre os quatro pedidos: tamanho do botão comparado ao de
 áudio, o "não se aplica" dos dois blocos (inclusive persistindo e não escondendo
 dado já anotado), o aviso das 2 horas, e o recolher da Gestão da Prescrição.
+
+---
+
+# O "Zerar" que se desfazia sozinho
+
+Zerar o app numa aba não adiantava se **outra aba do app continuasse aberta**.
+A aba antiga mantinha o código da família em memória e, no polling seguinte
+(8 segundos), buscava os dados no servidor e gravava tudo de volta no
+`localStorage` — que é compartilhado entre as abas do mesmo navegador. O reset
+era desfeito sozinho, sem ninguém ver: a aba zerada mostrava o cadastro do
+zero, e os remédios reapareciam assim que ela voltasse ao Mural.
+
+Reproduzido em `teste-reset.mjs`: duas abas, zera numa, e 8 segundos depois o
+`cf_medicamentos` está de volta.
+
+A correção avisa as outras abas. O reset:
+
+1. marca `resetEmAndamento` **antes** do primeiro `await`, para que uma
+   resposta de sincronização que chegue no meio não regrave nada;
+2. avisa as outras abas por `BroadcastChannel`, com o evento `storage` como
+   rede de segurança para navegadores que não o tenham;
+3. as outras abas param o polling, esquecem a família e recarregam.
+
+`carregarEstadoFamilia()` e `sincronizarComServidor()` passaram a sair cedo
+enquanto o reset está em andamento.
+
+O teste também confere que a sincronização normal **não** foi quebrada: um
+aparelho novo, com o código da família, continua recebendo os remédios. O
+servidor falso do teste reproduz a mescla protetora do worker, senão mediria um
+servidor que o app real não tem.
+
+> Nota: zerar limpa o aparelho e o desliga da família, mas **não apaga o
+> registro compartilhado no servidor** — os outros familiares continuam com os
+> dados deles. Quem quiser recomeçar do zero de verdade usa um código de
+> família novo, que é o que o app gera após o reset.

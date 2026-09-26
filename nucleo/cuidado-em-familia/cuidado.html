@@ -1959,6 +1959,42 @@
     let medsExtraidosIA = [];
     let chatMensagens = [];
 
+    // Zerar numa aba não adiantava se outra aba do app continuasse aberta:
+    // ela mantinha o código da família e, no polling seguinte (8s), buscava os
+    // dados no servidor e gravava tudo de volta no localStorage — que é
+    // compartilhado entre as abas. O reset era desfeito sozinho, sem ninguém
+    // ver. Agora o reset avisa as outras abas, que param na hora e recarregam.
+    let resetEmAndamento = false;
+    const CANAL_RESET = 'cf_reset_total';
+    let canalReset = null;
+    try { if ('BroadcastChannel' in window) canalReset = new BroadcastChannel(CANAL_RESET); } catch (e) { canalReset = null; }
+
+    function acatarResetDeOutraAba() {
+      if (resetEmAndamento) return;
+      resetEmAndamento = true;
+      try { clearInterval(_intervaloPollingFamilia); } catch (e) {}
+      _intervaloPollingFamilia = null;
+      familiaId = null;
+      papelDeFamilia = null;
+      // Recarrega para esta aba voltar do zero, igual à que zerou.
+      try { window.location.reload(); } catch (e) {}
+    }
+
+    if (canalReset) {
+      canalReset.onmessage = (ev) => { if (ev && ev.data === 'reset') acatarResetDeOutraAba(); };
+    }
+    // Rede de segurança para navegadores sem BroadcastChannel: o evento
+    // "storage" dispara nas OUTRAS abas quando esta escreve a marca do reset.
+    window.addEventListener('storage', (ev) => {
+      if (ev && ev.key === 'cf_reset_em') acatarResetDeOutraAba();
+    });
+
+    function avisarOutrasAbasDoReset() {
+      try { if (canalReset) canalReset.postMessage('reset'); } catch (e) {}
+      // Escrita DEPOIS do clear, só para disparar o evento nas outras abas.
+      try { localStorage.setItem('cf_reset_em', String(Date.now())); } catch (e) {}
+    }
+
     async function executarResetTotal() {
       if (!confirm("Tem certeza que deseja apagar TODOS os dados (remédios, histórico, fotos de receita e sinais vitais) e começar do zero?\n\nEsta ação não pode ser desfeita.")) {
         return;
@@ -1968,6 +2004,11 @@
       // "devolve" os dados de volta pro aparelho segundos depois de um
       // simples localStorage.clear() — por isso o Zerar parecia não fazer
       // nada. Sair da conta primeiro garante que o reset é de verdade.
+      // Marca antes de qualquer await: uma resposta de sincronização que
+      // chegue no meio do reset não pode regravar nada.
+      resetEmAndamento = true;
+      try { if (canalReset) canalReset.postMessage('reset'); } catch (e) {}
+
       try { await fetch('/api/auth/sair', { method: 'POST' }); } catch (e) {}
       clearInterval(_intervaloPollingFamilia);
       _intervaloPollingFamilia = null;
@@ -1978,6 +2019,7 @@
         localStorage.clear();
         sessionStorage.clear();
       } catch(e) {}
+      avisarOutrasAbasDoReset();
       // Usa reload() em vez de reatribuir location.href: em vários navegadores
       // (especialmente Safari/iOS) navegar para a MESMA URL já carregada não força
       // um recarregamento real da página, deixando os dados antigos visíveis em tela
@@ -5236,11 +5278,13 @@
     }
 
     async function carregarEstadoFamilia() {
+      if (resetEmAndamento) return;
       const cod = obterOuGerarCodigoFamiliaLocal();
       if (!cod) return;
       try {
         const res = await fetch('/api/familia/estado?codigo=' + encodeURIComponent(cod));
         const data = await res.json();
+        if (resetEmAndamento) return;
         if (data.sucesso && data.dados) {
           aplicarDadosFamiliaNoEstadoLocal(data.dados);
           if (typeof renderizarMural === 'function') renderizarMural();
@@ -5336,6 +5380,7 @@
     }
 
     async function sincronizarComServidor() {
+      if (resetEmAndamento) return;
       const cod = obterOuGerarCodigoFamiliaLocal();
       if (!cod) return;
       familiaId = cod;
