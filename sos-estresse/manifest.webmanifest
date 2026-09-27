@@ -1,7 +1,7 @@
 {
-  "name": "Ponto de Alívio",
-  "short_name": "Alívio",
-  "description": "Alívio Imediato do Estresse — Toque Vagal, Respiração 4:7:8, Coerência 5:6 e Suspiro Fisiológico.",
+  "name": "SOS Estresse",
+  "short_name": "SOS Estresse",
+  "description": "Alívio Imediato a Um Clique — Toque Vagal, Respiração 4:7:8, Coerência 5:6 e Suspiro Fisiológico.",
   "lang": "pt-BR",
   "start_url": "./index.html",
   "scope": "./",

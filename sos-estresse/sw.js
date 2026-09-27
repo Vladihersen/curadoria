@@ -1,6 +1,6 @@
-// ── SERVICE WORKER — Ponto de Alívio ───────────────────────────────────
+// ── SERVICE WORKER — SOS Estresse ───────────────────────────────────
 // Cache 100% offline para o aplicativo de alívio imediato do estresse
-const CACHE_VERSION = 'alivio-2026-09-09-0001';
+const CACHE_VERSION = 'sos-estresse-2026-09-27-0001';
 const CACHE_APP    = CACHE_VERSION + '-app';
 const CACHE_FONTES = CACHE_VERSION + '-fontes';
 

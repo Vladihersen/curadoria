@@ -6,4 +6,4 @@ A expressão máxima da Soberania Mental e Social. Este espaço é o campo de co
 
 ## Apps
 
-- [`ponto-de-alivio/`](ponto-de-alivio/) — Ponto de Alívio, PWA de alívio imediato do estresse (toque vagal, respiração 4:7:8, coerência cardíaca 5:6, suspiro fisiológico). Migrado da pasta correspondente do Drive; ver o README do app para estrutura e deploy.
+- [`sos-estresse/`](sos-estresse/) — SOS Estresse, PWA de alívio imediato do estresse (toque vagal, respiração 4:7:8, coerência cardíaca 5:6, suspiro fisiológico). Migrado da pasta "Ponto de Alívio" do Drive; ver o README do app para estrutura e deploy.

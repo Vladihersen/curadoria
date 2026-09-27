@@ -1,8 +1,8 @@
-# Ponto de Alívio
+# SOS Estresse
 
 Aplicativo de bolso (PWA) para alívio imediato do estresse, com toque vagal guiado, respiração 4:7:8, coerência cardíaca 5:6 e suspiro fisiológico. 100% offline após a primeira abertura — sem login, sem nuvem, sem anúncios e sem rastreamento de dados.
 
-Migrado da pasta do Google Drive `Ponto de Alívio` (curadoria de Vladimir Hersen) para o repositório, como a versão de referência do app.
+Migrado da pasta do Google Drive `Ponto de Alívio` (curadoria de Vladimir Hersen) para o repositório, e renomeado para SOS Estresse — nome mais direto para quem busca ajuda num momento de crise aguda.
 
 ## Estrutura
 
@@ -25,7 +25,7 @@ Abra `index.html` diretamente no navegador (duplo clique) — o app roda inteiro
 npx wrangler deploy
 ```
 
-Isso publica o conteúdo desta pasta (`wrangler.toml` aponta `directory = "./"`) como assets estáticos servidos pelo `_worker.js`, disponível em `https://ponto-de-alivio.<sua-conta>.workers.dev`.
+Isso publica o conteúdo desta pasta (`wrangler.toml` aponta `directory = "./"`) como assets estáticos servidos pelo `_worker.js`, disponível em `https://sos-estresse.<sua-conta>.workers.dev`.
 
 ## Práticas incluídas no app
 
