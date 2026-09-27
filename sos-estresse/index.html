@@ -781,6 +781,270 @@ var SuspiroFisiologico = (function(){
 
 })();
 
+// ── Motor de Áudio dedicado da Respiração 4:7:8 (extraído do "Leveza de
+// Viver") — três tons de taça (inspira/retém/expira) com um glide sutil
+// descendente na expiração. Usado tanto no SOS 4:7:8 quanto no Desacelerar
+// 4:7:8, que só diferem no número de repetições.
+var Respiracao478 = (function(){
+
+  var masterGain = null;
+  var bellBufIn = null;      // 262Hz, batimento normal — inspiração
+  var bellBufHold = null;    // 226Hz, batimento lento — retenção
+  var bellBufExLong = null;  // 196Hz, batimento lento — expiração
+
+  var BELL_GAIN = 1.0625;
+  var BELL_COMP_Q478 = 1.10;
+
+  var FASES = { inhale: 4, hold: 7, exhale: 8 }; // ciclo total: 19s
+  var XFADE = 0.45;
+
+  function getCtx(){
+    var c = getAudioContext();
+    if (!masterGain) {
+      masterGain = c.createGain();
+      masterGain.gain.value = 1.5;
+      masterGain.connect(c.destination);
+    }
+    return c;
+  }
+
+  function makeBellBuffer(baseFreq, beatHz){
+    var c = getCtx();
+    var sr = c.sampleRate;
+    var dur = 15.0;
+    var len = Math.floor(sr * dur);
+    var buf = c.createBuffer(1, len, sr);
+    var d = buf.getChannelData(0);
+    var base = baseFreq || 148;
+    var partials = [
+      {r:1.00, a:1.00, dec:15.0},
+      {r:2.00, a:0.60, dec:10.0},
+      {r:2.76, a:0.42, dec:8.0},
+      {r:4.07, a:0.20, dec:5.5},
+      {r:5.43, a:0.12, dec:4.0},
+      {r:6.80, a:0.07, dec:3.0},
+      {r:8.20, a:0.03, dec:2.2}
+    ];
+    var beat = (beatHz != null) ? beatHz : 0.45;
+    for (var i = 0; i < len; i++) {
+      var t = i / sr;
+      var s = 0;
+      for (var p = 0; p < partials.length; p++) {
+        var pr = partials[p];
+        var f = base * pr.r;
+        var env = Math.exp(-t / pr.dec);
+        s += pr.a * env * (Math.sin(2 * Math.PI * f * t) + 0.5 * Math.sin(2 * Math.PI * (f + beat) * t));
+      }
+      var atk = t < 0.010 ? t / 0.010 : 1;
+      d[i] = s * atk * 0.24;
+    }
+    return buf;
+  }
+
+  function ensureBuffers(){
+    getCtx();
+    if (!bellBufIn) bellBufIn = makeBellBuffer(262, 0.45);
+    if (!bellBufHold) bellBufHold = makeBellBuffer(226, 0.10);
+    if (!bellBufExLong) bellBufExLong = makeBellBuffer(196, 0.10);
+  }
+
+  function playSample(buf, when, gainVal, cutAt, endRate, atkSec, relSec){
+    var c = getCtx();
+    var src = c.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.setValueAtTime(1.0, when);
+    if (endRate) {
+      src.playbackRate.linearRampToValueAtTime(endRate, when + cutAt);
+    }
+    var g = c.createGain();
+    g.gain.setValueAtTime(0.05, when);
+    g.gain.exponentialRampToValueAtTime(Math.max(gainVal, 0.0002), when + (atkSec || 0.30));
+    var rel = relSec || 0.18;
+    var fadeStart = Math.max(when + cutAt - rel, when + (atkSec || 0.30) + 0.02);
+    g.gain.setValueAtTime(Math.max(gainVal, 0.0001), fadeStart);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + cutAt + 0.08);
+    src.connect(g); g.connect(masterGain);
+    src.start(when);
+    src.stop(when + cutAt + 0.20);
+  }
+
+  function scheduleCycle(when, gainMult){
+    ensureBuffers();
+    var gm = (gainMult != null) ? gainMult : 1;
+    var gain = BELL_GAIN * BELL_COMP_Q478 * gm;
+    var t = when;
+
+    playSample(bellBufIn, t, gain, FASES.inhale + XFADE);
+    t += FASES.inhale;
+
+    playSample(bellBufHold, t, gain, FASES.hold + XFADE);
+    t += FASES.hold;
+
+    playSample(bellBufExLong, t, gain, FASES.exhale + XFADE, 0.94, 0.30, 1.6);
+    t += FASES.exhale;
+
+    return t;
+  }
+
+  return {
+    scheduleCycle: scheduleCycle,
+    getCtx: getCtx,
+    FASES: FASES
+  };
+
+})();
+
+// ── Motor de Áudio dedicado da Respiração Coerente (extraído do "Leveza de
+// Viver") — taça que muda de tom entre inspiração e expiração, mais um toque
+// de cristal ("pim") marcando cada troca de fase.
+var RespiracaoCoerente = (function(){
+
+  var masterGain = null;
+  var bellBufIn = null;    // 262Hz — inspiração
+  var bellBufEx = null;    // 196Hz — expiração
+  var crestBuf = null;     // 528Hz puro — o "pim" de transição de fase
+
+  var BELL_GAIN = 1.0625;
+  var BELL_COMP_COER = 1.02;
+
+  var FASES = { inhale: 5, exhale: 5.5 }; // ciclo total: 10,5s
+  var XFADE = 0.45;
+
+  function getCtx(){
+    var c = getAudioContext();
+    if (!masterGain) {
+      masterGain = c.createGain();
+      masterGain.gain.value = 1.5;
+      masterGain.connect(c.destination);
+    }
+    return c;
+  }
+
+  function makeBellBuffer(baseFreq, beatHz){
+    var c = getCtx();
+    var sr = c.sampleRate;
+    var dur = 15.0;
+    var len = Math.floor(sr * dur);
+    var buf = c.createBuffer(1, len, sr);
+    var d = buf.getChannelData(0);
+    var base = baseFreq || 148;
+    var partials = [
+      {r:1.00, a:1.00, dec:15.0},
+      {r:2.00, a:0.60, dec:10.0},
+      {r:2.76, a:0.42, dec:8.0},
+      {r:4.07, a:0.20, dec:5.5},
+      {r:5.43, a:0.12, dec:4.0},
+      {r:6.80, a:0.07, dec:3.0},
+      {r:8.20, a:0.03, dec:2.2}
+    ];
+    var beat = (beatHz != null) ? beatHz : 0.45;
+    for (var i = 0; i < len; i++) {
+      var t = i / sr;
+      var s = 0;
+      for (var p = 0; p < partials.length; p++) {
+        var pr = partials[p];
+        var f = base * pr.r;
+        var env = Math.exp(-t / pr.dec);
+        s += pr.a * env * (Math.sin(2 * Math.PI * f * t) + 0.5 * Math.sin(2 * Math.PI * (f + beat) * t));
+      }
+      var atk = t < 0.010 ? t / 0.010 : 1;
+      d[i] = s * atk * 0.24;
+    }
+    return buf;
+  }
+
+  function makeCrystalBuf(){
+    var c = getCtx();
+    var sr = c.sampleRate;
+    var dur = 12.0;
+    var len = Math.floor(sr * dur);
+    var buf = c.createBuffer(1, len, sr);
+    var d = buf.getChannelData(0);
+    var partials = [
+      {f: 528,  a: 1.00, dec: 11.0},
+      {f: 1056, a: 0.06, dec:  5.0}
+    ];
+    for (var i = 0; i < len; i++) {
+      var t = i / sr;
+      var s = 0;
+      for (var p = 0; p < partials.length; p++) {
+        var pr = partials[p];
+        s += pr.a * Math.exp(-t / pr.dec) * Math.sin(2 * Math.PI * pr.f * t);
+      }
+      var atk = t < 0.015 ? t / 0.015 : 1;
+      d[i] = s * atk * 0.28;
+    }
+    return buf;
+  }
+
+  function ensureBuffers(){
+    getCtx();
+    if (!bellBufIn) bellBufIn = makeBellBuffer(262);
+    if (!bellBufEx) bellBufEx = makeBellBuffer(196);
+    if (!crestBuf) crestBuf = makeCrystalBuf();
+  }
+
+  function playSample(buf, when, gainVal, cutAt){
+    var c = getCtx();
+    var src = c.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.setValueAtTime(1.0, when);
+    var g = c.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(Math.max(gainVal, 0.0002), when + 0.30);
+    var dur = cutAt - XFADE;
+    var dk2Bottom = when + dur;
+    var holdUntil = dk2Bottom - 0.15;
+    g.gain.setValueAtTime(Math.max(gainVal, 0.0002), holdUntil);
+    g.gain.exponentialRampToValueAtTime(Math.max(gainVal * 0.35, 0.0002), dk2Bottom);
+    var dk2End = dk2Bottom + 0.20;
+    g.gain.exponentialRampToValueAtTime(Math.max(gainVal, 0.0002), dk2End);
+    var fadeStart = Math.max(when + cutAt - 0.18, dk2End + 0.01);
+    g.gain.setValueAtTime(Math.max(gainVal, 0.0001), fadeStart);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + cutAt + 0.08);
+    src.connect(g); g.connect(masterGain);
+    src.start(when);
+    src.stop(when + cutAt + 0.20);
+  }
+
+  function scheduleCrest(when){
+    var c = getCtx();
+    var cs = c.createBufferSource();
+    cs.buffer = crestBuf;
+    cs.playbackRate.value = 1.7;
+    var cg = c.createGain();
+    cg.gain.setValueAtTime(0.0001, when);
+    cg.gain.exponentialRampToValueAtTime(1.1, when + 0.03);
+    cg.gain.exponentialRampToValueAtTime(0.0001, when + 1.0);
+    cs.connect(cg); cg.connect(masterGain);
+    cs.start(when); cs.stop(when + 1.10);
+  }
+
+  function scheduleCycle(when, gainMult){
+    ensureBuffers();
+    var gm = (gainMult != null) ? gainMult : 1;
+    var gain = BELL_GAIN * BELL_COMP_COER * gm;
+    var t = when;
+
+    playSample(bellBufIn, t, gain, FASES.inhale + XFADE);
+    scheduleCrest(t + FASES.inhale - 0.025);
+    t += FASES.inhale;
+
+    playSample(bellBufEx, t, gain, FASES.exhale + XFADE);
+    scheduleCrest(t + FASES.exhale - 0.025);
+    t += FASES.exhale;
+
+    return t;
+  }
+
+  return {
+    scheduleCycle: scheduleCycle,
+    getCtx: getCtx,
+    FASES: FASES
+  };
+
+})();
+
 // ── Condução por Voz (Nativa e Suave) ────────────────────────────────
 function speakVoice(text) {
   if (!('speechSynthesis' in window)) return;
@@ -809,9 +1073,9 @@ var MODES = {
     name: "SOS 4:7:8",
     reps: 5,
     phases: [
-      { name: "Inspire pelo nariz", voice: "Inspire", dur: 4.0, scale: 1.25, bowl: "inhale" },
-      { name: "Retenha com calma",  voice: "Retenha", dur: 7.0, scale: 1.25, bowl: "hold" },
-      { name: "Solte pela boca",    voice: "Solte o ar", dur: 8.0, scale: 0.95, bowl: "exhale" }
+      { name: "Inspire pelo nariz", voice: "Inspire", dur: 4.0, scale: 1.25 },
+      { name: "Retenha com calma",  voice: "Retenha", dur: 7.0, scale: 1.25 },
+      { name: "Solte pela boca",    voice: "Solte o ar", dur: 8.0, scale: 0.95 }
     ],
     desc: "4 segundos inspirando pelo nariz, 7 segundos retendo suavemente e 8 segundos soltando o ar pela boca. 5 ciclos para desarmar o pico da aflição."
   },
@@ -819,9 +1083,9 @@ var MODES = {
     name: "Desacelerar 4:7:8",
     reps: 9,
     phases: [
-      { name: "Inspire pelo nariz", voice: "Inspire", dur: 4.0, scale: 1.25, bowl: "inhale" },
-      { name: "Retenha com calma",  voice: "Retenha", dur: 7.0, scale: 1.25, bowl: "hold" },
-      { name: "Solte pela boca",    voice: "Solte o ar", dur: 8.0, scale: 0.95, bowl: "exhale" }
+      { name: "Inspire pelo nariz", voice: "Inspire", dur: 4.0, scale: 1.25 },
+      { name: "Retenha com calma",  voice: "Retenha", dur: 7.0, scale: 1.25 },
+      { name: "Solte pela boca",    voice: "Solte o ar", dur: 8.0, scale: 0.95 }
     ],
     desc: "9 ciclos completos da respiração 4:7:8 (~3 min). Ativação profunda do freio vagal para dissolver a tensão e induzir calma duradoura."
   },
@@ -829,10 +1093,10 @@ var MODES = {
     name: "Resp. Coerente",
     totalSeconds: 180, // 3 min
     phases: [
-      { name: "Inspire suavemente", voice: "Inspire", dur: 5.0, scale: 1.22, bowl: "inhale" },
-      { name: "Solte devagar",      voice: "Solte",   dur: 6.0, scale: 0.96, bowl: "exhale" }
+      { name: "Inspire suavemente", voice: "Inspire", dur: 5.0, scale: 1.22 },
+      { name: "Solte devagar",      voice: "Solte",   dur: 5.5, scale: 0.96 }
     ],
-    desc: "Ritmo assimétrico de 5s inspirando e 6s soltando. A expiração prolongada desacelera o coração a cada ciclo, sincronizando respiração e ritmo cardíaco."
+    desc: "Ritmo de 5s inspirando e 5,5s soltando (~5,5 respirações por minuto), o ritmo clássico da coerência cardíaca."
   },
   fisio: {
     name: "Suspiro Fisiológico",
@@ -924,13 +1188,16 @@ function runPhase() {
   var m = MODES[currentModeKey];
   var p = m.phases[phaseIndex];
 
-  // O Suspiro Fisiológico usa o motor dedicado (agenda as 3 notas do ciclo
-  // inteiro de uma vez, com crossfade); os demais modos tocam a taça genérica
-  // fase a fase.
+  // Cada modo tem seu próprio motor de áudio dedicado, que agenda o ciclo
+  // inteiro (todas as fases, com crossfade entre as notas) de uma vez só, no
+  // início do ciclo (phaseIndex 0). A taça genérica fica de reserva, disparada
+  // fase a fase, pra um modo futuro sem motor próprio.
   if (currentModeKey === 'fisio') {
-    if (phaseIndex === 0) {
-      SuspiroFisiologico.scheduleCycle(SuspiroFisiologico.getCtx().currentTime + 0.05);
-    }
+    if (phaseIndex === 0) SuspiroFisiologico.scheduleCycle(getAudioContext().currentTime + 0.05);
+  } else if (currentModeKey === 'sos478' || currentModeKey === 'desc478') {
+    if (phaseIndex === 0) Respiracao478.scheduleCycle(getAudioContext().currentTime + 0.05);
+  } else if (currentModeKey === 'coer') {
+    if (phaseIndex === 0) RespiracaoCoerente.scheduleCycle(getAudioContext().currentTime + 0.05);
   } else {
     playTibetanBowl(p.bowl);
   }
