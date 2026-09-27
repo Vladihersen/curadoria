@@ -450,70 +450,10 @@ html, body {
         <span style="font-size:10px;color:var(--sage);font-weight:600">Ciclo de 5 segundos</span>
       </div>
 
-      <!-- Contêiner Anatômico com Animação Sobreposta -->
+      <!-- Contêiner Anatômico (o próprio GIF já traz título, contador e instruções) -->
       <div style="position:relative;width:100%;max-width:380px;margin:12px auto;border-radius:14px;overflow:hidden;background:#FFFFFF;box-shadow:0 4px 18px rgba(26,42,58,0.08);border:1px solid var(--borda);">
-        
-        <!-- Imagem Anatômica de Base -->
-        <img id="img-vagal" src="animacao_deslize_orelha_clavicula.gif" alt="Anatomia Cervical do Nervo Vago"
-             style="width:100%;height:auto;display:block;object-fit:cover;">
-
-        <!-- Camada SVG com a Animação Fluida da Orelha para a Clavícula -->
-        <svg viewBox="0 0 400 400" preserveAspectRatio="none" 
-             style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;">
-          <defs>
-            <!-- Gradiente do Ponto de Toque -->
-            <radialGradient id="touchOrb" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#005F6B" stop-opacity="0.95"/>
-              <stop offset="35%" stop-color="#D9C5A8" stop-opacity="0.85"/>
-              <stop offset="70%" stop-color="#7A9E93" stop-opacity="0.4"/>
-              <stop offset="100%" stop-color="#005F6B" stop-opacity="0"/>
-            </radialGradient>
-            <!-- Filtro de Brilho Suave -->
-            <filter id="softBlur" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="3"/>
-            </filter>
-          </defs>
-
-          <!-- 1. Linha Guia Tracejada do Trajeto (Orelha -> ECM -> Clavícula) -->
-          <path id="vagus-track" d="M 188, 92 C 198, 190 208, 260 220, 332" 
-                fill="none" stroke="#005F6B" stroke-width="2.5" stroke-dasharray="4,4" opacity="0.4"/>
-
-          <!-- 2. Rastro Luminoso com preenchimento animado em loop de 5s -->
-          <path d="M 188, 92 C 198, 190 208, 260 220, 332" 
-                fill="none" stroke="#005F6B" stroke-width="5" stroke-linecap="round" opacity="0.3"
-                stroke-dasharray="260" stroke-dashoffset="260">
-            <animate attributeName="stroke-dashoffset" values="260; 0; 260" dur="5s" repeatCount="indefinite"
-                     keyTimes="0; 0.85; 1" calcMode="spline" keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"/>
-          </path>
-
-          <!-- 3. Ponto Inicial (Base da Orelha) -->
-          <circle cx="188" cy="92" r="7" fill="#D9C5A8" stroke="#005F6B" stroke-width="2"/>
-          <text x="180" y="84" font-family="'DM Sans',sans-serif" font-size="10" font-weight="700" fill="#005F6B" text-anchor="end">Início</text>
-
-          <!-- 4. Ponto Final (Clavícula) -->
-          <circle cx="220" cy="332" r="7" fill="#7A9E93" stroke="#005F6B" stroke-width="2"/>
-          <text x="232" y="336" font-family="'DM Sans',sans-serif" font-size="10" font-weight="700" fill="#005F6B">Clavícula</text>
-
-          <!-- 5. O ORBE ANIMADO QUE DESCE EM 5 SEGUNDOS -->
-          <g filter="url(#softBlur)">
-            <circle r="18" fill="url(#touchOrb)">
-              <animateMotion dur="5s" repeatCount="indefinite" path="M 188, 92 C 198, 190 208, 260 220, 332"
-                             keyTimes="0; 0.85; 1" keyPoints="0; 1; 1" calcMode="spline" keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"/>
-              <animate attributeName="opacity" values="0.2; 1; 1; 0.2" dur="5s" repeatCount="indefinite"
-                       keyTimes="0; 0.1; 0.85; 1"/>
-            </circle>
-          </g>
-          <circle r="6" fill="#005F6B" stroke="#FFFFFF" stroke-width="2">
-            <animateMotion dur="5s" repeatCount="indefinite" path="M 188, 92 C 198, 190 208, 260 220, 332"
-                           keyTimes="0; 0.85; 1" keyPoints="0; 1; 1" calcMode="spline" keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"/>
-          </circle>
-        </svg>
-
-        <!-- Legenda Flutuante Discreta -->
-        <div style="position:absolute;bottom:8px;left:10px;right:10px;background:rgba(255,255,255,0.9);backdrop-filter:blur(4px);padding:6px 10px;border-radius:8px;font-size:10.5px;color:#1A2A3A;display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(0,95,107,0.15);">
-          <span>↓ Acompanhe o ponto no pescoço</span>
-          <span style="color:#005F6B;font-weight:700">5s por descida</span>
-        </div>
+        <img id="img-vagal" src="animacao_deslize_orelha_clavicula.gif" alt="Animação: deslize da orelha até a clavícula para estimular o nervo vago"
+             style="width:100%;height:auto;display:block;">
       </div>
 
       <div class="vagal-steps">
