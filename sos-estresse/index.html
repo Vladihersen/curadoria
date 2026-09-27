@@ -940,7 +940,7 @@ function finishPractice() {
 // A cada N práticas concluídas com sucesso, mostra um convite discreto
 // pra contribuir — nunca durante a prática, só depois, quando a pessoa
 // já está mais calma e recebeu o valor do app.
-var PRATICAS_ENTRE_CONVITES = 3;
+var PRATICAS_ENTRE_CONVITES = 5;
 
 function registrarPraticaConcluida() {
   var total = Number(localStorage.getItem('sos_estresse_praticas') || '0') + 1;
