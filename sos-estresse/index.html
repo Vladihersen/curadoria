@@ -907,7 +907,7 @@ var RespiracaoCoerente = (function(){
   var BELL_GAIN = 1.0625;
   var BELL_COMP_COER = 1.02;
 
-  var FASES = { inhale: 5, exhale: 5.5 }; // ciclo total: 10,5s
+  var FASES = { inhale: 5, exhale: 6 }; // ciclo total: 11s
   var XFADE = 0.45;
 
   function getCtx(){
@@ -1094,9 +1094,9 @@ var MODES = {
     totalSeconds: 180, // 3 min
     phases: [
       { name: "Inspire suavemente", voice: "Inspire", dur: 5.0, scale: 1.22 },
-      { name: "Solte devagar",      voice: "Solte",   dur: 5.5, scale: 0.96 }
+      { name: "Solte devagar",      voice: "Solte",   dur: 6.0, scale: 0.96 }
     ],
-    desc: "Ritmo de 5s inspirando e 5,5s soltando (~5,5 respirações por minuto), o ritmo clássico da coerência cardíaca."
+    desc: "Ritmo assimétrico de 5s inspirando e 6s soltando. A expiração prolongada desacelera o coração a cada ciclo, sincronizando respiração e ritmo cardíaco."
   },
   fisio: {
     name: "Suspiro Fisiológico",
