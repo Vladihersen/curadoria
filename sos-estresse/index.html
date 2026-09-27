@@ -1046,23 +1046,30 @@ var RespiracaoCoerente = (function(){
 })();
 
 // ── Condução por Voz (Nativa e Suave) ────────────────────────────────
+// Só fala se encontrar uma voz de fato em português instalada no aparelho —
+// sem isso, o navegador cai numa voz em inglês e lê "Inspire" foneticamente
+// errado ("inspaier"). Melhor ficar em silêncio (só sinos) do que pronunciar
+// errado.
 function speakVoice(text) {
   if (!('speechSynthesis' in window)) return;
   try {
-    window.speechSynthesis.cancel();
-    var utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'pt-BR';
-    utter.rate = 0.88;
-    utter.pitch = 0.95;
-    utter.volume = 0.9;
-
     var voices = window.speechSynthesis.getVoices();
+    var ptVoice = null;
     for (var i = 0; i < voices.length; i++) {
-      if (voices[i].lang.indexOf('pt') !== -1 || voices[i].lang.indexOf('PT') !== -1) {
-        utter.voice = voices[i];
+      if (voices[i].lang.toLowerCase().indexOf('pt') === 0) {
+        ptVoice = voices[i];
         break;
       }
     }
+    if (!ptVoice) return;
+
+    window.speechSynthesis.cancel();
+    var utter = new SpeechSynthesisUtterance(text);
+    utter.voice = ptVoice;
+    utter.lang = ptVoice.lang;
+    utter.rate = 0.88;
+    utter.pitch = 0.95;
+    utter.volume = 0.9;
     window.speechSynthesis.speak(utter);
   } catch(e) {}
 }
@@ -1117,6 +1124,7 @@ var phaseIndex = 0;
 var currentCycle = 1;
 var totalRemaining = 0;
 var CIRCUMFERENCE = 615.75;
+var currentCycleAudioStart = 0; // início do ciclo atual no relógio do AudioContext
 
 function setMode(key) {
   if (isRunning) stopPractice();
@@ -1187,19 +1195,28 @@ function runPhase() {
   if (!isRunning) return;
   var m = MODES[currentModeKey];
   var p = m.phases[phaseIndex];
+  var ctx = getAudioContext();
 
   // Cada modo tem seu próprio motor de áudio dedicado, que agenda o ciclo
   // inteiro (todas as fases, com crossfade entre as notas) de uma vez só, no
-  // início do ciclo (phaseIndex 0). A taça genérica fica de reserva, disparada
-  // fase a fase, pra um modo futuro sem motor próprio.
-  if (currentModeKey === 'fisio') {
-    if (phaseIndex === 0) SuspiroFisiologico.scheduleCycle(getAudioContext().currentTime + 0.05);
-  } else if (currentModeKey === 'sos478' || currentModeKey === 'desc478') {
-    if (phaseIndex === 0) Respiracao478.scheduleCycle(getAudioContext().currentTime + 0.05);
-  } else if (currentModeKey === 'coer') {
-    if (phaseIndex === 0) RespiracaoCoerente.scheduleCycle(getAudioContext().currentTime + 0.05);
-  } else {
-    playTibetanBowl(p.bowl);
+  // início do ciclo (phaseIndex 0), no relógio do AudioContext. A animação e
+  // a voz seguem esse MESMO relógio (em vez de performance.now(), que sofre
+  // pequenos atrasos do navegador e ia se desalinhando dos sinos a cada
+  // ciclo) — é assim que ficam sempre em sincronia com o som.
+  if (phaseIndex === 0) {
+    currentCycleAudioStart = ctx.currentTime + 0.05;
+    if (currentModeKey === 'fisio') {
+      SuspiroFisiologico.scheduleCycle(currentCycleAudioStart);
+    } else if (currentModeKey === 'sos478' || currentModeKey === 'desc478') {
+      Respiracao478.scheduleCycle(currentCycleAudioStart);
+    } else if (currentModeKey === 'coer') {
+      RespiracaoCoerente.scheduleCycle(currentCycleAudioStart);
+    } else {
+      currentCycleAudioStart = ctx.currentTime;
+      playTibetanBowl(p.bowl);
+    }
+  } else if (currentModeKey !== 'fisio' && currentModeKey !== 'sos478' && currentModeKey !== 'desc478' && currentModeKey !== 'coer') {
+    playTibetanBowl(p.bowl); // taça genérica: reserva para um modo futuro sem motor próprio
   }
   speakVoice(p.voice);
 
@@ -1214,18 +1231,20 @@ function runPhase() {
 
   setOrbVisual(p.scale, p.name, cycleStr, "");
 
-  var startTs = performance.now();
-  var durationMs = p.dur * 1000;
+  var priorDur = 0;
+  for (var i = 0; i < phaseIndex; i++) priorDur += m.phases[i].dur;
+  var phaseAudioStart = currentCycleAudioStart + priorDur;
+  var phaseAudioEnd = phaseAudioStart + p.dur;
 
-  function frame(now) {
+  function frame() {
     if (!isRunning) return;
-    var elapsed = now - startTs;
-    var progress = Math.min(elapsed / durationMs, 1.0);
+    var now = getAudioContext().currentTime;
+    var progress = Math.min(Math.max((now - phaseAudioStart) / p.dur, 0), 1.0);
 
     var offset = CIRCUMFERENCE * (1 - progress);
     setArcOffset(offset);
 
-    if (elapsed < durationMs) {
+    if (now < phaseAudioEnd) {
       timerId = requestAnimationFrame(frame);
     } else {
       nextPhase();
