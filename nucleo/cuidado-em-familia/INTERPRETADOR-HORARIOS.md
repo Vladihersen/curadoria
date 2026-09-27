@@ -409,3 +409,43 @@ o conteúdo.
 
 > Publicar esta correção exige subir o `cuidado-worker.js` também, não só o
 > `cuidado.html`: a revisão é acordo entre os dois.
+
+---
+
+# O código da família não era aceito
+
+Quem terminava o cadastro, via o Código da Família e o mandava na hora para um
+familiar recebia de volta um "código não encontrado". Não era erro de digitação:
+**o código nunca tinha sido registrado no servidor.**
+
+`concluirCadastro()` gravava tudo localmente mas não sincronizava. Como
+`agendarSincronizacao()` começa com `if (!familiaId) return`, e `familiaId` só é
+preenchido dentro de `sincronizarComServidor()`, nada era enviado — o registro
+da família só nascia no carregamento seguinte da página. No meio desse intervalo
+o código existia no aparelho e em nenhum outro lugar.
+
+Provado antes de corrigir: ao fim do cadastro, `famílias registradas no
+servidor: []` enquanto o app exibia o código `xwiiacoh`.
+
+Correções:
+
+- `concluirCadastro()` registra a família no servidor na hora;
+- `atualizarCodigoFamiliaVisivel()` faz o mesmo antes de mostrar o código, que é
+  justamente o instante em que ele vai ser passado para alguém.
+
+## E ninguém mais fica preso no cadastro
+
+O campo do código ficava no fim do PASSO 1, apesar de o comentário no HTML
+dizer "entrar com código direto na capa". Quem errava o código e seguia adiante
+não tinha como voltar — não havia botão de voltar em passo nenhum.
+
+- Todos os passos ganharam **← Voltar**, e voltar do passo 1 devolve a capa
+  inteira (o `irEtapa(0)` precisava restaurar a tela de boas-vindas).
+- A capa passou a ter o campo do código, como o comentário já prometia: quem
+  recebe um convite não está fazendo um cadastro novo, está entrando numa
+  família que já existe.
+
+`teste-convite.mjs` cobre o caminho inteiro: o responsável se cadastra e o
+código vale imediatamente; o acompanhante entra com ele e recebe os dados; e
+quem erra o código consegue voltar até o campo — pela capa ou pelo passo 1 — e
+acertar na segunda tentativa.

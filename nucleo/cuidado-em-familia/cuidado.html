@@ -509,6 +509,21 @@
 <button onclick="concluirCadastro()" style="background:none; border:none; color:var(--teal-vital); font-weight:700; font-size:14px; cursor:pointer; padding:6px;">
           Pular introdução e entrar direto no Mural ➔
         </button>
+<!-- ENTRAR COM CÓDIGO, NA CAPA
+     Quem recebe um convite não está fazendo um cadastro novo: está entrando
+     numa família que já existe. Antes isso só aparecia no fim do PASSO 1, e
+     quem errava o código ficava sem caminho de volta até o campo. -->
+<div style="margin-top:18px; padding-top:14px; border-top:1px dashed #E2E8E7;">
+<div style="font-size:12px; color:var(--cinza-frio); margin-bottom:8px;">
+          Já recebeu um código de convite da família?
+        </div>
+<div style="display:flex; gap:6px;">
+<input class="input-clean" id="input-codigo-capa-0" placeholder="Digite o código (ex: a1b2c3d4)" style="margin:0; text-align:center; font-size:13px;" type="text"/>
+<button onclick="entrarComCodigoPelaCapa('input-codigo-capa-0')" style="background:var(--teal-vital); color:#FFF; border:none; border-radius:8px; padding:0 14px; font-weight:700; font-size:12px; cursor:pointer; white-space:nowrap;" type="button">
+            Entrar
+          </button>
+</div>
+</div>
 <div style="margin-top:14px;">
 <a href="/privacidade" style="font-size:11px; color:var(--cinza-frio); text-decoration:underline;" target="_blank">Política de Privacidade</a>
 </div>
@@ -516,6 +531,7 @@
 <!-- ETAPA 1: QUEM VOCÊ ESTÁ CUIDANDO -->
 <div id="etapa-1" style="display: none;">
 <div class="wizard-card">
+<button onclick="voltarEtapa(1)" style="background:none; border:none; color:var(--teal-deep); font-size:13px; font-weight:700; cursor:pointer; padding:4px 0; display:inline-flex; align-items:center; gap:4px;" type="button">← Voltar</button>
 <a href="javascript:void(0)" onclick="executarResetTotal()" style="display:inline-block; font-size:11px; color:#C0392B; text-decoration:none; font-weight:700; margin-bottom:8px;">🔄 Zerar / Começar Limpo</a><div class="step-badge">PASSO 1 DE 4</div>
 <div class="step-title">Quem você está cuidando?</div>
 <button class="btn-option selected" onclick="escolherParentesco(this, 'mãe', 'Dona ')">👵 Minha mãe</button>
@@ -565,7 +581,8 @@
 <div id="etapa-2" style="display: none;">
 <div class="wizard-card">
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-<div class="step-badge" style="margin:0;">PASSO 2 DE 4</div>
+<div style="display:flex; align-items:center; gap:10px;"><button onclick="voltarEtapa(2)" style="background:none; border:none; color:var(--teal-deep); font-size:13px; font-weight:700; cursor:pointer; padding:4px 0; display:inline-flex; align-items:center; gap:4px;" type="button">← Voltar</button>
+<div class="step-badge" style="margin:0;">PASSO 2 DE 4</div></div>
 <a href="javascript:void(0)" onclick="executarResetTotal()" style="font-size:11px; color:#C0392B; text-decoration:none; font-weight:700;">🔄 Zerar</a>
 </div>
 <div class="step-title">Fotos da Sua Receita Médica</div>
@@ -594,7 +611,8 @@
 <div id="etapa-3" style="display: none;">
 <div class="wizard-card">
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-<div class="step-badge" style="margin:0;">PASSO 3 DE 4</div>
+<div style="display:flex; align-items:center; gap:10px;"><button onclick="voltarEtapa(3)" style="background:none; border:none; color:var(--teal-deep); font-size:13px; font-weight:700; cursor:pointer; padding:4px 0; display:inline-flex; align-items:center; gap:4px;" type="button">← Voltar</button>
+<div class="step-badge" style="margin:0;">PASSO 3 DE 4</div></div>
 <a href="javascript:void(0)" onclick="executarResetTotal()" style="font-size:11px; color:#C0392B; text-decoration:none; font-weight:700;">🔄 Zerar</a>
 </div>
 <div class="step-title">Como é a rotina de cuidado?</div>
@@ -641,6 +659,7 @@
 </div>
 <div id="etapa-4" style="display: none;">
 <div class="wizard-card">
+<button onclick="voltarEtapa(4)" style="background:none; border:none; color:var(--teal-deep); font-size:13px; font-weight:700; cursor:pointer; padding:4px 0; display:inline-flex; align-items:center; gap:4px;" type="button">← Voltar</button>
 <div class="step-badge">PASSO 4 DE 4</div>
 <div class="step-title">Conectar familiares e equipe</div>
 <p style="font-size: 13px; color: var(--cinza-frio); margin-bottom: 14px;">
@@ -2306,6 +2325,17 @@
       if (campo) {
         campo.value = obterOuGerarCodigoFamiliaLocal();
       }
+      // Rede de segurança: mostrar o código é o momento em que ele vai ser
+      // passado para alguém, então ele precisa existir no servidor.
+      garantirFamiliaNoServidor();
+    }
+
+    // Garante que o código desta família esteja registrado no servidor antes
+    // de alguém tentar entrar com ele.
+    function garantirFamiliaNoServidor() {
+      if (resetEmAndamento) return;
+      if (localStorage.getItem('cf_configurado') !== 'true') return;
+      try { sincronizarComServidor(); } catch (e) {}
     }
 
     function copiarCodigoFamiliaVisivel() {
@@ -2331,8 +2361,9 @@
       window.open(url, '_blank');
     }
 
-    async function entrarComCodigoPelaCapa() {
-      const campo = document.getElementById('input-codigo-capa');
+    async function entrarComCodigoPelaCapa(idCampo) {
+      // O campo existe em dois lugares: na capa e no fim do passo 1.
+      const campo = document.getElementById(idCampo || 'input-codigo-capa');
       const codigo = campo ? campo.value.trim().toLowerCase() : '';
       if (!codigo) {
         alert("Por favor, digite o código da família.");
@@ -3026,12 +3057,27 @@
     }
 
     // ONBOARDING
+    // Sem isto, quem errava o código de convite ficava preso: entrava no
+    // cadastro e não tinha como voltar à capa, que é o único lugar onde o
+    // código pode ser digitado.
+    function voltarEtapa(atual) {
+      const anterior = Math.max(0, Number(atual) - 1);
+      irEtapa(anterior);
+    }
+
     function irEtapa(num) {
       // Esconde todas as etapas existentes: uma lista fixa deixaria a etapa
       // nova aparecendo por baixo da seguinte.
       document.querySelectorAll('[id^="etapa-"]').forEach(el => { el.style.display = 'none'; });
       const alvo = document.getElementById('etapa-' + num);
-      if (alvo) alvo.style.display = 'block';
+      if (alvo) alvo.style.display = (num === 0) ? 'flex' : 'block';
+      // Voltando para a capa, a tela de cadastro tem de reaparecer inteira.
+      if (num === 0) {
+        const branco = document.getElementById('tela-em-branco');
+        const uso = document.getElementById('tela-em-uso');
+        if (branco) branco.style.display = 'flex';
+        if (uso) uso.style.display = 'none';
+      }
       window.scrollTo(0, 0);
     }
 
@@ -3363,6 +3409,12 @@
       if (branco) branco.style.display = 'none';
       if (uso) uso.style.display = 'block';
       window.scrollTo(0, 0);
+
+      // Registra a família no servidor AGORA. Sem isto o código que o app
+      // mostra logo em seguida ainda não existe lá, e quem recebe leva um
+      // "código não encontrado" sem ter feito nada errado.
+      try { sincronizarComServidor(); } catch (e) {}
+      try { iniciarPollingFamilia(); } catch (e) {}
 
       registrarUsoDoAppHoje();
     }

@@ -13,7 +13,8 @@
     "test:sos": "node teste-sos.mjs",
     "test:blocos": "node teste-blocos.mjs",
     "test:reset": "node teste-reset.mjs",
-    "test:apagar": "node teste-apagar.mjs"
+    "test:apagar": "node teste-apagar.mjs",
+    "test:convite": "node teste-convite.mjs"
   },
   "devDependencies": {
     "playwright": "^1.48.0"
