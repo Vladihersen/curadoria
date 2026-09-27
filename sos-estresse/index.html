@@ -359,6 +359,77 @@ html, body {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* Gancho para outros projetos, dentro do modal PIX */
+.gancho-projeto {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--borda);
+  text-align: center;
+}
+.gancho-projeto p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--mineral);
+  opacity: 0.85;
+  margin-bottom: 8px;
+}
+.gancho-projeto a {
+  display: inline-block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--teal-vital);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0,95,107,0.3);
+}
+
+/* Convite periódico de apoio, some sozinho até aparecer de novo */
+.support-banner {
+  display: none;
+  background: linear-gradient(135deg, #EAF3F2 0%, #F4F8F7 100%);
+  border: 1px solid rgba(0,95,107,0.2);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  text-align: center;
+  position: relative;
+  animation: apareceSuave 0.4s ease;
+}
+.support-banner.show { display: block; }
+@keyframes apareceSuave {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.support-banner p {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--azul-noite);
+  margin-bottom: 10px;
+  padding-right: 10px;
+}
+.support-banner .support-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.support-banner button {
+  border-radius: 20px;
+  padding: 7px 16px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+.support-banner .btn-sim {
+  background: var(--teal-vital);
+  color: #FFFFFF;
+}
+.support-banner .btn-depois {
+  background: none;
+  color: var(--mineral);
+  opacity: 0.7;
+  border: 1px solid var(--borda);
+}
 </style>
 </head>
 <body>
@@ -511,6 +582,15 @@ html, body {
       <button class="btn-test-sound" onclick="testBowlSound()">🔔 Toque para testar o som da taça</button>
     </div>
 
+    <!-- Convite periódico para se tornar contribuinte mantenedor -->
+    <div class="support-banner" id="support-banner">
+      <p>Esse alívio te ajudou? Pessoas como você mantêm este app de pé — sem anúncios, sem coleta de dados, gratuito pra quem precisar.</p>
+      <div class="support-actions">
+        <button class="btn-sim" onclick="aceitarConviteApoio()">Quero contribuir</button>
+        <button class="btn-depois" onclick="fecharConviteApoio()">Agora não</button>
+      </div>
+    </div>
+
     <!-- Citação -->
     <div class="card" style="text-align:center;padding:18px 16px">
       <div class="card-top-line"></div>
@@ -553,6 +633,11 @@ html, body {
     <button class="btn-copy-pix" id="btn-copy" onclick="copyPixKey()">Copiar Chave PIX</button>
     <div style="text-align:center;font-size:11.5px;color:var(--mineral);opacity:0.75;margin-top:12px;font-style:italic">
       "Que todos os seres possam viver em paz, com saúde e serenidade."
+    </div>
+
+    <div class="gancho-projeto">
+      <p>Cuida de alguém além de você mesmo? Conheça o <strong>Cuidado em Família</strong> — remédios, receitas e rotina de saúde organizados para toda a família.</p>
+      <a href="https://cuidado-em-familia.vladihersen.workers.dev/" target="_blank" rel="noopener">Conhecer o Cuidado em Família →</a>
     </div>
   </div>
 </div>
@@ -848,6 +933,35 @@ function finishPractice() {
 
   playThreeBowls();
   speakVoice("Que todos os seres possam viver em paz, com saúde e serenidade.");
+  registrarPraticaConcluida();
+}
+
+// ── Convite periódico de apoio ────────────────────────────────────────
+// A cada N práticas concluídas com sucesso, mostra um convite discreto
+// pra contribuir — nunca durante a prática, só depois, quando a pessoa
+// já está mais calma e recebeu o valor do app.
+var PRATICAS_ENTRE_CONVITES = 3;
+
+function registrarPraticaConcluida() {
+  var total = Number(localStorage.getItem('sos_estresse_praticas') || '0') + 1;
+  localStorage.setItem('sos_estresse_praticas', String(total));
+
+  if (total % PRATICAS_ENTRE_CONVITES === 0) {
+    setTimeout(function(){
+      var banner = document.getElementById('support-banner');
+      if (banner) banner.classList.add('show');
+    }, 1500);
+  }
+}
+
+function aceitarConviteApoio() {
+  fecharConviteApoio();
+  openModal();
+}
+
+function fecharConviteApoio() {
+  var banner = document.getElementById('support-banner');
+  if (banner) banner.classList.remove('show');
 }
 
 // ── Modal PIX ───────────────────────────────────────────────────────
