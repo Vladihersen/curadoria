@@ -660,6 +660,127 @@ function testBowlSound() {
   speakVoice("Inspire pelo nariz");
 }
 
+// ── Motor de Áudio dedicado do Suspiro Fisiológico (extraído do "Leveza de
+// Viver") — duas taças de inspiração com crossfade + uma taça de expiração,
+// agendadas juntas no relógio do AudioContext para soarem como um único
+// gesto contínuo, sem os pequenos vãos de silêncio da taça genérica por fase.
+var SuspiroFisiologico = (function(){
+
+  var masterGain = null;
+  var bellBufIn = null;   // taça na altura da INSPIRAÇÃO (262 Hz, ~C4)
+  var bellBufEx = null;   // taça na altura da EXPIRAÇÃO   (196 Hz, ~G3 — quarta justa abaixo)
+
+  var BELL_GAIN = 1.0625;
+  var BELL_COMP_FISIO = 0.89;
+
+  // Duração das fases (segundos) — ciclo total: 8,9s
+  var FASES = { inhale: 2.3, inhale2: 1.3, exhale: 5.3 };
+
+  // Cada nota continua soando 0,45s além do fim nominal da sua fase, criando
+  // uma pequena sobreposição com o início da próxima.
+  var XFADE = 0.45;
+
+  var envFisioInsp   = { atk: 0.40, rel: 0.45, floor: 0.05 };
+  var envFisioInsp2  = { atk: 0.22, rel: 0.55, floor: 0.05 };
+  var envFisioExhale = { atk: 0.15, rel: 0.60, floor: 0.05 };
+
+  function getCtx(){
+    var c = getAudioContext(); // compartilhado com o resto do app
+    if (!masterGain) {
+      masterGain = c.createGain();
+      masterGain.gain.value = 1.5;
+      masterGain.connect(c.destination);
+    }
+    return c;
+  }
+
+  function makeBellBuffer(baseFreq, beatHz){
+    var c = getCtx();
+    var sr = c.sampleRate;
+    var dur = 15.0;
+    var len = Math.floor(sr * dur);
+    var buf = c.createBuffer(1, len, sr);
+    var d = buf.getChannelData(0);
+    var base = baseFreq || 148;
+    var partials = [
+      {r:1.00, a:1.00, dec:15.0},
+      {r:2.00, a:0.60, dec:10.0},
+      {r:2.76, a:0.42, dec:8.0},
+      {r:4.07, a:0.20, dec:5.5},
+      {r:5.43, a:0.12, dec:4.0},
+      {r:6.80, a:0.07, dec:3.0},
+      {r:8.20, a:0.03, dec:2.2}
+    ];
+    var beat = (beatHz != null) ? beatHz : 0.45;
+    for (var i = 0; i < len; i++) {
+      var t = i / sr;
+      var s = 0;
+      for (var p = 0; p < partials.length; p++) {
+        var pr = partials[p];
+        var f = base * pr.r;
+        var env = Math.exp(-t / pr.dec);
+        s += pr.a * env * (Math.sin(2 * Math.PI * f * t) + 0.5 * Math.sin(2 * Math.PI * (f + beat) * t));
+      }
+      var atk = t < 0.010 ? t / 0.010 : 1;
+      d[i] = s * atk * 0.24;
+    }
+    return buf;
+  }
+
+  function ensureBuffers(){
+    getCtx();
+    if (!bellBufIn) bellBufIn = makeBellBuffer(262);
+    if (!bellBufEx) bellBufEx = makeBellBuffer(196);
+  }
+
+  function playSample(buf, when, rate, gainVal, cutAt, opts){
+    var c = getCtx();
+    var src = c.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.setValueAtTime(rate, when);
+    var g = c.createGain();
+    var floorVal = (opts && opts.floor) ? opts.floor : 0.0001;
+    g.gain.setValueAtTime(floorVal, when);
+    var atkSec = (opts && opts.atk) ? opts.atk : 0.30;
+    var relSec = (opts && opts.rel) ? opts.rel : 0.18;
+    g.gain.exponentialRampToValueAtTime(Math.max(gainVal, 0.0002), when + atkSec);
+    if (cutAt) {
+      var fadeStart = Math.max(when + cutAt - relSec, when + atkSec + 0.02);
+      g.gain.setValueAtTime(Math.max(gainVal, 0.0001), fadeStart);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + cutAt + 0.08);
+    }
+    src.connect(g); g.connect(masterGain);
+    src.start(when);
+    if (cutAt) src.stop(when + cutAt + 0.20);
+    return src;
+  }
+
+  function scheduleCycle(when, gainMult){
+    ensureBuffers();
+    var gm = (gainMult != null) ? gainMult : 1;
+    var gain = BELL_GAIN * BELL_COMP_FISIO * gm;
+    var t = when;
+
+    playSample(bellBufIn, t, 1.00, gain, FASES.inhale + XFADE, envFisioInsp);
+    t += FASES.inhale;
+
+    playSample(bellBufIn, t, 1.03, gain, FASES.inhale2 + XFADE, envFisioInsp2);
+    t += FASES.inhale2;
+
+    playSample(bellBufEx, t, 1.00, gain, FASES.exhale + XFADE, envFisioExhale);
+    t += FASES.exhale;
+
+    return t;
+  }
+
+  return {
+    scheduleCycle: scheduleCycle,
+    getCtx: getCtx,
+    FASES: FASES
+  };
+
+})();
+
 // ── Condução por Voz (Nativa e Suave) ────────────────────────────────
 function speakVoice(text) {
   if (!('speechSynthesis' in window)) return;
@@ -717,9 +838,9 @@ var MODES = {
     name: "Suspiro Fisiológico",
     totalSeconds: 120, // 2 min
     phases: [
-      { name: "Inspire pelo nariz",   voice: "Inspire", dur: 2.0, scale: 1.15, bowl: "inhale" },
-      { name: "Puxe mais um pouco",   voice: "Puxe mais um pouco", dur: 1.0, scale: 1.28, bowl: "hold" },
-      { name: "Solte longo pela boca",voice: "Solte o ar", dur: 5.0, scale: 0.95, bowl: "exhale" }
+      { name: "Inspire pelo nariz",   voice: "Inspire", dur: 2.3, scale: 1.15 },
+      { name: "Puxe mais um pouco",   voice: "Puxe mais um pouco", dur: 1.3, scale: 1.28 },
+      { name: "Solte longo pela boca",voice: "Solte o ar", dur: 5.3, scale: 0.95 }
     ],
     desc: "Duas inspirações nasais consecutivas seguidas por uma expiração lenta pela boca. O reset biológico mais rápido para esvaziar o CO2₂ e relaxar."
   }
@@ -803,8 +924,16 @@ function runPhase() {
   var m = MODES[currentModeKey];
   var p = m.phases[phaseIndex];
 
-  // Toca a taça correspondente à fase
-  playTibetanBowl(p.bowl);
+  // O Suspiro Fisiológico usa o motor dedicado (agenda as 3 notas do ciclo
+  // inteiro de uma vez, com crossfade); os demais modos tocam a taça genérica
+  // fase a fase.
+  if (currentModeKey === 'fisio') {
+    if (phaseIndex === 0) {
+      SuspiroFisiologico.scheduleCycle(SuspiroFisiologico.getCtx().currentTime + 0.05);
+    }
+  } else {
+    playTibetanBowl(p.bowl);
+  }
   speakVoice(p.voice);
 
   var cycleStr = "";
