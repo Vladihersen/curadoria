@@ -1,0 +1,17 @@
+name = "cuidado-em-familia"
+main = "cuidado-worker.js"
+compatibility_date = "2024-09-01"
+
+[[kv_namespaces]]
+binding = "USUARIOS_PREMIUM"
+id = "b2f79a32c4414c3aa61afca86b0d9499"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cuidado-em-familia-db"
+database_id = "c194bef5-0e0e-4801-81e1-195a477b66b0"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true
