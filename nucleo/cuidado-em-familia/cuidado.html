@@ -5296,6 +5296,7 @@
         const data = await res.json();
         if (resetEmAndamento) return;
         if (data.sucesso && data.dados) {
+          gravarRevFamilia(data.dados.rev);
           aplicarDadosFamiliaNoEstadoLocal(data.dados);
           if (typeof renderizarMural === 'function') renderizarMural();
           if (typeof renderizarPasta === 'function') renderizarPasta();
@@ -5389,17 +5390,40 @@
       _sincronizacaoAgendada = setTimeout(sincronizarComServidor, 600);
     }
 
+    // A revisão do estado da família que este aparelho conhece. Mandá-la ao
+    // salvar é o que prova ao servidor que sabemos o que estamos
+    // sobrescrevendo — sem isso, uma exclusão de verdade (apagar o último
+    // remédio, a última receita) era recusada pela proteção contra perda de
+    // dados e o item reaparecia no polling seguinte.
+    function lerRevFamilia() {
+      const v = Number(localStorage.getItem('cf_rev_familia'));
+      return Number.isFinite(v) ? v : 0;
+    }
+
+    function gravarRevFamilia(rev) {
+      const v = Number(rev);
+      if (!Number.isFinite(v)) return;
+      try { localStorage.setItem('cf_rev_familia', String(v)); } catch (e) {}
+    }
+
     async function sincronizarComServidor() {
       if (resetEmAndamento) return;
       const cod = obterOuGerarCodigoFamiliaLocal();
       if (!cod) return;
       familiaId = cod;
       try {
-        await fetch('/api/familia/salvar', {
+        const res = await fetch('/api/familia/salvar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ codigo: cod, dados: coletarDadosFamilia() })
+          body: JSON.stringify({ codigo: cod, revBase: lerRevFamilia(), dados: coletarDadosFamilia() })
         });
+        const data = await res.json().catch(() => ({}));
+        if (data && data.sucesso) {
+          gravarRevFamilia(data.rev);
+          // O servidor aceitou: as exclusões já estão gravadas lá, então as
+          // marcas de "esvaziei de propósito" cumpriram o papel e saem.
+          try { localStorage.removeItem('cf_esvaziados_de_proposito'); } catch (e) {}
+        }
         _sincronizacaoPendente = false;
       } catch (e) {
         console.warn('Falha ao sincronizar com o servidor:', e);

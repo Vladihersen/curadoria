@@ -365,3 +365,47 @@ onde assusta quem cuida e esconde o que de fato acontece.
 sincronização normal continua funcionando, e depois do reset o registro da
 família segue no servidor com os remédios intactos — com outro familiar ainda
 recebendo a lista.
+
+---
+
+# Apagar não apagava — e a causa fui eu
+
+Depois que a proteção contra perda de dados foi ligada no servidor, **apagar
+deixou de funcionar**. A proteção recusa listas vazias para impedir que um
+aparelho com estado incompleto apague dados reais, mas ela não distinguia dois
+casos opostos:
+
+- a lista chegou vazia porque o aparelho está com o estado quebrado — recusar;
+- a lista chegou vazia porque **a pessoa apagou** — aceitar.
+
+Apagar o último remédio mandava a lista vazia, o servidor devolvia a antiga, e
+no polling seguinte (8 s) o remédio reaparecia no aparelho. O mesmo valia para
+receitas, exames, vacinas e o histórico. Daí "o app não limpa, não elimina" e
+"nem consegui apagar os remédios".
+
+## A correção: número de revisão
+
+O registro da família passou a ter um `rev`, que o servidor incrementa a cada
+gravação e devolve junto do estado. O aparelho guarda o `rev` que conhece e o
+manda de volta ao salvar:
+
+- **`revBase` igual ao `rev` gravado** → o aparelho provou que sabe o que está
+  sobrescrevendo, e a gravação dele é aceita inteira, exclusões incluídas.
+- **`revBase` velho ou ausente** → o aparelho não sabe, e cai na mescla
+  protetora exatamente como antes.
+
+É a mesma pergunta que a proteção sempre quis fazer — "este aparelho sabe o que
+está apagando?" — só que agora respondida por um fato, não por um palpite sobre
+o conteúdo.
+
+`teste-apagar.mjs` cobre os dois lados, que é o ponto:
+
+1. apagar o último remédio apaga de verdade e não volta no polling;
+2. apagar a última receita idem;
+3. um aparelho com revisão velha (ou nenhuma) **continua sem conseguir apagar
+   nada** — a proteção original está de pé;
+4. depois de zerar, um cadastro novo começa limpo, com código de família novo,
+   e a família antiga continua intacta no servidor.
+
+> Publicar esta correção exige subir o `cuidado-worker.js` também, não só o
+> `cuidado.html`: a revisão é acordo entre os dois.

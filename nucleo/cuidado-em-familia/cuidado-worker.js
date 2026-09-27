@@ -634,7 +634,27 @@ var worker_default = {
           if (kv) atual = kv;
         } catch (e) {}
       }
-      const dados = mesclarDadosFamiliaComSeguranca(atual, recebido);
+      // NÚMERO DE REVISÃO — o que distingue "veio vazio por erro" de "a
+      // pessoa apagou de propósito".
+      //
+      // A mescla protetora abaixo recusa listas vazias para impedir que um
+      // aparelho com estado incompleto apague dados reais. Só que ela também
+      // recusava uma EXCLUSÃO de verdade: apagar o último remédio mandava a
+      // lista vazia, o servidor devolvia a antiga, e no polling seguinte o
+      // remédio reaparecia no aparelho. Era impossível apagar.
+      //
+      // A revisão resolve: quem manda a revisão que está gravada agora provou
+      // que sabe o que está sobrescrevendo, e a exclusão dele é aceita
+      // inteira. Quem manda uma revisão velha (ou nenhuma) não sabe, e cai na
+      // mescla protetora como antes.
+      const revAtual = Number(atual.rev) || 0;
+      const revBase = Number(body.revBase);
+      const clienteEstaEmDia = Number.isFinite(revBase) && revBase === revAtual;
+
+      const dados = clienteEstaEmDia
+        ? { ...atual, ...recebido }
+        : mesclarDadosFamiliaComSeguranca(atual, recebido);
+      dados.rev = revAtual + 1;
       const dadosJson = JSON.stringify(dados);
 
       try {
@@ -651,7 +671,7 @@ var worker_default = {
         await env.USUARIOS_PREMIUM.put("familia:" + codigo, dadosJson);
       } catch (e) {}
 
-      return new Response(JSON.stringify({ sucesso: true, atualizadoEm: agora }), {
+      return new Response(JSON.stringify({ sucesso: true, atualizadoEm: agora, rev: dados.rev }), {
         headers: { "Content-Type": "application/json;charset=UTF-8" }
       });
     }
