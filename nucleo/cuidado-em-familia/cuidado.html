@@ -1003,6 +1003,9 @@
 <p style="font-size: 12px; color: var(--cinza-frio); margin-bottom: 12px;">
     Ambiente de administração para cadastrar novas fórmulas, alterar dosagens ou encerrar remédios com calma:
   </p>
+<p style="font-size:11px; color:var(--cinza-frio); margin:2px 0 8px;">
+              O ✕ suspende o remédio: ele sai do Mural do Dia e fica guardado em <strong>Remédios Suspensos</strong>, na Memória do Cuidado, com a data e o motivo — para mostrar ao médico ou voltar a tomar depois.
+            </p>
 <div id="lista-resumo-prescricao-pasta" style="display:flex; flex-direction:column; gap:8px;"></div>
 </div>
 </div>
@@ -2279,8 +2282,7 @@
               <strong style="color:var(--azul-noite);">${escaparHtml(m.nome)}</strong>
               <span style="color:#718096; font-size:11px;"> - ${escaparHtml(m.qtd || '1 dose')}</span>
             </div>
-            <button style="border:none; background:none; color:#C0392B; cursor:pointer; font-size:13px; padding:2px 4px;" title="Encerrar" onclick="removerMedicamento('${t}', ${idx});
-      renderizarResumoPrescricaoPasta();">✕</button>
+            <button style="border:none; background:none; color:#C0392B; cursor:pointer; font-size:13px; padding:2px 4px;" title="Encerrar" onclick="removerMedicamento('${t}', ${idx})">✕</button>
           </div>
         `).join('');
 
@@ -3529,7 +3531,7 @@
       medicamentos[turno].push({ nome, sub, qtd, tipo, dataFim });
       ativarTurnos([turno]);
       localStorage.setItem('cf_medicamentos', JSON.stringify(medicamentos));
-      renderizarMedicamentos();
+      medicamentosMudaram();
       fecharModalMed();
       // Remédio salvo silenciosamente sem pop-up
     }
@@ -3576,10 +3578,16 @@
       localStorage.setItem('cf_medicamentos', JSON.stringify(medicamentos));
       localStorage.setItem('cf_meds_encerrados', JSON.stringify(medicamentosEncerrados));
 
-      renderizarMedicamentos();
-      renderizarEncerrados();
+      medicamentosMudaram();
       fecharModalRemoverMed();
       verificarAlertaTemporariosVencidos();
+    }
+
+    function medicamentosMudaram() {
+      try { renderizarMedicamentos(); } catch (e) {}
+      try { renderizarEncerrados(); } catch (e) {}
+      try { renderizarResumoPrescricaoPasta(); } catch (e) {}
+      try { agendarSincronizacao(); } catch (e) {}
     }
 
     function reativarMedicamento(idx) {
@@ -3597,8 +3605,7 @@
         localStorage.setItem('cf_medicamentos', JSON.stringify(medicamentos));
         localStorage.setItem('cf_meds_encerrados', JSON.stringify(medicamentosEncerrados));
 
-        renderizarMedicamentos();
-        renderizarEncerrados();
+        medicamentosMudaram();
       }
     }
 
@@ -5260,22 +5267,31 @@
 
     function aplicarDadosFamiliaNoEstadoLocal(dados) {
       if (!dados) return;
-      if (dados.medicamentos && (medicamentosTemItens(dados.medicamentos) || localMedicamentosVazio())) {
+      // "Recusar lista vazia" protege contra um servidor que respondeu vazio por
+      // defeito, mas sozinho ele também impedia a exclusão do ÚLTIMO remédio de
+      // chegar aos outros aparelhos da família: o celular do filho guardava o
+      // remédio que a mãe acabou de excluir e o devolvia ao servidor depois.
+      // A revisão desfaz o empate: se o servidor está numa revisão mais nova que
+      // a minha, alguém da família mudou aquilo de propósito e quem manda é ele
+      // — inclusive quando o que sobrou foi uma lista vazia.
+      const servidorMaisNovo = dados.rev !== undefined && Number(dados.rev) > lerRevFamilia();
+      if (dados.rev !== undefined) gravarRevFamilia(dados.rev);
+      if (dados.medicamentos && (servidorMaisNovo || medicamentosTemItens(dados.medicamentos) || localMedicamentosVazio())) {
         medicamentos = garantirTurnos(dados.medicamentos);
       }
-      if (dados.medicamentosEncerrados && (dados.medicamentosEncerrados.length > 0 || medicamentosEncerrados.length === 0)) {
+      if (dados.medicamentosEncerrados && (servidorMaisNovo || dados.medicamentosEncerrados.length > 0 || medicamentosEncerrados.length === 0)) {
         medicamentosEncerrados = dados.medicamentosEncerrados;
       }
-      if (dados.fotosReceitas && (dados.fotosReceitas.length > 0 || fotosReceitas.length === 0)) {
+      if (dados.fotosReceitas && (servidorMaisNovo || dados.fotosReceitas.length > 0 || fotosReceitas.length === 0)) {
         fotosReceitas = dados.fotosReceitas;
       }
-      if (dados.examesSalvos && (dados.examesSalvos.length > 0 || examesSalvos.length === 0)) {
+      if (dados.examesSalvos && (servidorMaisNovo || dados.examesSalvos.length > 0 || examesSalvos.length === 0)) {
         examesSalvos = dados.examesSalvos;
       }
-      if (dados.vacinasSalvas && (dados.vacinasSalvas.length > 0 || vacinasSalvas.length === 0)) {
+      if (dados.vacinasSalvas && (servidorMaisNovo || dados.vacinasSalvas.length > 0 || vacinasSalvas.length === 0)) {
         vacinasSalvas = dados.vacinasSalvas;
       }
-      if (dados.chatMensagens && (dados.chatMensagens.length > 0 || chatMensagens.length === 0)) {
+      if (dados.chatMensagens && (servidorMaisNovo || dados.chatMensagens.length > 0 || chatMensagens.length === 0)) {
         chatMensagens = dados.chatMensagens;
       }
       if (dados.nomePaciente) localStorage.setItem('cf_nome_paciente', dados.nomePaciente);
@@ -5348,7 +5364,6 @@
         const data = await res.json();
         if (resetEmAndamento) return;
         if (data.sucesso && data.dados) {
-          gravarRevFamilia(data.dados.rev);
           aplicarDadosFamiliaNoEstadoLocal(data.dados);
           if (typeof renderizarMural === 'function') renderizarMural();
           if (typeof renderizarPasta === 'function') renderizarPasta();
@@ -6078,8 +6093,7 @@ Deseja que a Inteligência Artificial leia esta página agora e adicione os rem�
 
         localStorage.setItem('cf_medicamentos', JSON.stringify(medicamentos));
         localStorage.setItem('cf_meds_encerrados', JSON.stringify(medicamentosEncerrados));
-        renderizarMedicamentos();
-        renderizarEncerrados();
+        medicamentosMudaram();
         fecharModalIA();
         // Receita atualizada silenciosamente
 

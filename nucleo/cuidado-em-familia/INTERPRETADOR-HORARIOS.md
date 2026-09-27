@@ -449,3 +449,40 @@ não tinha como voltar — não havia botão de voltar em passo nenhum.
 código vale imediatamente; o acompanhante entra com ele e recebe os dados; e
 quem erra o código consegue voltar até o campo — pela capa ou pelo passo 1 — e
 acertar na segunda tentativa.
+
+## Excluir medicação (relato: "não estou conseguindo excluir medicação")
+
+Reproduzido no navegador. Eram três defeitos somados, não um:
+
+1. **A lista não se redesenhava.** O botão `✕` da Gestão da Prescrição chamava
+   `renderizarResumoPrescricaoPasta()` na hora do clique — antes de a pessoa
+   confirmar o motivo — e `confirmarRemocaoMedicamento()` redesenhava o Mural e o
+   histórico, mas nunca a lista onde a pessoa acabou de clicar. O remédio era
+   realmente excluído e ia para o histórico, mas continuava na tela. Para quem
+   está usando, isso é exatamente "não consigo excluir".
+2. **A exclusão do último remédio não chegava aos outros aparelhos.** O guard
+   "não aceito lista vazia vinda do servidor" existia para não perder dados por
+   uma resposta defeituosa, mas ele também recusava uma lista que ficou vazia
+   *de propósito*: o outro celular da família guardava o remédio excluído e o
+   devolvia ao servidor no ciclo seguinte. Agora a revisão desfaz o empate — se
+   o servidor está numa revisão mais nova que a do aparelho, quem manda é o
+   servidor, inclusive quando o que sobrou foi uma lista vazia.
+3. **Quem entrou pelo código da família ficava na revisão 0 para sempre.** Dois
+   dos três lugares que aplicavam os dados do servidor não guardavam a revisão,
+   então toda gravação daquele aparelho caía na mesclagem protetora e ele nunca
+   conseguia excluir nada. A gravação da revisão passou para dentro de
+   `aplicarDadosFamiliaNoEstadoLocal()`, onde nenhum chamador pode esquecê-la.
+
+De passagem: `medicamentosMudaram()` reúne os quatro redesenhos + a
+sincronização num lugar só (antes cada ponto redesenhava um pedaço e esquecia
+outro), acrescentar remédio passou a avisar o servidor, e o rótulo do histórico
+saía como "Tratamentos do Passado0 passados)".
+
+O histórico pedido já existia e continua: Pasta → Memória do Cuidado →
+**Remédios Suspensos / Tratamentos do Passado**, com data, motivo, 🔄 Reativar e
+🗑️ Excluir. A Gestão da Prescrição agora diz isso em uma linha, para a pessoa
+saber que o `✕` guarda e não destrói.
+
+Coberto por `teste-excluir-ui.mjs` (20 verificações), que dirige o `✕` de
+verdade, com dois aparelhos abertos e um servidor falso que usa a mesma função
+de mescla do worker publicado.
