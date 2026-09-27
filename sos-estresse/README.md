@@ -11,6 +11,7 @@ Migrado da pasta do Google Drive `Ponto de Alívio` (curadoria de Vladimir Herse
 - `sw.js` — service worker que faz cache 100% offline dos assets do app.
 - `wrangler.toml` / `_worker.js` — configuração de publicação no Cloudflare Workers (assets estáticos, `/` servindo `index.html`).
 - `.assetsignore` — arquivos que não devem subir como assets estáticos no deploy do Worker.
+- `PUBLICAR APP.bat` — duplo clique publica o app no Cloudflare (mesmo padrão usado nos outros apps, como o Cuidado em Família).
 - `icon-192.png`, `icon-512.png`, `apple-touch-icon.png`, `capa-app.png` — ícones e imagem de capa do PWA.
 - `animacao_deslize_orelha_clavicula.gif` — ilustração animada do toque vagal (usada no card de instrução).
 - `audio/paisagem-brisa.mp3` — paisagem sonora de brisa referenciada pelo service worker para cache offline.
@@ -21,11 +22,9 @@ Abra `index.html` diretamente no navegador (duplo clique) — o app roda inteiro
 
 ## Como publicar (Cloudflare Workers)
 
-```
-npx wrangler deploy
-```
+Dê duplo clique em `PUBLICAR APP.bat` (Windows, com Node.js instalado e `wrangler` já logado na conta Cloudflare — mesmo requisito dos outros apps).
 
-Isso publica o conteúdo desta pasta (`wrangler.toml` aponta `directory = "./"`) como assets estáticos servidos pelo `_worker.js`, disponível em `https://sos-estresse.<sua-conta>.workers.dev`.
+Isso roda `npx wrangler deploy`, que publica o conteúdo desta pasta (`wrangler.toml` aponta `directory = "./"`) como assets estáticos servidos pelo `_worker.js`, disponível em `https://sos-estresse.vladihersen.workers.dev/`.
 
 ## Práticas incluídas no app
 
