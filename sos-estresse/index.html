@@ -476,12 +476,12 @@ html, body {
     <div class="modes-grid">
       <button class="mode-btn active" id="btn-mode-sos478" onclick="setMode('sos478')">
         <div class="serif mode-name">SOS Protocolo 4:7:8</div>
-        <div class="mode-meta">5 repetições</div>
+        <div class="mode-meta">4 repetições</div>
       </button>
 
       <button class="mode-btn" id="btn-mode-desc478" onclick="setMode('desc478')">
         <div class="serif mode-name">Desacelerar Protocolo 4:7:8</div>
-        <div class="mode-meta">9 repetições</div>
+        <div class="mode-meta">8 repetições</div>
       </button>
 
       <button class="mode-btn" id="btn-mode-coer" onclick="setMode('coer')">
@@ -497,7 +497,7 @@ html, body {
 
     <!-- Descrição -->
     <div class="desc-box" id="mode-desc">
-      4 segundos inspirando pelo nariz, 7 segundos retendo suavemente e 8 segundos soltando o ar pela boca. 5 ciclos para desarmar o pico da aflição.
+      4 segundos inspirando pelo nariz, 7 segundos retendo suavemente e 8 segundos soltando o ar pela boca. 4 ciclos para desarmar o pico da aflição — dose inicial, ideal pra quem está começando.
     </div>
 
     <!-- Orbe Visual com Taça que marca o tempo -->
@@ -505,7 +505,7 @@ html, body {
       <div class="orb-ring" id="orb-ring"></div>
       <div class="orb-core" id="orb-core">
         <div class="orb-phase" id="orb-phase">Comece quando quiser</div>
-        <div class="orb-cycle" id="orb-cycle">5 repetições</div>
+        <div class="orb-cycle" id="orb-cycle">4 repetições</div>
         <div class="orb-time" id="orb-time"></div>
       </div>
       <svg class="orb-svg" width="210" height="210">
@@ -1078,23 +1078,23 @@ function speakVoice(text) {
 var MODES = {
   sos478: {
     name: "SOS 4:7:8",
-    reps: 5,
+    reps: 4,
     phases: [
       { name: "Inspire pelo nariz", voice: "Inspire", dur: 4.0, scale: 1.25 },
       { name: "Retenha com calma",  voice: "Retenha", dur: 7.0, scale: 1.25 },
       { name: "Solte pela boca",    voice: "Solte o ar", dur: 8.0, scale: 0.95 }
     ],
-    desc: "4 segundos inspirando pelo nariz, 7 segundos retendo suavemente e 8 segundos soltando o ar pela boca. 5 ciclos para desarmar o pico da aflição."
+    desc: "4 segundos inspirando pelo nariz, 7 segundos retendo suavemente e 8 segundos soltando o ar pela boca. 4 ciclos para desarmar o pico da aflição — dose inicial, ideal pra quem está começando."
   },
   desc478: {
     name: "Desacelerar 4:7:8",
-    reps: 9,
+    reps: 8,
     phases: [
       { name: "Inspire pelo nariz", voice: "Inspire", dur: 4.0, scale: 1.25 },
       { name: "Retenha com calma",  voice: "Retenha", dur: 7.0, scale: 1.25 },
       { name: "Solte pela boca",    voice: "Solte o ar", dur: 8.0, scale: 0.95 }
     ],
-    desc: "9 ciclos completos da respiração 4:7:8 (~3 min). Ativação profunda do freio vagal para dissolver a tensão e induzir calma duradoura."
+    desc: "8 ciclos completos da respiração 4:7:8 (~2m30s). Ativação profunda do freio vagal para dissolver a tensão e induzir calma duradoura — o teto recomendado da prática."
   },
   coer: {
     name: "Resp. Coerente",
