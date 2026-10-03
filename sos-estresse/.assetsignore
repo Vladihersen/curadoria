@@ -1,0 +1,8 @@
+_worker.js
+wrangler.toml
+*.md
+*.ps1
+*.py
+.wrangler/
+node_modules/
+*.bat

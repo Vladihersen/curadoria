@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no"/>
+<title>SOS Estresse — Alívio Imediato a Um Clique</title>
+<meta name="theme-color" content="#F8F9F9"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="SOS Estresse"/>
+<link rel="manifest" href="manifest.webmanifest"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="SOS Estresse"/>
+<meta property="og:title" content="SOS Estresse — Alívio Imediato a Um Clique"/>
+<meta property="og:description" content="Ferramenta de alívio rápido a um clique com vídeo de massagem vagal, taças tibetanas sonoras e respiração guiada."/>
+<meta property="og:image" content="capa-app.png"/>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet"/>
+
+<style>
+:root {
+  --teal-vital: #005F6B;
+  --azul-noite: #1A2A3A;
+  --mineral: #3A4B48;
+  --sage: #7A9E93;
+  --areia: #D9C5A8;
+  --off-white: #F8F9F9;
+  --branco: #FFFFFF;
+  --borda: #D9E1E0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  min-height: 100%;
+  background-color: var(--off-white);
+  color: var(--mineral);
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+.serif { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  background: linear-gradient(175deg, #F8F9F9 0%, #EFF4F3 55%, #E5ECE9 100%);
+}
+#content {
+  width: 100%;
+  max-width: 480px;
+  padding: 24px 18px 120px;
+  position: relative;
+  z-index: 1;
+}
+
+.card {
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: 18px;
+  padding: 18px 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 20px rgba(26, 42, 58, 0.04);
+  position: relative;
+}
+.card-top-line {
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--areia) 0%, var(--teal-vital) 100%);
+  border-radius: 0 0 3px 3px;
+}
+
+.eyebrow {
+  color: var(--teal-vital);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.app-title {
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--azul-noite);
+}
+.app-title em {
+  font-style: italic;
+  color: var(--teal-vital);
+}
+.app-subtitle {
+  font-size: 13.5px;
+  color: var(--mineral);
+  opacity: 0.8;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* Card Massagem Vagal com Vídeo */
+.vagal-card {
+  border-left: 4px solid var(--teal-vital);
+}
+.vagal-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--teal-vital);
+  margin-bottom: 8px;
+}
+.video-wrapper {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #000;
+  margin: 10px 0;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
+.video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+.vagal-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin-top: 10px;
+}
+.vagal-step-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.vagal-num {
+  background: #EAF3F2;
+  color: var(--teal-vital);
+  font-weight: 700;
+  font-size: 10.5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Modos */
+.modes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.mode-btn {
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  padding: 13px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 80px;
+}
+.mode-btn.active {
+  border-color: var(--teal-vital);
+  background: #EAF3F2;
+  box-shadow: 0 4px 14px rgba(0, 95, 107, 0.12);
+}
+.mode-name {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--azul-noite);
+}
+.mode-btn.active .mode-name {
+  color: var(--teal-vital);
+}
+.mode-meta {
+  font-size: 10.5px;
+  color: var(--mineral);
+  opacity: 0.75;
+}
+
+.desc-box {
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--mineral);
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+}
+
+/* Orbe */
+.orb-wrap {
+  position: relative;
+  width: 210px;
+  height: 210px;
+  margin: 10px auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.orb-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 95, 107, 0.22);
+  transition: transform 0.8s ease;
+}
+.orb-core {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(0, 95, 107, 0.28) 0%, rgba(122, 158, 147, 0.12) 55%, transparent 85%);
+  border: 1.5px solid rgba(0, 95, 107, 0.3);
+  box-shadow: 0 0 35px rgba(0, 95, 107, 0.14);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.orb-phase {
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--teal-vital);
+  line-height: 1.3;
+}
+.orb-cycle {
+  font-size: 11px;
+  color: var(--mineral);
+  opacity: 0.7;
+  margin-top: 4px;
+  font-weight: 500;
+}
+.orb-time {
+  font-size: 10px;
+  color: var(--sage);
+  margin-top: 2px;
+}
+.orb-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.actions-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.btn-primary {
+  padding: 14px 44px;
+  background: var(--teal-vital);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 95, 107, 0.25);
+  transition: all 0.2s ease;
+}
+.btn-primary:active {
+  background: var(--azul-noite);
+  transform: scale(0.98);
+}
+.btn-test-sound {
+  background: none;
+  border: none;
+  color: var(--teal-vital);
+  font-size: 11.5px;
+  cursor: pointer;
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+/* Modal PIX */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 42, 58, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-overlay.open { display: flex; }
+.modal-card {
+  background: #FFFFFF;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 400px;
+  padding: 24px 20px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--mineral);
+  cursor: pointer;
+}
+.pix-box {
+  background: #F4F8F7;
+  border: 1px dashed var(--teal-vital);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+  margin: 14px 0;
+}
+.btn-copy-pix {
+  width: 100%;
+  padding: 13px;
+  background: var(--teal-vital);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Gancho para outros projetos, dentro do modal PIX */
+.gancho-projeto {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--borda);
+  text-align: center;
+}
+.gancho-projeto p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--mineral);
+  opacity: 0.85;
+  margin-bottom: 8px;
+}
+.gancho-projeto a {
+  display: inline-block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--teal-vital);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0,95,107,0.3);
+}
+
+/* Convite periódico de apoio, some sozinho até aparecer de novo */
+.support-banner {
+  display: none;
+  background: linear-gradient(135deg, #EAF3F2 0%, #F4F8F7 100%);
+  border: 1px solid rgba(0,95,107,0.2);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  text-align: center;
+  position: relative;
+  animation: apareceSuave 0.4s ease;
+}
+.support-banner.show { display: block; }
+@keyframes apareceSuave {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.support-banner p {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--azul-noite);
+  margin-bottom: 10px;
+  padding-right: 10px;
+}
+.support-banner .support-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.support-banner button {
+  border-radius: 20px;
+  padding: 7px 16px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+.support-banner .btn-sim {
+  background: var(--teal-vital);
+  color: #FFFFFF;
+}
+.support-banner .btn-depois {
+  background: none;
+  color: var(--mineral);
+  opacity: 0.7;
+  border: 1px solid var(--borda);
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="content">
+
+    <header style="text-align:center;margin-bottom:18px">
+      <div class="eyebrow">Curadoria de Evolução Humana</div>
+      <h1 class="serif app-title">SOS <em>Estresse</em></h1>
+      <p class="app-subtitle">Alívio Imediato · A um clique</p>
+    </header>
+
+        <!-- Card Guia Vagal com Imagem Anatômica e Animação Descendente -->
+    <div class="card vagal-card">
+      <div class="vagal-title">
+        <span>👐 Estímulo do Nervo Vago (Pescoço)</span>
+        <span style="font-size:10px;color:var(--sage);font-weight:600">Ciclo de 5 segundos</span>
+      </div>
+
+      <!-- Contêiner Anatômico (o próprio GIF já traz título, contador e instruções) -->
+      <div style="position:relative;width:100%;max-width:380px;margin:12px auto;border-radius:14px;overflow:hidden;background:#FFFFFF;box-shadow:0 4px 18px rgba(26,42,58,0.08);border:1px solid var(--borda);">
+        <img id="img-vagal" src="animacao_deslize_orelha_clavicula.gif" alt="Animação: deslize da orelha até a clavícula para estimular o nervo vago"
+             style="width:100%;height:auto;display:block;">
+      </div>
+
+      <div class="vagal-steps">
+        <div class="vagal-step-item">
+          <div class="vagal-num">1</div>
+          <div><strong>Onde tocar:</strong> Pouse os dedos indicador e médio na lateral do pescoço, logo abaixo do lóbulo da orelha.</div>
+        </div>
+        <div class="vagal-step-item">
+          <div class="vagal-num">2</div>
+          <div><strong>Movimento:</strong> Siga a luz e deslize suavemente para baixo em 5 segundos até a clavícula.</div>
+        </div>
+        <div class="vagal-step-item">
+          <div class="vagal-num">3</div>
+          <div><strong>Ritmo:</strong> Faça <strong>3 a 5 descidas lentas</strong>, soltando os ombros e expirando devagar.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modos de Prática -->
+    <div class="modes-grid">
+      <button class="mode-btn active" id="btn-mode-sos478" onclick="setMode('sos478')">
+        <div class="serif mode-name">SOS Protocolo 4:7:8</div>
+        <div class="mode-meta">4 repetições</div>
+      </button>
+
+      <button class="mode-btn" id="btn-mode-desc478" onclick="setMode('desc478')">
+        <div class="serif mode-name">Desacelerar Protocolo 4:7:8</div>
+        <div class="mode-meta">8 repetições</div>
+      </button>
+
+      <button class="mode-btn" id="btn-mode-coer" onclick="setMode('coer')">
+        <div class="serif mode-name">Resp. Coerente</div>
+        <div class="mode-meta">3 minutos</div>
+      </button>
+
+      <button class="mode-btn" id="btn-mode-fisio" onclick="setMode('fisio')">
+        <div class="serif mode-name">Suspiro Fisiológico</div>
+        <div class="mode-meta">3 minutos</div>
+      </button>
+    </div>
+
+    <!-- Descrição -->
+    <div class="desc-box" id="mode-desc">
+      4 segundos inspirando pelo nariz, 7 segundos retendo suavemente e 8 segundos soltando o ar pela boca. 4 ciclos para desarmar o pico da aflição — dose inicial, ideal pra quem está começando.
+    </div>
+
+    <!-- Orbe Visual com Taça que marca o tempo -->
+    <div class="orb-wrap">
+      <div class="orb-ring" id="orb-ring"></div>
+      <div class="orb-core" id="orb-core">
+        <div class="orb-phase" id="orb-phase">Comece quando quiser</div>
+        <div class="orb-cycle" id="orb-cycle">4 repetições</div>
+        <div class="orb-time" id="orb-time"></div>
+      </div>
+      <svg class="orb-svg" width="210" height="210">
+        <circle cx="105" cy="105" r="98" fill="none" stroke="rgba(0, 95, 107, 0.12)" stroke-width="2"/>
+        <circle id="orb-arc" cx="105" cy="105" r="98" fill="none" stroke="#005F6B" stroke-width="3" stroke-linecap="round"
+                stroke-dasharray="615.75" stroke-dashoffset="615.75"
+                style="transform-origin:center;transform:rotate(-90deg);transition:stroke-dashoffset 0.08s linear;"/>
+      </svg>
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="actions-row">
+      <button class="btn-primary" id="btn-start" onclick="togglePlay()">Iniciar Prática</button>
+      <button class="btn-test-sound" onclick="testBowlSound()">🔔 Toque para testar o som da taça</button>
+    </div>
+
+    <!-- Convite periódico para se tornar contribuinte mantenedor -->
+    <div class="support-banner" id="support-banner">
+      <p>Esse alívio te ajudou? Pessoas como você mantêm este app de pé — sem anúncios, sem coleta de dados, gratuito pra quem precisar.</p>
+      <div class="support-actions">
+        <button class="btn-sim" onclick="aceitarConviteApoio()">Quero contribuir</button>
+        <button class="btn-depois" onclick="fecharConviteApoio()">Agora não</button>
+      </div>
+    </div>
+
+    <!-- Citação -->
+    <div class="card" style="text-align:center;padding:18px 16px">
+      <div class="card-top-line"></div>
+      <div class="serif" style="font-size:15px;font-style:italic;line-height:1.7;color:var(--azul-noite)">
+        "Não há nada para conquistar.<br>Apenas estar."
+      </div>
+      <div style="color:var(--teal-vital);font-size:11px;margin-top:6px;letter-spacing:0.08em;text-transform:uppercase">
+        — Vladimir Hersen
+      </div>
+    </div>
+
+    <!-- Rodapé e Apoio -->
+    <footer style="text-align:center;margin-top:14px">
+      <div style="font-size:11px;color:var(--mineral);opacity:0.75;margin-bottom:6px">Feito por IA com curadoria de Vladimir Hersen</div>
+      <div style="font-size:10px;color:var(--mineral);opacity:0.55;margin-bottom:12px">Curadoria de Evolução Humana · Funciona sem internet</div>
+      <button onclick="openModal()" style="background:none;border:1px solid rgba(0,95,107,0.3);color:var(--teal-vital);border-radius:20px;padding:8px 18px;font-size:11.5px;font-weight:500;cursor:pointer">
+        Contribuir com este projeto ♡
+      </button>
+    </footer>
+
+  </div>
+</div>
+
+<!-- Modal PIX -->
+<div class="modal-overlay" id="pix-modal" onclick="if(event.target.id==='pix-modal')closeModal()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="serif" style="font-size:22px;font-weight:600;color:var(--azul-noite);margin-bottom:8px">Contribuir com este projeto</div>
+    <p style="font-size:13px;line-height:1.6;color:var(--mineral);margin-bottom:12px">
+      Este aplicativo é gratuito, sem anúncios e sem coleta de dados. Uma ferramenta de bolso desenvolvida para oferecer alívio imediato nos momentos de aflição.<br><br>
+      Se esta prática te trouxe alívio e você deseja apoiar a manutenção e infraestrutura, sua contribuição solidária é muito bem-vinda.
+    </p>
+
+    <div class="pix-box">
+      <div style="font-size:10.5px;font-weight:700;color:var(--teal-vital);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Chave PIX (CPF)</div>
+      <div style="font-size:18px;font-weight:700;color:var(--azul-noite);letter-spacing:0.05em;margin:4px 0" id="pix-key-val">72436581720</div>
+      <div style="font-size:11px;color:var(--mineral);opacity:0.75">Titular: Vladimir Hersen · Banco Inter</div>
+    </div>
+
+    <button class="btn-copy-pix" id="btn-copy" onclick="copyPixKey()">Copiar Chave PIX</button>
+    <div style="text-align:center;font-size:11.5px;color:var(--mineral);opacity:0.75;margin-top:12px;font-style:italic">
+      "Que todos os seres possam viver em paz, com saúde e serenidade."
+    </div>
+
+    <div class="gancho-projeto">
+      <p>Cuida de alguém além de você mesmo? Conheça o <strong>Cuidado em Família</strong> — remédios, receitas e rotina de saúde organizados para toda a família.</p>
+      <a href="https://cuidado-em-familia.vladihersen.workers.dev/" target="_blank" rel="noopener">Conhecer o Cuidado em Família →</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Desbloqueio e Síntese Acústica da Taça Tibetana ─────────────────
+var audioCtx = null;
+
+function getAudioContext() {
+  if (!audioCtx) {
+    var AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtxClass) {
+      audioCtx = new AudioCtxClass();
+    }
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+// Reproduz a taça tibetana autêntica com batimento harmônico orgânico
+function playTibetanBowl(type) {
+  var ctx = getAudioContext();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') {
+    ctx.resume();
+  }
+
+  var now = ctx.currentTime;
+  var baseFreq = 165; // Tom quente de bronze
+  if (type === 'inhale') baseFreq = 165;
+  if (type === 'hold')   baseFreq = 220;
+  if (type === 'exhale') baseFreq = 132;
+  if (type === 'final')  baseFreq = 198;
+
+  var duration = (type === 'final') ? 6.5 : 4.8;
+  var masterVol = (type === 'final') ? 0.45 : 0.35;
+
+  var masterGain = ctx.createGain();
+  masterGain.gain.setValueAtTime(0.0001, now);
+  masterGain.gain.linearRampToValueAtTime(masterVol, now + 0.03);
+  masterGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  masterGain.connect(ctx.destination);
+
+  // Harmônicos de taça tibetana
+  var partials = [
+    { ratio: 1.00, gain: 0.85, decay: duration },
+    { ratio: 2.76, gain: 0.45, decay: duration * 0.75 },
+    { ratio: 5.40, gain: 0.20, decay: duration * 0.50 },
+    { ratio: 8.93, gain: 0.08, decay: duration * 0.30 }
+  ];
+
+  partials.forEach(function(p) {
+    var osc = ctx.createOscillator();
+    var pGain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(baseFreq * p.ratio, now);
+
+    pGain.gain.setValueAtTime(0.0001, now);
+    pGain.gain.linearRampToValueAtTime(p.gain, now + 0.02);
+    pGain.gain.exponentialRampToValueAtTime(0.0001, now + p.decay);
+
+    osc.connect(pGain);
+    pGain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + p.decay);
+  });
+}
+
+function playThreeBowls() {
+  playTibetanBowl('exhale');
+  setTimeout(function(){ playTibetanBowl('hold'); }, 2000);
+  setTimeout(function(){ playTibetanBowl('final'); }, 4200);
+}
+
+function testBowlSound() {
+  getAudioContext();
+  playTibetanBowl('inhale');
+  speakVoice("Inspire pelo nariz");
+}
+
+// ── Motor de Áudio dedicado do Suspiro Fisiológico (extraído do "Leveza de
+// Viver") — duas taças de inspiração com crossfade + uma taça de expiração,
+// agendadas juntas no relógio do AudioContext para soarem como um único
+// gesto contínuo, sem os pequenos vãos de silêncio da taça genérica por fase.
+var SuspiroFisiologico = (function(){
+
+  var masterGain = null;
+  var bellBufIn = null;   // taça na altura da INSPIRAÇÃO (262 Hz, ~C4)
+  var bellBufEx = null;   // taça na altura da EXPIRAÇÃO   (196 Hz, ~G3 — quarta justa abaixo)
+
+  var BELL_GAIN = 1.0625;
+  var BELL_COMP_FISIO = 0.89;
+
+  // Duração das fases (segundos) — ciclo total: 8,9s
+  var FASES = { inhale: 2.3, inhale2: 1.3, exhale: 5.3 };
+
+  // Cada nota continua soando 0,45s além do fim nominal da sua fase, criando
+  // uma pequena sobreposição com o início da próxima.
+  var XFADE = 0.45;
+
+  var envFisioInsp   = { atk: 0.40, rel: 0.45, floor: 0.05 };
+  var envFisioInsp2  = { atk: 0.22, rel: 0.55, floor: 0.05 };
+  var envFisioExhale = { atk: 0.15, rel: 0.60, floor: 0.05 };
+
+  function getCtx(){
+    var c = getAudioContext(); // compartilhado com o resto do app
+    if (!masterGain) {
+      masterGain = c.createGain();
+      masterGain.gain.value = 1.5;
+      masterGain.connect(c.destination);
+    }
+    return c;
+  }
+
+  function makeBellBuffer(baseFreq, beatHz){
+    var c = getCtx();
+    var sr = c.sampleRate;
+    var dur = 15.0;
+    var len = Math.floor(sr * dur);
+    var buf = c.createBuffer(1, len, sr);
+    var d = buf.getChannelData(0);
+    var base = baseFreq || 148;
+    var partials = [
+      {r:1.00, a:1.00, dec:15.0},
+      {r:2.00, a:0.60, dec:10.0},
+      {r:2.76, a:0.42, dec:8.0},
+      {r:4.07, a:0.20, dec:5.5},
+      {r:5.43, a:0.12, dec:4.0},
+      {r:6.80, a:0.07, dec:3.0},
+      {r:8.20, a:0.03, dec:2.2}
+    ];
+    var beat = (beatHz != null) ? beatHz : 0.45;
+    for (var i = 0; i < len; i++) {
+      var t = i / sr;
+      var s = 0;
+      for (var p = 0; p < partials.length; p++) {
+        var pr = partials[p];
+        var f = base * pr.r;
+        var env = Math.exp(-t / pr.dec);
+        s += pr.a * env * (Math.sin(2 * Math.PI * f * t) + 0.5 * Math.sin(2 * Math.PI * (f + beat) * t));
+      }
+      var atk = t < 0.010 ? t / 0.010 : 1;
+      d[i] = s * atk * 0.24;
+    }
+    return buf;
+  }
+
+  function ensureBuffers(){
+    getCtx();
+    if (!bellBufIn) bellBufIn = makeBellBuffer(262);
+    if (!bellBufEx) bellBufEx = makeBellBuffer(196);
+  }
+
+  function playSample(buf, when, rate, gainVal, cutAt, opts){
+    var c = getCtx();
+    var src = c.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.setValueAtTime(rate, when);
+    var g = c.createGain();
+    var floorVal = (opts && opts.floor) ? opts.floor : 0.0001;
+    g.gain.setValueAtTime(floorVal, when);
+    var atkSec = (opts && opts.atk) ? opts.atk : 0.30;
+    var relSec = (opts && opts.rel) ? opts.rel : 0.18;
+    g.gain.exponentialRampToValueAtTime(Math.max(gainVal, 0.0002), when + atkSec);
+    if (cutAt) {
+      var fadeStart = Math.max(when + cutAt - relSec, when + atkSec + 0.02);
+      g.gain.setValueAtTime(Math.max(gainVal, 0.0001), fadeStart);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + cutAt + 0.08);
+    }
+    src.connect(g); g.connect(masterGain);
+    src.start(when);
+    if (cutAt) src.stop(when + cutAt + 0.20);
+    return src;
+  }
+
+  function scheduleCycle(when, gainMult){
+    ensureBuffers();
+    var gm = (gainMult != null) ? gainMult : 1;
+    var gain = BELL_GAIN * BELL_COMP_FISIO * gm;
+    var t = when;
+
+    playSample(bellBufIn, t, 1.00, gain, FASES.inhale + XFADE, envFisioInsp);
+    t += FASES.inhale;
+
+    playSample(bellBufIn, t, 1.03, gain, FASES.inhale2 + XFADE, envFisioInsp2);
+    t += FASES.inhale2;
+
+    playSample(bellBufEx, t, 1.00, gain, FASES.exhale + XFADE, envFisioExhale);
+    t += FASES.exhale;
+
+    return t;
+  }
+
+  return {
+    scheduleCycle: scheduleCycle,
+    getCtx: getCtx,
+    FASES: FASES
+  };
+
+})();
+
+// ── Motor de Áudio dedicado da Respiração 4:7:8 (extraído do "Leveza de
+// Viver") — três tons de taça (inspira/retém/expira) com um glide sutil
+// descendente na expiração. Usado tanto no SOS 4:7:8 quanto no Desacelerar
+// 4:7:8, que só diferem no número de repetições.
+var Respiracao478 = (function(){
+
+  var masterGain = null;
+  var bellBufIn = null;      // 262Hz, batimento normal — inspiração
+  var bellBufHold = null;    // 226Hz, batimento lento — retenção
+  var bellBufExLong = null;  // 196Hz, batimento lento — expiração
+
+  var BELL_GAIN = 1.0625;
+  var BELL_COMP_Q478 = 1.10;
+
+  var FASES = { inhale: 4, hold: 7, exhale: 8 }; // ciclo total: 19s
+  var XFADE = 0.45;
+
+  function getCtx(){
+    var c = getAudioContext();
+    if (!masterGain) {
+      masterGain = c.createGain();
+      masterGain.gain.value = 1.5;
+      masterGain.connect(c.destination);
+    }
+    return c;
+  }
+
+  function makeBellBuffer(baseFreq, beatHz){
+    var c = getCtx();
+    var sr = c.sampleRate;
+    var dur = 15.0;
+    var len = Math.floor(sr * dur);
+    var buf = c.createBuffer(1, len, sr);
+    var d = buf.getChannelData(0);
+    var base = baseFreq || 148;
+    var partials = [
+      {r:1.00, a:1.00, dec:15.0},
+      {r:2.00, a:0.60, dec:10.0},
+      {r:2.76, a:0.42, dec:8.0},
+      {r:4.07, a:0.20, dec:5.5},
+      {r:5.43, a:0.12, dec:4.0},
+      {r:6.80, a:0.07, dec:3.0},
+      {r:8.20, a:0.03, dec:2.2}
+    ];
+    var beat = (beatHz != null) ? beatHz : 0.45;
+    for (var i = 0; i < len; i++) {
+      var t = i / sr;
+      var s = 0;
+      for (var p = 0; p < partials.length; p++) {
+        var pr = partials[p];
+        var f = base * pr.r;
+        var env = Math.exp(-t / pr.dec);
+        s += pr.a * env * (Math.sin(2 * Math.PI * f * t) + 0.5 * Math.sin(2 * Math.PI * (f + beat) * t));
+      }
+      var atk = t < 0.010 ? t / 0.010 : 1;
+      d[i] = s * atk * 0.24;
+    }
+    return buf;
+  }
+
+  function ensureBuffers(){
+    getCtx();
+    if (!bellBufIn) bellBufIn = makeBellBuffer(262, 0.45);
+    if (!bellBufHold) bellBufHold = makeBellBuffer(226, 0.10);
+    if (!bellBufExLong) bellBufExLong = makeBellBuffer(196, 0.10);
+  }
+
+  function playSample(buf, when, gainVal, cutAt, endRate, atkSec, relSec){
+    var c = getCtx();
+    var src = c.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.setValueAtTime(1.0, when);
+    if (endRate) {
+      src.playbackRate.linearRampToValueAtTime(endRate, when + cutAt);
+    }
+    var g = c.createGain();
+    g.gain.setValueAtTime(0.05, when);
+    g.gain.exponentialRampToValueAtTime(Math.max(gainVal, 0.0002), when + (atkSec || 0.30));
+    var rel = relSec || 0.18;
+    var fadeStart = Math.max(when + cutAt - rel, when + (atkSec || 0.30) + 0.02);
+    g.gain.setValueAtTime(Math.max(gainVal, 0.0001), fadeStart);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + cutAt + 0.08);
+    src.connect(g); g.connect(masterGain);
+    src.start(when);
+    src.stop(when + cutAt + 0.20);
+  }
+
+  function scheduleCycle(when, gainMult){
+    ensureBuffers();
+    var gm = (gainMult != null) ? gainMult : 1;
+    var gain = BELL_GAIN * BELL_COMP_Q478 * gm;
+    var t = when;
+
+    playSample(bellBufIn, t, gain, FASES.inhale + XFADE);
+    t += FASES.inhale;
+
+    playSample(bellBufHold, t, gain, FASES.hold + XFADE);
+    t += FASES.hold;
+
+    playSample(bellBufExLong, t, gain, FASES.exhale + XFADE, 0.94, 0.30, 1.6);
+    t += FASES.exhale;
+
+    return t;
+  }
+
+  return {
+    scheduleCycle: scheduleCycle,
+    getCtx: getCtx,
+    FASES: FASES
+  };
+
+})();
+
+// ── Motor de Áudio dedicado da Respiração Coerente (extraído do "Leveza de
+// Viver") — taça que muda de tom entre inspiração e expiração, mais um toque
+// de cristal ("pim") marcando cada troca de fase.
+var RespiracaoCoerente = (function(){
+
+  var masterGain = null;
+  var bellBufIn = null;    // 262Hz — inspiração
+  var bellBufEx = null;    // 196Hz — expiração
+  var crestBuf = null;     // 528Hz puro — o "pim" de transição de fase
+
+  var BELL_GAIN = 1.0625;
+  var BELL_COMP_COER = 1.02;
+
+  var FASES = { inhale: 5, exhale: 6 }; // ciclo total: 11s
+  var XFADE = 0.45;
+
+  function getCtx(){
+    var c = getAudioContext();
+    if (!masterGain) {
+      masterGain = c.createGain();
+      masterGain.gain.value = 1.5;
+      masterGain.connect(c.destination);
+    }
+    return c;
+  }
+
+  function makeBellBuffer(baseFreq, beatHz){
+    var c = getCtx();
+    var sr = c.sampleRate;
+    var dur = 15.0;
+    var len = Math.floor(sr * dur);
+    var buf = c.createBuffer(1, len, sr);
+    var d = buf.getChannelData(0);
+    var base = baseFreq || 148;
+    var partials = [
+      {r:1.00, a:1.00, dec:15.0},
+      {r:2.00, a:0.60, dec:10.0},
+      {r:2.76, a:0.42, dec:8.0},
+      {r:4.07, a:0.20, dec:5.5},
+      {r:5.43, a:0.12, dec:4.0},
+      {r:6.80, a:0.07, dec:3.0},
+      {r:8.20, a:0.03, dec:2.2}
+    ];
+    var beat = (beatHz != null) ? beatHz : 0.45;
+    for (var i = 0; i < len; i++) {
+      var t = i / sr;
+      var s = 0;
+      for (var p = 0; p < partials.length; p++) {
+        var pr = partials[p];
+        var f = base * pr.r;
+        var env = Math.exp(-t / pr.dec);
+        s += pr.a * env * (Math.sin(2 * Math.PI * f * t) + 0.5 * Math.sin(2 * Math.PI * (f + beat) * t));
+      }
+      var atk = t < 0.010 ? t / 0.010 : 1;
+      d[i] = s * atk * 0.24;
+    }
+    return buf;
+  }
+
+  function makeCrystalBuf(){
+    var c = getCtx();
+    var sr = c.sampleRate;
+    var dur = 12.0;
+    var len = Math.floor(sr * dur);
+    var buf = c.createBuffer(1, len, sr);
+    var d = buf.getChannelData(0);
+    var partials = [
+      {f: 528,  a: 1.00, dec: 11.0},
+      {f: 1056, a: 0.06, dec:  5.0}
+    ];
+    for (var i = 0; i < len; i++) {
+      var t = i / sr;
+      var s = 0;
+      for (var p = 0; p < partials.length; p++) {
+        var pr = partials[p];
+        s += pr.a * Math.exp(-t / pr.dec) * Math.sin(2 * Math.PI * pr.f * t);
+      }
+      var atk = t < 0.015 ? t / 0.015 : 1;
+      d[i] = s * atk * 0.28;
+    }
+    return buf;
+  }
+
+  function ensureBuffers(){
+    getCtx();
+    if (!bellBufIn) bellBufIn = makeBellBuffer(262);
+    if (!bellBufEx) bellBufEx = makeBellBuffer(196);
+    if (!crestBuf) crestBuf = makeCrystalBuf();
+  }
+
+  function playSample(buf, when, gainVal, cutAt){
+    var c = getCtx();
+    var src = c.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.setValueAtTime(1.0, when);
+    var g = c.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(Math.max(gainVal, 0.0002), when + 0.30);
+    var dur = cutAt - XFADE;
+    var dk2Bottom = when + dur;
+    var holdUntil = dk2Bottom - 0.15;
+    g.gain.setValueAtTime(Math.max(gainVal, 0.0002), holdUntil);
+    g.gain.exponentialRampToValueAtTime(Math.max(gainVal * 0.35, 0.0002), dk2Bottom);
+    var dk2End = dk2Bottom + 0.20;
+    g.gain.exponentialRampToValueAtTime(Math.max(gainVal, 0.0002), dk2End);
+    var fadeStart = Math.max(when + cutAt - 0.18, dk2End + 0.01);
+    g.gain.setValueAtTime(Math.max(gainVal, 0.0001), fadeStart);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + cutAt + 0.08);
+    src.connect(g); g.connect(masterGain);
+    src.start(when);
+    src.stop(when + cutAt + 0.20);
+  }
+
+  function scheduleCrest(when){
+    var c = getCtx();
+    var cs = c.createBufferSource();
+    cs.buffer = crestBuf;
+    cs.playbackRate.value = 1.7;
+    var cg = c.createGain();
+    cg.gain.setValueAtTime(0.0001, when);
+    cg.gain.exponentialRampToValueAtTime(1.1, when + 0.03);
+    cg.gain.exponentialRampToValueAtTime(0.0001, when + 1.0);
+    cs.connect(cg); cg.connect(masterGain);
+    cs.start(when); cs.stop(when + 1.10);
+  }
+
+  function scheduleCycle(when, gainMult){
+    ensureBuffers();
+    var gm = (gainMult != null) ? gainMult : 1;
+    var gain = BELL_GAIN * BELL_COMP_COER * gm;
+    var t = when;
+
+    playSample(bellBufIn, t, gain, FASES.inhale + XFADE);
+    scheduleCrest(t + FASES.inhale - 0.025);
+    t += FASES.inhale;
+
+    playSample(bellBufEx, t, gain, FASES.exhale + XFADE);
+    scheduleCrest(t + FASES.exhale - 0.025);
+    t += FASES.exhale;
+
+    return t;
+  }
+
+  return {
+    scheduleCycle: scheduleCycle,
+    getCtx: getCtx,
+    FASES: FASES
+  };
+
+})();
+
+// ── Condução por Voz (Nativa e Suave) ────────────────────────────────
+// Só fala se encontrar uma voz de fato em português instalada no aparelho —
+// sem isso, o navegador cai numa voz em inglês e lê "Inspire" foneticamente
+// errado ("inspaier"). Melhor ficar em silêncio (só sinos) do que pronunciar
+// errado.
+function speakVoice(text) {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    var voices = window.speechSynthesis.getVoices();
+    var ptVoice = null;
+    for (var i = 0; i < voices.length; i++) {
+      if (voices[i].lang.toLowerCase().indexOf('pt') === 0) {
+        ptVoice = voices[i];
+        break;
+      }
+    }
+    if (!ptVoice) return;
+
+    window.speechSynthesis.cancel();
+    var utter = new SpeechSynthesisUtterance(text);
+    utter.voice = ptVoice;
+    utter.lang = ptVoice.lang;
+    utter.rate = 0.88;
+    utter.pitch = 0.95;
+    utter.volume = 0.9;
+    window.speechSynthesis.speak(utter);
+  } catch(e) {}
+}
+
+// ── Modos e Ritmos da Respiração ────────────────────────────────────
+var MODES = {
+  sos478: {
+    name: "SOS 4:7:8",
+    reps: 4,
+    phases: [
+      { name: "Inspire pelo nariz", voice: "Inspire", dur: 4.0, scale: 1.25 },
+      { name: "Retenha com calma",  voice: "Retenha", dur: 7.0, scale: 1.25 },
+      { name: "Solte pela boca",    voice: "Solte o ar", dur: 8.0, scale: 0.95 }
+    ],
+    desc: "4 segundos inspirando pelo nariz, 7 segundos retendo suavemente e 8 segundos soltando o ar pela boca. 4 ciclos para desarmar o pico da aflição — dose inicial, ideal pra quem está começando."
+  },
+  desc478: {
+    name: "Desacelerar 4:7:8",
+    reps: 8,
+    phases: [
+      { name: "Inspire pelo nariz", voice: "Inspire", dur: 4.0, scale: 1.25 },
+      { name: "Retenha com calma",  voice: "Retenha", dur: 7.0, scale: 1.25 },
+      { name: "Solte pela boca",    voice: "Solte o ar", dur: 8.0, scale: 0.95 }
+    ],
+    desc: "8 ciclos completos da respiração 4:7:8 (~2m30s). Ativação profunda do freio vagal para dissolver a tensão e induzir calma duradoura — o teto recomendado da prática."
+  },
+  coer: {
+    name: "Resp. Coerente",
+    totalSeconds: 180, // 3 min
+    phases: [
+      { name: "Inspire suavemente", voice: "Inspire", dur: 5.0, scale: 1.22 },
+      { name: "Solte devagar",      voice: "Solte",   dur: 6.0, scale: 0.96 }
+    ],
+    desc: "Ritmo assimétrico de 5s inspirando e 6s soltando. A expiração prolongada desacelera o coração a cada ciclo, sincronizando respiração e ritmo cardíaco."
+  },
+  fisio: {
+    name: "Suspiro Fisiológico",
+    totalSeconds: 180, // 3 min
+    phases: [
+      { name: "Inspire pelo nariz",   voice: "Inspire", dur: 2.3, scale: 1.15 },
+      { name: "Puxe mais um pouco",   voice: "Puxe mais um pouco", dur: 1.3, scale: 1.28 },
+      { name: "Solte longo pela boca",voice: "Solte o ar", dur: 5.3, scale: 0.95 }
+    ],
+    desc: "Duas inspirações nasais consecutivas seguidas por uma expiração lenta pela boca. O reset biológico mais rápido para esvaziar o CO2₂ e relaxar."
+  }
+};
+
+var currentModeKey = "sos478";
+var isRunning = false;
+var timerId = null;
+var phaseIndex = 0;
+var currentCycle = 1;
+var totalRemaining = 0;
+var CIRCUMFERENCE = 615.75;
+var currentCycleAudioStart = 0; // início do ciclo atual no relógio do AudioContext
+
+function setMode(key) {
+  if (isRunning) stopPractice();
+  currentModeKey = key;
+  document.querySelectorAll(".mode-btn").forEach(function(b){ b.classList.remove("active"); });
+  document.getElementById("btn-mode-" + key).classList.add("active");
+
+  var m = MODES[key];
+  document.getElementById("mode-desc").textContent = m.desc;
+  document.getElementById("orb-phase").textContent = "Comece quando quiser";
+  document.getElementById("orb-cycle").textContent = m.reps ? (m.reps + " repetições") : (Math.round(m.totalSeconds/60) + " minutos");
+  document.getElementById("orb-time").textContent = "";
+  setArcOffset(CIRCUMFERENCE);
+}
+
+function setArcOffset(val) {
+  var arc = document.getElementById("orb-arc");
+  if (arc) arc.style.strokeDashoffset = val;
+}
+
+function setOrbVisual(scale, text, cycleText, timeText) {
+  var core = document.getElementById("orb-core");
+  var ring = document.getElementById("orb-ring");
+  if (core) core.style.transform = "scale(" + scale + ")";
+  if (ring) ring.style.transform = "scale(" + (scale * 1.05) + ")";
+  if (text) document.getElementById("orb-phase").textContent = text;
+  if (cycleText !== undefined) document.getElementById("orb-cycle").textContent = cycleText;
+  if (timeText !== undefined) document.getElementById("orb-time").textContent = timeText;
+}
+
+function togglePlay() {
+  if (isRunning) {
+    stopPractice();
+  } else {
+    startPractice();
+  }
+}
+
+function startPractice() {
+  getAudioContext();
+  isRunning = true;
+  document.getElementById("btn-start").textContent = "Pausar Prática";
+
+  var m = MODES[currentModeKey];
+  currentCycle = 1;
+  phaseIndex = 0;
+  if (m.totalSeconds) totalRemaining = m.totalSeconds;
+
+  setOrbVisual(1.0, "Prepare-se...", "Solte os ombros", "");
+  playTibetanBowl('inhale');
+
+  setTimeout(function(){
+    if (!isRunning) return;
+    runPhase();
+  }, 1000);
+}
+
+function stopPractice() {
+  isRunning = false;
+  cancelAnimationFrame(timerId);
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  document.getElementById("btn-start").textContent = "Iniciar Prática";
+  setOrbVisual(1.0, "Pausado", "Toque em Iniciar para continuar", "");
+  setArcOffset(CIRCUMFERENCE);
+}
+
+function runPhase() {
+  if (!isRunning) return;
+  var m = MODES[currentModeKey];
+  var p = m.phases[phaseIndex];
+  var ctx = getAudioContext();
+
+  // Cada modo tem seu próprio motor de áudio dedicado, que agenda o ciclo
+  // inteiro (todas as fases, com crossfade entre as notas) de uma vez só, no
+  // início do ciclo (phaseIndex 0), no relógio do AudioContext. A animação e
+  // a voz seguem esse MESMO relógio (em vez de performance.now(), que sofre
+  // pequenos atrasos do navegador e ia se desalinhando dos sinos a cada
+  // ciclo) — é assim que ficam sempre em sincronia com o som.
+  if (phaseIndex === 0) {
+    currentCycleAudioStart = ctx.currentTime + 0.05;
+    if (currentModeKey === 'fisio') {
+      SuspiroFisiologico.scheduleCycle(currentCycleAudioStart);
+    } else if (currentModeKey === 'sos478' || currentModeKey === 'desc478') {
+      Respiracao478.scheduleCycle(currentCycleAudioStart);
+    } else if (currentModeKey === 'coer') {
+      RespiracaoCoerente.scheduleCycle(currentCycleAudioStart);
+    } else {
+      currentCycleAudioStart = ctx.currentTime;
+      playTibetanBowl(p.bowl);
+    }
+  } else if (currentModeKey !== 'fisio' && currentModeKey !== 'sos478' && currentModeKey !== 'desc478' && currentModeKey !== 'coer') {
+    playTibetanBowl(p.bowl); // taça genérica: reserva para um modo futuro sem motor próprio
+  }
+  speakVoice(p.voice);
+
+  var cycleStr = "";
+  if (m.reps) {
+    cycleStr = "Ciclo " + currentCycle + " de " + m.reps;
+  } else if (totalRemaining > 0) {
+    var min = Math.floor(totalRemaining / 60);
+    var sec = totalRemaining % 60;
+    cycleStr = min + "m " + (sec < 10 ? "0" : "") + sec + "s restantes";
+  }
+
+  setOrbVisual(p.scale, p.name, cycleStr, "");
+
+  var priorDur = 0;
+  for (var i = 0; i < phaseIndex; i++) priorDur += m.phases[i].dur;
+  var phaseAudioStart = currentCycleAudioStart + priorDur;
+  var phaseAudioEnd = phaseAudioStart + p.dur;
+
+  function frame() {
+    if (!isRunning) return;
+    var now = getAudioContext().currentTime;
+    var progress = Math.min(Math.max((now - phaseAudioStart) / p.dur, 0), 1.0);
+
+    var offset = CIRCUMFERENCE * (1 - progress);
+    setArcOffset(offset);
+
+    if (now < phaseAudioEnd) {
+      timerId = requestAnimationFrame(frame);
+    } else {
+      nextPhase();
+    }
+  }
+  timerId = requestAnimationFrame(frame);
+}
+
+function nextPhase() {
+  var m = MODES[currentModeKey];
+  phaseIndex++;
+
+  if (phaseIndex >= m.phases.length) {
+    phaseIndex = 0;
+    currentCycle++;
+
+    if (m.reps && currentCycle > m.reps) {
+      finishPractice();
+      return;
+    }
+  }
+
+  if (m.totalSeconds) {
+    var cycleDuration = m.phases.reduce(function(a, b){ return a + b.dur; }, 0);
+    totalRemaining -= cycleDuration;
+    if (totalRemaining <= 0) {
+      finishPractice();
+      return;
+    }
+  }
+
+  runPhase();
+}
+
+function finishPractice() {
+  isRunning = false;
+  cancelAnimationFrame(timerId);
+  setOrbVisual(1.0, "Paz e Presença", "Prática concluída", "");
+  setArcOffset(0);
+  document.getElementById("btn-start").textContent = "Reiniciar Prática";
+
+  playThreeBowls();
+  speakVoice("Que todos os seres possam viver em paz, com saúde e serenidade.");
+  registrarPraticaConcluida();
+}
+
+// ── Convite periódico de apoio ────────────────────────────────────────
+// A cada N práticas concluídas com sucesso, mostra um convite discreto
+// pra contribuir — nunca durante a prática, só depois, quando a pessoa
+// já está mais calma e recebeu o valor do app.
+var PRATICAS_ENTRE_CONVITES = 5;
+
+function registrarPraticaConcluida() {
+  var total = Number(localStorage.getItem('sos_estresse_praticas') || '0') + 1;
+  localStorage.setItem('sos_estresse_praticas', String(total));
+
+  if (total % PRATICAS_ENTRE_CONVITES === 0) {
+    setTimeout(function(){
+      var banner = document.getElementById('support-banner');
+      if (banner) banner.classList.add('show');
+    }, 1500);
+  }
+}
+
+function aceitarConviteApoio() {
+  fecharConviteApoio();
+  openModal();
+}
+
+function fecharConviteApoio() {
+  var banner = document.getElementById('support-banner');
+  if (banner) banner.classList.remove('show');
+}
+
+// ── Modal PIX ───────────────────────────────────────────────────────
+ function openModal() { document.getElementById("pix-modal").classList.add("open"); }
+function closeModal() { document.getElementById("pix-modal").classList.remove("open"); }
+function copyPixKey() {
+  var key = "72436581720";
+  navigator.clipboard.writeText(key).then(function(){
+    var btn = document.getElementById("btn-copy");
+    btn.textContent = "✓ Chave PIX copiada com sucesso! Gratidão.";
+    btn.style.background = "#2A5C42";
+    setTimeout(closeModal, 2000);
+  });
+}
+
+setMode("sos478");
+</script>
+</body>
+</html>
