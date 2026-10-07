@@ -1,0 +1,9 @@
+# Worker que já atende vladimirhersen.com.br/blog no Cloudflare.
+name = "vladimirhersencombrblog"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+workers_dev = false
+
+routes = [
+  { pattern = "vladimirhersen.com.br/blog*", zone_name = "vladimirhersen.com.br" }
+]

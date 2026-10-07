@@ -1,0 +1,31 @@
+name: Publicar blog
+
+# Publica o blog sempre que algo dentro de blog/ muda na main,
+# e todo dia de manhã para liberar posts agendados com data futura.
+on:
+  push:
+    branches: [main]
+    paths: ['blog/**']
+  schedule:
+    - cron: '0 9 * * *'   # 06:00 em Brasília
+  workflow_dispatch:
+
+concurrency: blog-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: blog
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run build
+      - run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
