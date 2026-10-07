@@ -7,6 +7,7 @@
  *   /blog/<slug>/        post completo
  *   /blog/sitemap.xml    sitemap só do blog
  *   /blog/feed.xml       feed RSS (para e-mail automático e leitores)
+ *   /robots.txt          robots do site inteiro, já apontando o sitemap do blog
  */
 
 import { POSTS } from './posts.generated.js';
@@ -19,12 +20,21 @@ const NOME_BLOG = 'Palavras para Respirar';
 const DESCRICAO_BLOG = 'Textos de Vladimir Hersen sobre respiração, presença e o dia a dia, para tirar um pouco do peso dos ombros.';
 const IMAGEM_PADRAO = SITE + '/banner-preview.jpg';
 
+// Mesmo robots.txt do site principal, mais o sitemap do blog.
+// Este Worker atende /robots.txt (rota em wrangler.toml) para não precisar mexer no site principal.
+const ROBOTS = 'User-agent: *\nAllow: /\nDisallow: /oficina/admin\n\n' +
+  'Sitemap: ' + SITE + '/sitemap.xml\n' +
+  'Sitemap: ' + SITE + '/blog/sitemap.xml\n';
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '') || '/';
     const publicados = postsPublicados();
 
+    if (path === '/robots.txt') {
+      return new Response(ROBOTS, { headers: { 'content-type': 'text/plain;charset=UTF-8', 'cache-control': 'public, max-age=86400' } });
+    }
     if (path === '/blog') {
       return html(paginaLista(publicados));
     }

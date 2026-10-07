@@ -1,9 +1,11 @@
-# Worker que já atende vladimirhersen.com.br/blog no Cloudflare.
+# Worker que atende vladimirhersen.com.br/blog e /robots.txt no Cloudflare.
 name = "vladimirhersencombrblog"
 main = "src/index.js"
 compatibility_date = "2026-09-01"
 workers_dev = false
 
 routes = [
-  { pattern = "vladimirhersen.com.br/blog*", zone_name = "vladimirhersen.com.br" }
+  { pattern = "vladimirhersen.com.br/blog*", zone_name = "vladimirhersen.com.br" },
+  # robots.txt com o sitemap do blog, sem precisar mexer no Worker do site principal.
+  { pattern = "vladimirhersen.com.br/robots.txt", zone_name = "vladimirhersen.com.br" }
 ]
