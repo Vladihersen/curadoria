@@ -1,10 +1,10 @@
 ---
-titulo: "3 Respirações para Ansiedade, Sono e Cansaço: Guia Prático"
+titulo: "Respiração para Ansiedade e Sono: 3 Técnicas (4-7-8)"
 slug: respiracao-para-ansiedade-e-sono
 categoria: Neurobiologia Aplicada
 data: 2026-10-12
 leitura: 6
-resumo: "Suspiro fisiológico, 4-7-8 e respiração coerente: como fazer cada uma, quando usar e o que a ciência diz. Por Vladimir Hersen."
+resumo: "Qual a melhor respiração para ansiedade? Suspiro fisiológico, 4-7-8 para dormir e respiração coerente: como fazer cada uma em 1 minuto e o que a ciência diz."
 # Conferido com os e-books da Trilogia de Respiração (Vol. 1, 2 e 3) em 2026-10-08.
 ---
 
