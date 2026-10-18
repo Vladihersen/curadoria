@@ -1,9 +1,12 @@
 // Curadoria Instagram — Worker único (webhook Meta + Supabase + Telegram + painel)
 // Secrets esperados: IG_APP_SECRET, IG_ACCESS_TOKEN, TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET,
 //                    ANTHROPIC_API_KEY, SUPABASE_SERVICE_KEY, PANEL_PASSWORD
-// Variáveis (não secretas): IG_USER_ID, VERIFY_TOKEN, SUPABASE_URL, MODEL, TELEGRAM_CHAT_ID
+//                    Facebook (opcional): FB_APP_SECRET, FB_PAGE_TOKEN
+// Variáveis (não secretas): IG_USER_ID, VERIFY_TOKEN, SUPABASE_URL, MODEL, TELEGRAM_CHAT_ID, FB_PAGE_ID
 
 const GRAPH = "https://graph.instagram.com/v21.0";
+const FB_GRAPH = "https://graph.facebook.com/v21.0";
+const isFb = (row) => row.channel === "facebook";
 
 // ---------- utilidades ----------
 const enc = new TextEncoder();
@@ -61,8 +64,30 @@ async function refreshToken(env) {
   return j;
 }
 
+// ---------- Facebook (página + Messenger): enviar resposta ----------
+async function sendToFacebook(env, row, text) {
+  let res;
+  if (row.kind === "comment") {
+    res = await fetch(`${FB_GRAPH}/${row.ig_event_id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ message: text, access_token: env.FB_PAGE_TOKEN }),
+    });
+  } else {
+    res = await fetch(`${FB_GRAPH}/me/messages?access_token=${encodeURIComponent(env.FB_PAGE_TOKEN)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipient: { id: row.from_id }, messaging_type: "RESPONSE", message: { text } }),
+    });
+  }
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`Facebook ${res.status}: ${JSON.stringify(j).slice(0, 300)}`);
+  return j;
+}
+
 // ---------- Instagram: enviar resposta ----------
 async function sendToInstagram(env, row, text) {
+  if (isFb(row)) return sendToFacebook(env, row, text);
   const token = await getToken(env);
   let res;
   if (row.kind === "comment") {
@@ -84,8 +109,18 @@ async function sendToInstagram(env, row, text) {
 }
 
 // ---------- Instagram: postagem comentada (link + legenda) ----------
-async function getMedia(env, mediaId) {
+async function getMedia(env, mediaId, channel) {
   if (!mediaId) return null;
+  if (channel === "facebook") {
+    try {
+      const res = await fetch(`${FB_GRAPH}/${mediaId}?fields=permalink_url,message&access_token=${encodeURIComponent(env.FB_PAGE_TOKEN)}`);
+      if (!res.ok) return null;
+      const j = await res.json();
+      return { permalink: j.permalink_url || "", caption: (j.message || "").trim() };
+    } catch (_) {
+      return null;
+    }
+  }
   try {
     const token = await getToken(env);
     const res = await fetch(`${GRAPH}/${mediaId}?fields=permalink,caption&access_token=${encodeURIComponent(token)}`);
@@ -151,7 +186,7 @@ async function suggest(env, row, media) {
       model: env.MODEL || "claude-haiku-4-5",
       max_tokens: 300,
       system,
-      messages: [{ role: "user", content: `${ctx}Tipo: ${row.kind === "comment" ? "comentário público" : "mensagem direta"}\n<mensagem>${(row.text || "").slice(0, 1200)}</mensagem>` }],
+      messages: [{ role: "user", content: `${ctx}Tipo: ${row.kind === "comment" ? "comentário público" : "mensagem direta"} no ${isFb(row) ? "Facebook" : "Instagram"}\n<mensagem>${(row.text || "").slice(0, 1200)}</mensagem>` }],
     }),
   });
   const j = await res.json();
@@ -170,8 +205,9 @@ async function tg(env, method, body) {
 }
 const KB = (id) => ({ inline_keyboard: [[{ text: "✅ Aprovar", callback_data: `a:${id}` }, { text: "✏️ Editar", callback_data: `e:${id}` }, { text: "🗑 Descartar", callback_data: `d:${id}` }]] });
 function cardText(row, note, media) {
-  const who = row.from_username ? `@${row.from_username}` : row.from_id || "alguém";
-  const head = row.kind === "comment" ? `💬 Comentário de ${who}` : `✉️ DM de ${who}`;
+  const fb = isFb(row);
+  const who = row.from_username ? (fb ? row.from_username : `@${row.from_username}`) : row.from_id || "alguém";
+  const head = row.kind === "comment" ? `💬 Comentário no ${fb ? "Facebook" : "Instagram"} de ${who}` : fb ? `✉️ Messenger de ${who}` : `✉️ DM no Instagram de ${who}`;
   let post = "";
   if (media) {
     const cap = media.caption.split("\n")[0].slice(0, 120);
@@ -180,7 +216,7 @@ function cardText(row, note, media) {
   return `${head}\n${post}\n“${(row.text || "").slice(0, 700)}”\n\n— Sugestão —\n${row.final_text || row.suggestion || ""}${note ? `\n\n${note}` : ""}\n\n#${row.id}`;
 }
 async function sendCard(env, row, note, media) {
-  if (media === undefined && row.kind === "comment") media = await getMedia(env, row.media_id);
+  if (media === undefined && row.kind === "comment") media = await getMedia(env, row.media_id, row.channel);
   const r = await tg(env, "sendMessage", { chat_id: env.TELEGRAM_CHAT_ID, text: cardText(row, note, media), reply_markup: KB(row.id), link_preview_options: { is_disabled: true } });
   if (r.ok) await patchRow(env, row.id, { telegram_message_id: r.result.message_id });
 }
@@ -188,7 +224,7 @@ async function sendCard(env, row, note, media) {
 // ---------- processamento de um evento recebido ----------
 async function handleIncoming(env, ev) {
   const reason = filterReason(ev.text);
-  const base = { kind: ev.kind, ig_event_id: ev.id, from_id: ev.from_id, from_username: ev.from_username || null, text: ev.text || null, media_id: ev.media_id || null };
+  const base = { channel: ev.channel || "instagram", kind: ev.kind, ig_event_id: ev.id, from_id: ev.from_id, from_username: ev.from_username || null, text: ev.text || null, media_id: ev.media_id || null };
   let row;
   try {
     const ins = await sb(env, "ig_interactions?on_conflict=ig_event_id", {
@@ -203,7 +239,7 @@ async function handleIncoming(env, ev) {
   }
   if (!row || reason) return; // duplicado (Meta reenvia) ou filtrado: sem IA, sem aviso
   try {
-    const media = row.kind === "comment" ? await getMedia(env, row.media_id) : null;
+    const media = row.kind === "comment" ? await getMedia(env, row.media_id, row.channel) : null;
     let s = await suggest(env, row, media);
     let note = "";
     if (/^\[(ATENÇÃO|ATENCAO)\]/i.test(s)) { note = "⚠️ ATENÇÃO: possível sofrimento — revise com cuidado."; s = s.replace(/^\[[^\]]+\]\s*/, ""); }
@@ -218,6 +254,7 @@ async function handleIncoming(env, ev) {
 }
 
 async function handleMeta(env, payload) {
+  if (payload.object === "page") return handleFacebook(env, payload);
   if (payload.object !== "instagram") return;
   for (const entry of payload.entry || []) {
     for (const ch of entry.changes || []) {
@@ -230,6 +267,25 @@ async function handleMeta(env, payload) {
       const msg = m.message;
       if (!msg || msg.is_echo || m.sender?.id === env.IG_USER_ID) continue;
       await handleIncoming(env, { kind: "dm", id: msg.mid, text: msg.text, from_id: m.sender?.id });
+    }
+  }
+}
+
+// Página do Facebook: comentários (campo "feed") e Messenger
+async function handleFacebook(env, payload) {
+  if (!env.FB_PAGE_TOKEN) return;
+  const page = String(env.FB_PAGE_ID || "");
+  for (const entry of payload.entry || []) {
+    for (const ch of entry.changes || []) {
+      const v = ch.value || {};
+      if (ch.field !== "feed" || v.item !== "comment" || v.verb !== "add") continue;
+      if (!v.comment_id || String(v.from?.id) === page) continue; // ignora comentários da própria página
+      await handleIncoming(env, { channel: "facebook", kind: "comment", id: v.comment_id, text: v.message, from_id: v.from?.id, from_username: v.from?.name, media_id: v.post_id });
+    }
+    for (const m of entry.messaging || []) {
+      const msg = m.message;
+      if (!msg || msg.is_echo || String(m.sender?.id) === page) continue;
+      await handleIncoming(env, { channel: "facebook", kind: "dm", id: msg.mid, text: msg.text, from_id: m.sender?.id });
     }
   }
 }
@@ -342,7 +398,7 @@ async function panel(env, req, url) {
   const cards = (rows || []).map((r) => {
     const when = new Date(r.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
     const actionable = r.status === "pending" || r.status === "error";
-    return `<div class="card"><div class="meta"><span class="tag">${r.kind === "comment" ? "comentário" : "DM"}</span> ${esc(r.from_username ? "@" + r.from_username : r.from_id)} · ${when}${r.filter_reason ? " · " + esc(r.filter_reason) : ""}</div>
+    return `<div class="card"><div class="meta"><span class="tag">${r.channel === "facebook" ? "Facebook · " : ""}${r.kind === "comment" ? "comentário" : "DM"}</span> ${esc(r.from_username ? (r.channel === "facebook" ? r.from_username : "@" + r.from_username) : r.from_id)} · ${when}${r.filter_reason ? " · " + esc(r.filter_reason) : ""}</div>
 <div class="msg">“${esc(r.text)}”</div>
 ${actionable ? `<form method="post" action="/act"><input type="hidden" name="id" value="${r.id}"><textarea name="text">${esc(r.final_text || r.suggestion)}</textarea>
 <div class="row"><button class="ok" name="do" value="approve">Aprovar e publicar</button><button class="no" name="do" value="discard">Descartar</button></div></form>${r.error ? `<div class="meta">Erro: ${esc(r.error)}</div>` : ""}`
@@ -366,7 +422,9 @@ export default {
       }
       const raw = await req.text();
       const sig = (req.headers.get("x-hub-signature-256") || "").replace("sha256=", "");
-      if (!safeEq(sig, await hmacHex(env.IG_APP_SECRET, raw))) return new Response("bad signature", { status: 401 });
+      // Instagram e Facebook assinam com segredos de app diferentes
+      const okSig = safeEq(sig, await hmacHex(env.IG_APP_SECRET, raw)) || (!!env.FB_APP_SECRET && safeEq(sig, await hmacHex(env.FB_APP_SECRET, raw)));
+      if (!okSig) return new Response("bad signature", { status: 401 });
       let payload;
       try { payload = JSON.parse(raw); } catch { return new Response("bad json", { status: 400 }); }
       ctx.waitUntil(handleMeta(env, payload).catch((e) => console.error("meta", e.message)));
