@@ -207,6 +207,7 @@ async function handleIncoming(env, ev) {
     let s = await suggest(env, row, media);
     let note = "";
     if (/^\[(ATENÇÃO|ATENCAO)\]/i.test(s)) { note = "⚠️ ATENÇÃO: possível sofrimento — revise com cuidado."; s = s.replace(/^\[[^\]]+\]\s*/, ""); }
+    else if (/^\[(POLÍTICA|POLITICA)\]/i.test(s)) { note = "🗳 Tema político — decida se vale responder."; s = s.replace(/^\[[^\]]+\]\s*/, ""); }
     else if (/^\[REVISAR\]/i.test(s)) { note = "⚠️ A IA não tinha certeza — revise."; s = s.replace(/^\[[^\]]+\]\s*/, ""); }
     const [upd] = await patchRow(env, row.id, { suggestion: s, status: "pending" });
     await sendCard(env, upd, note, media);
@@ -280,7 +281,15 @@ async function handleTelegram(env, upd) {
       if (r.ok) await tg(env, "editMessageText", { chat_id: chat, message_id: mid, text: cq.message.text + "\n\n🗑 DESCARTADO" });
     } else if (act === "e") {
       await tg(env, "answerCallbackQuery", { callback_query_id: cq.id });
-      await tg(env, "sendMessage", { chat_id: chat, text: `✏️ Responda a ESTA mensagem com o texto final.\n\n#${id}`, reply_markup: { force_reply: true, selective: true } });
+      const row = await getRow(env, id);
+      const atual = row?.final_text || row?.suggestion || "";
+      // texto atual em <code>: no celular, um toque copia para ajustar sem redigitar
+      await tg(env, "sendMessage", {
+        chat_id: chat,
+        parse_mode: "HTML",
+        text: `✏️ Responda a ESTA mensagem com o texto final.\nPara só acrescentar ao texto atual, comece com <b>+</b>\n\nTexto atual (toque para copiar):\n<code>${esc(atual)}</code>\n\n#${id}`,
+        reply_markup: { force_reply: true, selective: true },
+      });
     }
     return;
   }
@@ -289,7 +298,9 @@ async function handleTelegram(env, upd) {
   if (m?.text && idm) {
     const row = await getRow(env, idm[1]);
     if (!row || !["pending", "error"].includes(row.status)) return void (await tg(env, "sendMessage", { chat_id: chat, text: "Essa já foi processada." }));
-    const [upd2] = await patchRow(env, row.id, { final_text: m.text.trim(), status: "pending" });
+    const t = m.text.trim();
+    const final = t.startsWith("+") ? `${row.final_text || row.suggestion || ""} ${t.slice(1).trim()}`.trim() : t;
+    const [upd2] = await patchRow(env, row.id, { final_text: final, status: "pending" });
     await sendCard(env, upd2, "✏️ Texto editado — confirme para publicar.");
   }
 }
