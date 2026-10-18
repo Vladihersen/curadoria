@@ -297,7 +297,11 @@ async function handleTelegram(env, upd) {
   const idm = m?.reply_to_message?.text?.match(/#([0-9a-f-]{36})/);
   if (m?.text && idm) {
     const row = await getRow(env, idm[1]);
-    if (!row || !["pending", "error"].includes(row.status)) return void (await tg(env, "sendMessage", { chat_id: chat, text: "Essa já foi processada." }));
+    if (!row || !["pending", "error"].includes(row.status)) {
+      // comum quando o Telegram mantém a resposta presa a um pedido de edição antigo
+      const qual = row?.text ? ` (comentário “${row.text.slice(0, 60)}”, já ${row.status === "sent" ? "publicado" : "descartado"})` : "";
+      return void (await tg(env, "sendMessage", { chat_id: chat, text: `⚠️ Sua resposta foi para o pedido de edição de outro comentário${qual}. Nada foi alterado.\n\nToque em ✏️ Editar de novo e responda à mensagem nova que aparecer.` }));
+    }
     const t = m.text.trim();
     const final = t.startsWith("+") ? `${row.final_text || row.suggestion || ""} ${t.slice(1).trim()}`.trim() : t;
     const [upd2] = await patchRow(env, row.id, { final_text: final, status: "pending" });
