@@ -7,6 +7,7 @@
 const GRAPH = "https://graph.instagram.com/v21.0";
 const FB_GRAPH = "https://graph.facebook.com/v21.0";
 const isFb = (row) => row.channel === "facebook";
+const CRON_INSCRICOES = "*/5 * * * *"; // igual ao wrangler.toml
 
 // ---------- utilidades ----------
 const enc = new TextEncoder();
@@ -365,6 +366,38 @@ async function handleTelegram(env, upd) {
   }
 }
 
+// ---------- inscrições do site (D1 do site, só leitura) ----------
+// Guarda em ig_settings ("site_ultima_inscricao") a data da última inscrição avisada.
+async function checkInscricoes(env) {
+  if (!env.SITE_DB) return;
+  const st = (await sb(env, "ig_settings?key=eq.site_ultima_inscricao&select=value"))?.[0]?.value;
+  const save = (criado_em) =>
+    sb(env, "ig_settings", { method: "POST", prefer: "resolution=merge-duplicates", body: { key: "site_ultima_inscricao", value: { criado_em }, updated_at: new Date().toISOString() } });
+  if (!st?.criado_em) {
+    // primeira execução: marca o ponto de partida sem avisar as inscrições antigas
+    const r = await env.SITE_DB.prepare("select max(criado_em) as m from inscricoes").first();
+    return save(r?.m || new Date().toISOString());
+  }
+  const { results } = await env.SITE_DB.prepare("select * from inscricoes where criado_em > ? order by criado_em limit 20").bind(st.criado_em).all();
+  for (const i of results || []) {
+    const valor = i.valor != null ? ` · R$ ${Number(i.valor).toFixed(2).replace(".", ",")}` : "";
+    const linhas = [
+      "📝 Nova inscrição no site",
+      "",
+      `Nome: ${i.nome}`,
+      `Tipo: ${i.tipo}${i.lugares ? ` (${i.lugares} ${i.lugares > 1 ? "lugares" : "lugar"})` : ""}${i.acompanhante ? ` · com ${i.acompanhante}` : ""}`,
+      `WhatsApp: ${i.whatsapp}`,
+      i.email ? `E-mail: ${i.email}` : null,
+      i.origem ? `Como conheceu: ${i.origem}` : null,
+      `Status: ${i.status}${valor}`,
+      i.obs ? `Obs.: ${i.obs}` : null,
+    ].filter((l) => l !== null);
+    const r = await tg(env, "sendMessage", { chat_id: env.TELEGRAM_CHAT_ID, text: linhas.join("\n").slice(0, 3500) });
+    if (!r.ok) throw new Error("Telegram: " + JSON.stringify(r).slice(0, 200));
+    await save(i.criado_em);
+  }
+}
+
 // ---------- painel web ----------
 const CSS = `:root{--teal:#005F6B;--noite:#1A2A3A;--mineral:#3A4B48;--sage:#7A9E93;--areia:#D9C5A8;--off:#F8F9F9}
 *{box-sizing:border-box}body{margin:0;background:var(--off);color:var(--noite);font-family:'DM Sans',system-ui,sans-serif;line-height:1.5}
@@ -467,8 +500,12 @@ export default {
     return panel(env, req, url);
   },
 
-  // Cron diário: renova o token de 60 dias do Instagram
-  async scheduled(_evt, env, ctx) {
+  // Crons: a cada 5 min avisa inscrições novas do site; uma vez por dia renova o token de 60 dias do Instagram
+  async scheduled(evt, env, ctx) {
+    if (evt.cron === CRON_INSCRICOES) {
+      ctx.waitUntil(checkInscricoes(env).catch((e) => console.error("inscricoes", e.message)));
+      return;
+    }
     ctx.waitUntil(
       refreshToken(env).catch((e) => tg(env, "sendMessage", { chat_id: env.TELEGRAM_CHAT_ID, text: `⚠️ ${e.message}` }))
     );

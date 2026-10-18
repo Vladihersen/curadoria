@@ -11,8 +11,15 @@ preview_urls = false
 keep_vars = true
 
 # Renovação diária do token do Instagram (03:00 em Brasília).
+# A cada 5 minutos: avisa no Telegram as inscrições novas do site.
 [triggers]
-crons = ["0 6 * * *"]
+crons = ["0 6 * * *", "*/5 * * * *"]
+
+# Banco de inscrições do site vladimirhersen.com.br (só leitura aqui).
+[[d1_databases]]
+binding = "SITE_DB"
+database_name = "oficina-inscricoes"
+database_id = "ed3b7ba5-e6a0-4898-994c-5170bd43f16f"
 
 # Logs no painel da Cloudflare (estavam ligados antes de o Worker vir para o GitHub).
 [observability]
