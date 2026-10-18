@@ -20,7 +20,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npx --yes wrangler@4 deploy
+      # O repositório é público: o filtro tira do log as variáveis que o wrangler
+      # imprime ao comparar com o painel.
+      - run: |
+          set -o pipefail
+          npx --yes wrangler@4 deploy 2>&1 | grep -vE 'VERIFY_TOKEN|TELEGRAM_CHAT_ID|IG_USER_ID|SUPABASE_URL'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
