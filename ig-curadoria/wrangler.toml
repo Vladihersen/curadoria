@@ -1,0 +1,14 @@
+# Worker que recebe comentários e DMs do Instagram, sugere respostas com Claude
+# e manda para aprovação no Telegram. Publicado pelo GitHub Actions (ig-curadoria-deploy.yml).
+name = "ig-curadoria"
+main = "src/worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+# Mantém as variáveis já configuradas no painel da Cloudflare (IG_USER_ID, VERIFY_TOKEN,
+# SUPABASE_URL, MODEL, TELEGRAM_CHAT_ID). Os secrets nunca são tocados pelo deploy.
+keep_vars = true
+
+# Renovação diária do token do Instagram (03:00 em Brasília).
+[triggers]
+crons = ["0 6 * * *"]

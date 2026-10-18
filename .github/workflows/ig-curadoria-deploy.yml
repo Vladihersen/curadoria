@@ -1,0 +1,26 @@
+name: Publicar ig-curadoria
+
+# Publica o Worker do Instagram sempre que algo dentro de ig-curadoria/ muda na main.
+on:
+  push:
+    branches: [main]
+    paths: ['ig-curadoria/**']
+  workflow_dispatch:
+
+concurrency: ig-curadoria-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ig-curadoria
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npx --yes wrangler@4 deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
