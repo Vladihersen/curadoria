@@ -1,10 +1,10 @@
 ---
-titulo: "Mente Acelerada à Noite: Por Que a Cabeça Não Desliga (e a Respiração 4-7-8)"
-slug: mente-acelerada-a-noite
+titulo: "Não Consigo Dormir, Minha Mente Não Para: a Respiração 4-7-8"
+slug: nao-consigo-dormir-mente-nao-para
 categoria: Neurobiologia Aplicada
 data: 2026-10-19
 leitura: 6
-resumo: "Deita, apaga a luz e a cabeça liga? Entenda por que a mente acelera à noite e como fazer a respiração 4-7-8 para dormir, passo a passo e com os cuidados certos."
+resumo: "Não consegue dormir porque a mente não para? Entenda por que a cabeça não desliga à noite e como fazer a respiração 4-7-8 para dormir, passo a passo e com os cuidados certos."
 ---
 
 *O corpo pede descanso, mas a cabeça continua trabalhando. Isso tem explicação, e tem um caminho de volta.*
@@ -13,9 +13,9 @@ Você conhece a cena.
 
 O dia foi longo, o corpo está pesado, e você finalmente deita. Apaga a luz. E é nesse exato momento que a cabeça liga. A conversa que já terminou volta a rodar. A lista de amanhã aparece inteira. Uma preocupação pequena cresce no escuro. Você vira para um lado, vira para o outro, olha o relógio e faz a conta de quantas horas ainda dá para dormir.
 
-Se isso acontece com você, saiba de uma coisa antes de tudo: **não é falta de força de vontade, e você não está fazendo nada de errado.** É o seu sistema nervoso fazendo exatamente o que aprendeu a fazer.
+"Não consigo dormir, minha mente não para." Se você já disse essa frase, saiba de uma coisa antes de tudo: **não é falta de força de vontade, e você não está fazendo nada de errado.** É o seu sistema nervoso fazendo exatamente o que aprendeu a fazer.
 
-## Por que a cabeça não desliga à noite
+## Por que a mente não para à noite
 
 Durante o dia, a mente está ocupada. Há tarefas, pessoas, telas, barulho. Tudo aquilo que você não teve tempo de sentir fica guardado para depois. E o "depois" chega quando o mundo silencia: na cama, no escuro, sem mais nada para fazer.
 
@@ -25,7 +25,7 @@ Por isso tentar convencer a mente a parar raramente funciona. Pensar "preciso do
 
 Em 34 anos de acupuntura e yoga, aprendi que a porta mais acessível para esse corpo é a respiração. É a única função automática que também podemos conduzir com a vontade. O Professor Hermógenes, com quem tive a alegria de conviver, escreveu um livro inteiro para os "nervosos", e a respiração estava sempre no centro do que ele ensinava.
 
-## A respiração 4-7-8 para dormir, passo a passo
+## Como fazer a respiração 4-7-8 para dormir
 
 Esta é a respiração que mais indico para a hora de deitar. Faça na cama, já com a luz apagada.
 
@@ -40,7 +40,7 @@ Entre um ciclo e outro, deixe uma pausa natural de 1 ou 2 tempos. Na primeira se
 
 Depois do último ciclo, solte o controle e deixe a respiração voltar sozinha. Não precisa "conseguir dormir". Só observe o ar entrando e saindo.
 
-## Por que funciona
+## A respiração 4-7-8 funciona?
 
 Repare na conta: o ar sai em 8 tempos e entra em 4. **A saída é duas vezes mais longa que a entrada**, e a expiração longa é o freio natural do coração. A cada saída lenta, o sistema nervoso inclina um pouco mais para o lado do repouso.
 
