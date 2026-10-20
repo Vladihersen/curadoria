@@ -440,6 +440,18 @@ ${actionable ? `<form method="post" action="/act"><input type="hidden" name="id"
   return html(page(nav + (cards || `<p>Nada por aqui. 🌿</p>`)));
 }
 
+async function logWebhook(env, raw, assinatura) {
+  let p = {};
+  try { p = JSON.parse(raw); } catch {}
+  const obj = String(p.object || "desconhecido");
+  const campos = (p.entry || []).flatMap((e) => [...(e.changes || []).map((c) => c.field + (c.value?.item ? ":" + c.value.item : "")), ...((e.messaging || []).length ? ["messaging"] : [])]);
+  await sb(env, "ig_settings?on_conflict=key", {
+    method: "POST",
+    prefer: "resolution=merge-duplicates",
+    body: { key: "ultimo_webhook_" + obj, value: { em: new Date().toISOString(), assinatura, campos }, updated_at: new Date().toISOString() },
+  });
+}
+
 // ---------- roteador ----------
 export default {
   async fetch(req, env, ctx) {
@@ -456,7 +468,11 @@ export default {
       const raw = await req.text();
       const sig = (req.headers.get("x-hub-signature-256") || "").replace("sha256=", "");
       // Instagram e Facebook assinam com segredos de app diferentes
-      const okSig = safeEq(sig, await hmacHex(env.IG_APP_SECRET, raw)) || (!!env.FB_APP_SECRET && safeEq(sig, await hmacHex(env.FB_APP_SECRET, raw)));
+      const okIg = safeEq(sig, await hmacHex(env.IG_APP_SECRET, raw));
+      const okFb = !!env.FB_APP_SECRET && safeEq(sig, await hmacHex(env.FB_APP_SECRET, raw));
+      const okSig = okIg || okFb;
+      // diagnóstico: último aviso da Meta por tipo (sem conteúdo das mensagens)
+      ctx.waitUntil(logWebhook(env, raw, { ig: okIg, fb: okFb, tem_fb_secret: !!env.FB_APP_SECRET }).catch(() => {}));
       if (!okSig) return new Response("bad signature", { status: 401 });
       let payload;
       try { payload = JSON.parse(raw); } catch { return new Response("bad json", { status: 400 }); }
