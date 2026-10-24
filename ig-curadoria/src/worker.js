@@ -133,6 +133,39 @@ async function getMedia(env, mediaId, channel) {
   }
 }
 
+// Nome de quem mandou DM: reaproveita o que já sabemos dessa pessoa; senão pergunta à Meta
+async function getSender(env, fromId, channel) {
+  if (!fromId) return null;
+  try {
+    const prev = await sb(env, `ig_interactions?from_id=eq.${encodeURIComponent(fromId)}&from_username=not.is.null&select=from_username&limit=1`);
+    if (prev?.[0]?.from_username) return prev[0].from_username;
+  } catch (_) {}
+  try {
+    const url = channel === "facebook"
+      ? `${FB_GRAPH}/${fromId}?fields=name&access_token=${encodeURIComponent(env.FB_PAGE_TOKEN)}`
+      : `${GRAPH}/${fromId}?fields=username,name&access_token=${encodeURIComponent(await getToken(env))}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j.username || j.name || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// De onde veio a DM: resposta a story, post/reel compartilhado, menção em story
+function dmRef(msg) {
+  const story = msg.reply_to?.story;
+  if (story) return { label: "Respondendo ao seu story", caption: "", permalink: story.url || "" };
+  for (const a of msg.attachments || []) {
+    const pl = a.payload || {};
+    if (a.type === "story_mention") return { label: "Mencionou você no story", caption: "", permalink: pl.url || "" };
+    if (["share", "ig_reel", "reel", "ig_post", "post"].includes(a.type))
+      return { label: a.type.includes("reel") ? "Compartilhou um reel" : "Compartilhou uma postagem", caption: (pl.title || "").trim(), permalink: pl.url || "" };
+  }
+  return null;
+}
+
 // ---------- filtro barato (sem IA) ----------
 const SIMPLES = new Set([
   "amem", "amém", "lindo", "linda", "lindos", "lindas", "obrigado", "obrigada", "gratidao", "gratidão", "namaste", "verdade",
@@ -173,7 +206,8 @@ async function getTom(env) {
 }
 
 async function suggest(env, row, media) {
-  let ctx = media?.caption ? `Legenda da postagem comentada:\n${media.caption.slice(0, 600)}\n\n` : "";
+  let ctx = media?.label ? `Contexto da mensagem: ${media.label}.\n` : "";
+  if (media?.caption) ctx += `Legenda da postagem${media.label ? "" : " comentada"}:\n${media.caption.slice(0, 600)}\n\n`;
   if (row.kind === "dm" && row.from_id) {
     const prev = await sb(env, `ig_interactions?from_id=eq.${row.from_id}&kind=eq.dm&id=neq.${row.id}&order=created_at.desc&limit=3&select=text,final_text,status`);
     const lines = (prev || []).reverse().flatMap((p) => [p.text ? `Pessoa: ${p.text}` : null, p.status === "sent" && p.final_text ? `Vladimir: ${p.final_text}` : null]).filter(Boolean);
@@ -212,12 +246,13 @@ function cardText(row, note, media) {
   let post = "";
   if (media) {
     const cap = media.caption.split("\n")[0].slice(0, 120);
-    post = `\n📌 Na postagem: ${cap ? `“${cap}${media.caption.length > cap.length ? "…" : ""}”` : "(sem legenda)"}${media.permalink ? `\n${media.permalink}` : ""}\n`;
+    const desc = cap ? `“${cap}${media.caption.length > cap.length ? "…" : ""}”` : media.label ? "" : "(sem legenda)";
+    post = `\n📌 ${media.label || "Na postagem"}${desc ? `: ${desc}` : ""}${media.permalink ? `\n${media.permalink}` : ""}\n`;
   }
   return `${head}\n${post}\n“${(row.text || "").slice(0, 700)}”\n\n— Sugestão —\n${row.final_text || row.suggestion || ""}${note ? `\n\n${note}` : ""}\n\n#${row.id}`;
 }
 async function sendCard(env, row, note, media) {
-  if (media === undefined && row.kind === "comment") media = await getMedia(env, row.media_id, row.channel);
+  if (media === undefined) media = row.kind === "comment" ? await getMedia(env, row.media_id, row.channel) : row.ref || null;
   const r = await tg(env, "sendMessage", { chat_id: env.TELEGRAM_CHAT_ID, text: cardText(row, note, media), reply_markup: KB(row.id), link_preview_options: { is_disabled: true } });
   if (r.ok) await patchRow(env, row.id, { telegram_message_id: r.result.message_id });
 }
@@ -225,7 +260,7 @@ async function sendCard(env, row, note, media) {
 // ---------- processamento de um evento recebido ----------
 async function handleIncoming(env, ev) {
   const reason = filterReason(ev.text);
-  const base = { channel: ev.channel || "instagram", kind: ev.kind, ig_event_id: ev.id, from_id: ev.from_id, from_username: ev.from_username || null, text: ev.text || null, media_id: ev.media_id || null };
+  const base = { channel: ev.channel || "instagram", kind: ev.kind, ig_event_id: ev.id, from_id: ev.from_id, from_username: ev.from_username || null, text: ev.text || null, media_id: ev.media_id || null, ref: ev.ref || null };
   let row;
   try {
     const ins = await sb(env, "ig_interactions?on_conflict=ig_event_id", {
@@ -240,7 +275,11 @@ async function handleIncoming(env, ev) {
   }
   if (!row || reason) return; // duplicado (Meta reenvia) ou filtrado: sem IA, sem aviso
   try {
-    const media = row.kind === "comment" ? await getMedia(env, row.media_id, row.channel) : null;
+    const media = row.kind === "comment" ? await getMedia(env, row.media_id, row.channel) : row.ref || null;
+    if (row.kind === "dm" && !row.from_username) {
+      const name = await getSender(env, row.from_id, row.channel);
+      if (name) { row.from_username = name; await patchRow(env, row.id, { from_username: name }); }
+    }
     let s = await suggest(env, row, media);
     let note = "";
     if (/^\[(ATENÇÃO|ATENCAO)\]/i.test(s)) { note = "⚠️ ATENÇÃO: possível sofrimento — revise com cuidado."; s = s.replace(/^\[[^\]]+\]\s*/, ""); }
@@ -267,7 +306,7 @@ async function handleMeta(env, payload) {
     for (const m of entry.messaging || []) {
       const msg = m.message;
       if (!msg || msg.is_echo || m.sender?.id === env.IG_USER_ID) continue;
-      await handleIncoming(env, { kind: "dm", id: msg.mid, text: msg.text, from_id: m.sender?.id });
+      await handleIncoming(env, { kind: "dm", id: msg.mid, text: msg.text, from_id: m.sender?.id, ref: dmRef(msg) });
     }
   }
 }
