@@ -257,6 +257,19 @@ async function sendCard(env, row, note, media) {
   if (r.ok) await patchRow(env, row.id, { telegram_message_id: r.result.message_id });
 }
 
+// Marca o card no Telegram (selo no topo, sem botões) para não ser aprovado de novo
+const SELO = { sent: "✅ PUBLICADO", discarded: "🗑 DESCARTADO", edited: "✏️ EDITADO — use o card novo abaixo" };
+async function markCard(env, row, selo, baseText) {
+  if (!row?.telegram_message_id || !selo) return;
+  let base = baseText;
+  if (!base) {
+    const media = row.kind === "comment" ? await getMedia(env, row.media_id, row.channel) : row.ref || null;
+    base = cardText(row, "", media);
+  }
+  base = base.replace(/^(✅ PUBLICADO|🗑 DESCARTADO|✏️ EDITADO[^\n]*)\n\n/, "");
+  await tg(env, "editMessageText", { chat_id: env.TELEGRAM_CHAT_ID, message_id: row.telegram_message_id, text: `${selo}\n\n${base}`.slice(0, 4096), link_preview_options: { is_disabled: true } });
+}
+
 // ---------- processamento de um evento recebido ----------
 async function handleIncoming(env, ev) {
   const reason = filterReason(ev.text);
@@ -331,7 +344,7 @@ async function handleFacebook(env, payload) {
 }
 
 // ---------- ações (Telegram e painel compartilham) ----------
-async function approve(env, id, textOverride) {
+async function approve(env, id, textOverride, marcar = true) {
   const row = await getRow(env, id);
   if (!row) return { ok: false, msg: "Não encontrado." };
   if (row.status !== "pending" && row.status !== "error") return { ok: false, msg: `Já está “${row.status}”.` };
@@ -342,15 +355,17 @@ async function approve(env, id, textOverride) {
   if (!claimed?.length) return { ok: false, msg: "Já processado." };
   try {
     await sendToInstagram(env, row, text);
-    await patchRow(env, id, { sent_at: new Date().toISOString() });
+    const [done] = await patchRow(env, id, { sent_at: new Date().toISOString() });
+    if (marcar) await markCard(env, done, SELO.sent).catch(() => {});
     return { ok: true, msg: "Publicado ✅" };
   } catch (e) {
     await patchRow(env, id, { status: "error", error: String(e.message).slice(0, 500) });
     return { ok: false, msg: "Falha ao enviar: " + e.message };
   }
 }
-async function discard(env, id) {
+async function discard(env, id, marcar = true) {
   const r = await sb(env, `ig_interactions?id=eq.${id}&status=in.(pending,error)`, { method: "PATCH", body: { status: "discarded", updated_at: new Date().toISOString() }, prefer: "return=representation" });
+  if (r?.length && marcar) await markCard(env, r[0], SELO.discarded).catch(() => {});
   return r?.length ? { ok: true, msg: "Descartado 🗑" } : { ok: false, msg: "Já processado." };
 }
 
@@ -368,13 +383,17 @@ async function handleTelegram(env, upd) {
     const [act, id] = (cq.data || "").split(":");
     const mid = cq.message.message_id;
     if (act === "a") {
-      const r = await approve(env, id);
-      await tg(env, "answerCallbackQuery", { callback_query_id: cq.id, text: r.msg });
-      if (r.ok) await tg(env, "editMessageText", { chat_id: chat, message_id: mid, text: cq.message.text + "\n\n✅ PUBLICADO" });
+      const r = await approve(env, id, undefined, false);
+      await tg(env, "answerCallbackQuery", { callback_query_id: cq.id, text: r.msg, show_alert: !r.ok });
+      const row = await getRow(env, id);
+      const selo = r.ok ? SELO.sent : SELO[row?.status];
+      if (selo) await markCard(env, { ...row, telegram_message_id: mid }, selo, cq.message.text);
     } else if (act === "d") {
-      const r = await discard(env, id);
+      const r = await discard(env, id, false);
       await tg(env, "answerCallbackQuery", { callback_query_id: cq.id, text: r.msg });
-      if (r.ok) await tg(env, "editMessageText", { chat_id: chat, message_id: mid, text: cq.message.text + "\n\n🗑 DESCARTADO" });
+      const row = await getRow(env, id);
+      const selo = SELO[row?.status];
+      if (selo) await markCard(env, { ...row, telegram_message_id: mid }, selo, cq.message.text);
     } else if (act === "e") {
       await tg(env, "answerCallbackQuery", { callback_query_id: cq.id });
       const row = await getRow(env, id);
@@ -401,6 +420,7 @@ async function handleTelegram(env, upd) {
     const t = m.text.trim();
     const final = t.startsWith("+") ? `${row.final_text || row.suggestion || ""} ${t.slice(1).trim()}`.trim() : t;
     const [upd2] = await patchRow(env, row.id, { final_text: final, status: "pending" });
+    await markCard(env, row, SELO.edited).catch(() => {});
     await sendCard(env, upd2, "✏️ Texto editado — confirme para publicar.");
   }
 }
