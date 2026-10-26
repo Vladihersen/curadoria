@@ -66,7 +66,7 @@ para +4 dB (oração: +2 dB). iPhone sem mudança.
   `finishBreath()` chamava `stopSoundscape()` gradual, que cancelava o fade final
   e relia o volume — podia voltar ao volume cheio por um instante. Agora
   `stopSoundscape(true)` (corte direto; a paisagem já está em silêncio ali).
-- "Desfrute em silêncio…" (`ann4`): 0.585 → 0.2925.
+- "Desfrute em silêncio…" (`ann4`): 0.585 → 0.2925 → 0.365625 (+25%).
 - Oração "Que todos os seres…" (`mantra_todos`) estava metálica: a
   `MANTRA_LEVEL_CURVE` foi medida no WAV de 25,75 s, mas o arquivo atual tem
   31,02 s — a curva esticada dava até +15 dB em trechos já fortes e o limitador
