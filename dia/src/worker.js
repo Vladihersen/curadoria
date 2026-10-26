@@ -7,6 +7,7 @@ const SCHEMA = [
      nome TEXT NOT NULL,
      whatsapp TEXT NOT NULL,
      nota_inicial INTEGER,
+     dias_paz_inicial INTEGER,
      criado_em TEXT NOT NULL
    )`,
   `CREATE TABLE IF NOT EXISTS dia_registros (
@@ -22,6 +23,7 @@ const SCHEMA = [
      participante TEXT NOT NULL,
      domingo TEXT NOT NULL,
      nota INTEGER,
+     dias_paz INTEGER,
      encontro INTEGER NOT NULL DEFAULT 0,
      efeito_ruim INTEGER NOT NULL DEFAULT 0,
      efeito_texto TEXT,
@@ -85,13 +87,14 @@ async function entrar(request, env) {
   const nome = texto(c.nome, 80);
   const whatsapp = texto(c.whatsapp, 30).replace(/[^\d+() -]/g, '');
   const nota = inteiro(c.nota, 0, 10);
-  if (!nome || whatsapp.replace(/\D/g, '').length < 10 || nota === null || c.consentimento !== true) {
-    return json({ erro: 'preencha nome, WhatsApp com DDD, a nota e o consentimento' }, 400);
+  const diasPaz = inteiro(c.dias_paz, 0, 7);
+  if (!nome || whatsapp.replace(/\D/g, '').length < 10 || nota === null || diasPaz === null || c.consentimento !== true) {
+    return json({ erro: 'preencha nome, WhatsApp com DDD, a nota, os dias de paz e o consentimento' }, 400);
   }
   const id = novoId();
   await env.DB.prepare(
-    'INSERT INTO dia_participantes (id, nome, whatsapp, nota_inicial, criado_em) VALUES (?, ?, ?, ?, ?)'
-  ).bind(id, nome, whatsapp, nota, new Date().toISOString()).run();
+    'INSERT INTO dia_participantes (id, nome, whatsapp, nota_inicial, dias_paz_inicial, criado_em) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(id, nome, whatsapp, nota, diasPaz, new Date().toISOString()).run();
   return json({ id });
 }
 
@@ -117,15 +120,17 @@ async function semana(request, env) {
   if (!c || !DATA.test(c.domingo || '')) return json({ erro: 'domingo inválido' }, 400);
   if (!(await participanteExiste(env.DB, c.id))) return json({ erro: 'participante desconhecida' }, 404);
   const nota = c.nota === null || c.nota === undefined ? null : inteiro(c.nota, 0, 10);
+  const diasPaz = c.dias_paz === null || c.dias_paz === undefined ? null : inteiro(c.dias_paz, 0, 7);
   await env.DB.prepare(
-    `INSERT INTO dia_semanas (participante, domingo, nota, encontro, efeito_ruim, efeito_texto, duvida, atualizado_em)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO dia_semanas (participante, domingo, nota, dias_paz, encontro, efeito_ruim, efeito_texto, duvida, atualizado_em)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (participante, domingo) DO UPDATE SET
-       nota = COALESCE(excluded.nota, dia_semanas.nota), encontro = excluded.encontro,
+       nota = COALESCE(excluded.nota, dia_semanas.nota),
+       dias_paz = COALESCE(excluded.dias_paz, dia_semanas.dias_paz), encontro = excluded.encontro,
        efeito_ruim = excluded.efeito_ruim, efeito_texto = excluded.efeito_texto,
        duvida = excluded.duvida, atualizado_em = excluded.atualizado_em`
   ).bind(
-    c.id, c.domingo, nota, c.encontro ? 1 : 0, c.efeito_ruim ? 1 : 0,
+    c.id, c.domingo, nota, diasPaz, c.encontro ? 1 : 0, c.efeito_ruim ? 1 : 0,
     texto(c.efeito_texto, 600), texto(c.duvida, 600), new Date().toISOString()
   ).run();
   return json({ ok: true });
@@ -165,16 +170,16 @@ async function dadosPainel(db) {
 }
 
 function csv(d) {
-  const cab = ['nome', 'whatsapp', 'entrou_em', 'nota_inicial', 'dias_praticados', 'manhas', 'pausas', 'noites',
-    ...d.domingos.flatMap((dom) => [`nota_${dom}`, `encontro_${dom}`, `efeito_ruim_${dom}`, `efeito_texto_${dom}`, `duvida_${dom}`])];
+  const cab = ['nome', 'whatsapp', 'entrou_em', 'nota_inicial', 'dias_paz_inicial', 'dias_praticados', 'manhas', 'pausas', 'noites',
+    ...d.domingos.flatMap((dom) => [`nota_${dom}`, `dias_paz_${dom}`, `encontro_${dom}`, `efeito_ruim_${dom}`, `efeito_texto_${dom}`, `duvida_${dom}`])];
   const linhas = d.participantes.map((p) => {
     const r = d.registros[p.id] || {};
     const sem = d.semanas[p.id] || {};
-    return [p.nome, p.whatsapp, p.criado_em.slice(0, 10), p.nota_inicial, r.dias_praticados ?? 0,
+    return [p.nome, p.whatsapp, p.criado_em.slice(0, 10), p.nota_inicial, p.dias_paz_inicial ?? '', r.dias_praticados ?? 0,
       r.manhas ?? 0, r.pausas ?? 0, r.noites ?? 0,
       ...d.domingos.flatMap((dom) => {
         const w = sem[dom] || {};
-        return [w.nota ?? '', w.encontro ? 'sim' : '', w.efeito_ruim ? 'sim' : '', w.efeito_texto ?? '', w.duvida ?? ''];
+        return [w.nota ?? '', w.dias_paz ?? '', w.encontro ? 'sim' : '', w.efeito_ruim ? 'sim' : '', w.efeito_texto ?? '', w.duvida ?? ''];
       })];
   });
   return [cab, ...linhas].map((l) => l.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
@@ -189,9 +194,9 @@ function htmlPainel(d, chave) {
       const w = sem[dom];
       if (!w) return '<td class="vazio">–</td>';
       if (w.efeito_ruim) alertas.push({ nome: p.nome, whatsapp: p.whatsapp, dom, texto: w.efeito_texto });
-      return `<td>${w.nota ?? '–'}${w.efeito_ruim ? ' <b class="alerta">!</b>' : ''}</td>`;
+      return `<td>${w.nota ?? '–'} · ${w.dias_paz ?? '–'}d${w.efeito_ruim ? ' <b class="alerta">!</b>' : ''}</td>`;
     }).join('');
-    return `<tr><td>${esc(p.nome)}</td><td>${esc(p.whatsapp)}</td><td>${p.nota_inicial ?? '–'}</td>${celulas}<td>${r.dias_praticados ?? 0}</td></tr>`;
+    return `<tr><td>${esc(p.nome)}</td><td>${esc(p.whatsapp)}</td><td>${p.nota_inicial ?? '–'} · ${p.dias_paz_inicial ?? '–'}d</td>${celulas}<td>${r.dias_praticados ?? 0}</td></tr>`;
   }).join('');
   const duvidas = d.participantes.flatMap((p) => Object.values(d.semanas[p.id] || {})
     .filter((w) => w.duvida).map((w) => `<li><b>${esc(p.nome)}</b> (${esc(w.domingo)}): ${esc(w.duvida)}</li>`)).join('');
@@ -208,8 +213,8 @@ th{background:#efe9dc}.vazio{color:#aaa}.alerta{color:#b3261e}
 a.botao{display:inline-block;margin-top:8px;padding:10px 14px;background:#5b7f5a;color:#fff;border-radius:8px;text-decoration:none}
 </style></head><body>
 <h1>Painel do piloto · ${d.participantes.length} participantes</h1>
-<p>Nota de 0 a 10. "!" marca quem relatou algo que fez mal ou ficou difícil.</p>
-<div class="tab"><table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Nota inicial</th>
+<p>Cada domingo mostra a nota de satisfação (0 a 10) · os dias de paz na semana (0 a 7). "!" marca quem relatou algo que fez mal ou ficou difícil.</p>
+<div class="tab"><table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Início (nota · dias de paz)</th>
 ${d.domingos.map((dom) => `<th>${esc(dom.slice(8, 10) + '/' + dom.slice(5, 7))}</th>`).join('')}<th>Dias praticados</th></tr></thead>
 <tbody>${linhas || '<tr><td colspan="4">Ninguém entrou ainda.</td></tr>'}</tbody></table></div>
 <h2>Relatos de efeito ruim</h2><ul>${listaAlertas || '<li>Nenhum.</li>'}</ul>
