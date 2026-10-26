@@ -31,11 +31,36 @@ código mas ninguém as chama — não reativar.
 - Chamar `bgAudio.play()` de novo no `comContexto()`, depois que a voz decodifica.
   (Os dois ficaram no código como proteção extra, mas não eram a causa.)
 
-## Android picotando (Moto G23) — 25/out/2026
+## Android picotando (Moto G23, Samsung A53)
 
-O `tickVisual()` rodava a cada 50 ms buscando elementos da tela toda vez. Passou
-a guardar os elementos (`elOrbArc`, `elOrbRem`, `elOrbCyc`) e a rodar a cada
-100 ms. Ainda falta confirmação do usuário de que resolveu.
+**25/out/2026:** o `tickVisual()` passou a guardar os elementos da tela e a rodar
+a cada 100 ms (antes 50 ms). Não bastou: o picote seguia até "carregar tudo" e a
+jornada trepidava.
+
+**26/out/2026 — causa principal:** a prática inteira era agendada de uma vez (no
+Entretenimento de 23 min, ~400 sons + filtros criados no início, esperando no
+grafo de áudio). Android mais fraco não dá conta.
+
+**Correção (só no Android, `IS_ANDROID`):**
+- `lazyDefer()`/`lazyPump()`: `scheduleSound`, `scheduleVoiceClip` e
+  `scheduleCrest` só criam o som se ele começa nos próximos 25 s
+  (`LAZY_AHEAD`); o resto vai pra fila `lazyQ`, esvaziada pelo `tickVisual`.
+  Guarda o `bMode` do momento (as jornadas trocam o `bMode` ao montar).
+- Ao apagar a tela (`visibilitychange` hidden), agenda tudo o que falta de uma vez.
+- `AudioContext` com `latencyHint:"playback"` (buffer maior).
+- iPhone continua agendando tudo de uma vez — lá o JS para com a tela apagada.
+
+Teste no Chromium simulando Android: ~30 sons vivos por vez em vez de ~400.
+
+## Volumes e oração — 26/out/2026
+
+- Anúncio das práticas (`isNameAnn` em `announceVolumeFor`): 0.9125 → 0.45625.
+- "Desfrute em silêncio…" (`ann4`): 0.585 → 0.2925.
+- Oração "Que todos os seres…" (`mantra_todos`) estava metálica: a
+  `MANTRA_LEVEL_CURVE` foi medida no WAV de 25,75 s, mas o arquivo atual tem
+  31,02 s — a curva esticada dava até +15 dB em trechos já fortes e o limitador
+  esmagava. Curva desligada. Agudo (high-shelf) da oração de +11 dB → +4 dB.
+  **Se o arquivo da oração for reeditado, nunca reaproveitar curva antiga.**
 
 ## Publicação
 
