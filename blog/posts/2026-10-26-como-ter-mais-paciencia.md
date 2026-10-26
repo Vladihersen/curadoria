@@ -1,10 +1,10 @@
 ---
-titulo: "Como Ter Mais Paciência: a Respiração Coerente"
+titulo: "Como Ter Mais Paciência: a Respiração Coerente que Acalma o Corpo"
 slug: como-ter-mais-paciencia
 categoria: Neurobiologia Aplicada
 data: 2026-10-26
 leitura: 6
-resumo: "Pavio curto com quem você ama? Paciência não é só virtude, é fisiologia. Entenda por que a gente explode e como a respiração coerente, em um minuto, devolve o espaço antes de responder."
+resumo: "Falta de paciência e irritação com quem você ama? Paciência não é só virtude, é fisiologia. Entenda o que causa a falta de paciência e como ter mais paciência com a respiração coerente, em um minuto."
 ---
 
 *Paciência não é uma qualidade que uns têm e outros não. Ela depende de um corpo que não está em alerta, e isso se treina.*
@@ -15,9 +15,9 @@ O dia foi pesado. Você chega em casa, alguém faz uma pergunta simples, ou repe
 
 O curioso é que quase sempre explodimos com quem mais amamos. Não porque amamos menos, mas porque é com eles que baixamos a guarda depois de um dia inteiro segurando.
 
-Se você se reconhece aqui, comece por isto: **pavio curto não é defeito de caráter.** Na maioria das vezes, é um sistema nervoso cansado, funcionando no limite.
+Se você se reconhece aqui, comece por isto: **falta de paciência não é defeito de caráter.** Você não perdeu a paciência; o seu corpo perdeu primeiro. Na maioria das vezes, é um sistema nervoso cansado, funcionando no limite.
 
-## Por que a gente perde a paciência
+## O que causa a falta de paciência
 
 Paciência é a capacidade de deixar um espaço entre o que acontece e o que você faz. Quando esse espaço existe, você escolhe a resposta. Quando ele some, quem responde é o reflexo.
 
@@ -57,7 +57,7 @@ A respiração coerente não é mágica e não muda quem você é. O que ela faz
 
 A respiração coerente não segura o ar, por isso é a mais segura das que eu ensino: pode ser feita por quem tem histórico cardíaco, pressão alta ou está grávida. Se sentir tontura, você está enchendo demais: respire mais leve ou volte a respirar normalmente. Salivar mais ou sentir calor no peito é normal.
 
-E um cuidado de outra ordem: se a irritação é constante, se vem junto com cansaço que não passa, sono ruim ou tristeza, converse com um médico ou um psicólogo. Às vezes o pavio curto é o primeiro sinal de um esgotamento ou de uma depressão. Respiração é cuidado, não substitui o acompanhamento.
+E um cuidado de outra ordem: se a irritação é constante, se vem junto com cansaço que não passa, sono ruim ou tristeza, converse com um médico ou um psicólogo. Às vezes a irritação é o primeiro sinal de um esgotamento ou de uma depressão. Respiração é cuidado, não substitui o acompanhamento.
 
 ## Para ir mais fundo
 
