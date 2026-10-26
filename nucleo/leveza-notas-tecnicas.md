@@ -72,6 +72,7 @@ para +4 dB (oração: +2 dB). iPhone sem mudança.
   31,02 s — a curva esticada dava até +15 dB em trechos já fortes e o limitador
   esmagava. Curva desligada. Agudo (high-shelf) da oração de +11 dB → +4 dB.
   **Se o arquivo da oração for reeditado, nunca reaproveitar curva antiga.**
+  Depois, a pedido do usuário, `MANTRA_VOL` 0.605 → 0.847 (+40%).
 
 ## Publicação
 
