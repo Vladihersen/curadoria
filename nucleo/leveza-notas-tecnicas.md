@@ -54,7 +54,13 @@ Teste no Chromium simulando Android: ~30 sons vivos por vez em vez de ~400.
 
 ## Volumes e oração — 26/out/2026
 
-- Anúncio das práticas (`isNameAnn` em `announceVolumeFor`): 0.9125 → 0.45625.
+- Anúncio das práticas (`isNameAnn` em `announceVolumeFor`): 0.9125 → 0.45625 →
+  0.228125 (duas reduções de 50% no mesmo dia).
+- Condução do Suspiro (`fisioVol`): `GUIDE_VOL*2.25` → `GUIDE_VOL*1.6875` (-25%).
+- Ruído no fim da prática (resto da paisagem depois do "Desfrute"): o
+  `finishBreath()` chamava `stopSoundscape()` gradual, que cancelava o fade final
+  e relia o volume — podia voltar ao volume cheio por um instante. Agora
+  `stopSoundscape(true)` (corte direto; a paisagem já está em silêncio ali).
 - "Desfrute em silêncio…" (`ann4`): 0.585 → 0.2925.
 - Oração "Que todos os seres…" (`mantra_todos`) estava metálica: a
   `MANTRA_LEVEL_CURVE` foi medida no WAV de 25,75 s, mas o arquivo atual tem
