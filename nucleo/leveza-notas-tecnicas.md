@@ -52,6 +52,11 @@ grafo de áudio). Android mais fraco não dá conta.
 
 Teste no Chromium simulando Android: ~30 sons vivos por vez em vez de ~400.
 
+**Voz aguda/estridente no Android (26/out/2026):** só no Android, a presença da
+voz (`ensureVoiceBus`, 2,8 kHz) caiu de +6 dB para +1,5 dB, ganhou um corte suave
+de -4 dB acima de 6 kHz, e o realce de agudo dos clipes "brilhantes" caiu de +11 dB
+para +4 dB (oração: +2 dB). iPhone sem mudança.
+
 ## Volumes e oração — 26/out/2026
 
 - Anúncio das práticas (`isNameAnn` em `announceVolumeFor`): 0.9125 → 0.45625 →
