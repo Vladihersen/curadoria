@@ -1,0 +1,28 @@
+name: Publicar app do método
+
+# Publica o app do Método Bem Viver (vladimirhersen.com.br/dia) sempre que algo
+# dentro de dia/ muda na main.
+on:
+  push:
+    branches: [main]
+    paths: ['dia/**']
+  workflow_dispatch:
+
+concurrency: dia-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dia
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -1,0 +1,30 @@
+# Worker do app do Método (piloto do Dia Bem Vivido) em vladimirhersen.com.br/dia.
+# Publicado pelo GitHub Actions (dia-deploy.yml) quando algo em dia/ muda na main.
+name = "dia-bem-vivido"
+main = "src/worker.js"
+compatibility_date = "2026-10-12"
+workers_dev = false
+
+routes = [
+  { pattern = "vladimirhersen.com.br/dia*", zone_name = "vladimirhersen.com.br" }
+]
+
+# Mantém variáveis e secrets do painel (ADMIN_KEY é secret: wrangler secret put ADMIN_KEY).
+keep_vars = true
+
+# As telas do app são arquivos estáticos em public/dia/.
+# A API e o painel passam primeiro pelo Worker.
+[assets]
+directory = "public"
+binding = "ASSETS"
+run_worker_first = ["/dia/api/*", "/dia/painel*"]
+
+# Mesmo banco das inscrições do site. O app usa só as tabelas dia_*,
+# criadas pelo próprio Worker na primeira chamada.
+[[d1_databases]]
+binding = "DB"
+database_name = "oficina-inscricoes"
+database_id = "ed3b7ba5-e6a0-4898-994c-5170bd43f16f"
+
+[observability]
+enabled = true
