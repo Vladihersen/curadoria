@@ -25,6 +25,7 @@ const SCHEMA = [
      nota INTEGER,
      dias_paz INTEGER,
      encontro INTEGER NOT NULL DEFAULT 0,
+     encontro_com TEXT,
      efeito_ruim INTEGER NOT NULL DEFAULT 0,
      efeito_texto TEXT,
      duvida TEXT,
@@ -122,15 +123,16 @@ async function semana(request, env) {
   const nota = c.nota === null || c.nota === undefined ? null : inteiro(c.nota, 0, 10);
   const diasPaz = c.dias_paz === null || c.dias_paz === undefined ? null : inteiro(c.dias_paz, 0, 7);
   await env.DB.prepare(
-    `INSERT INTO dia_semanas (participante, domingo, nota, dias_paz, encontro, efeito_ruim, efeito_texto, duvida, atualizado_em)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO dia_semanas (participante, domingo, nota, dias_paz, encontro, encontro_com, efeito_ruim, efeito_texto, duvida, atualizado_em)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (participante, domingo) DO UPDATE SET
        nota = COALESCE(excluded.nota, dia_semanas.nota),
        dias_paz = COALESCE(excluded.dias_paz, dia_semanas.dias_paz), encontro = excluded.encontro,
+       encontro_com = excluded.encontro_com,
        efeito_ruim = excluded.efeito_ruim, efeito_texto = excluded.efeito_texto,
        duvida = excluded.duvida, atualizado_em = excluded.atualizado_em`
   ).bind(
-    c.id, c.domingo, nota, diasPaz, c.encontro ? 1 : 0, c.efeito_ruim ? 1 : 0,
+    c.id, c.domingo, nota, diasPaz, c.encontro ? 1 : 0, texto(c.encontro_com, 40) || null, c.efeito_ruim ? 1 : 0,
     texto(c.efeito_texto, 600), texto(c.duvida, 600), new Date().toISOString()
   ).run();
   return json({ ok: true });
@@ -171,7 +173,7 @@ async function dadosPainel(db) {
 
 function csv(d) {
   const cab = ['nome', 'whatsapp', 'entrou_em', 'nota_inicial', 'dias_paz_inicial', 'dias_praticados', 'manhas', 'pausas', 'noites',
-    ...d.domingos.flatMap((dom) => [`nota_${dom}`, `dias_paz_${dom}`, `encontro_${dom}`, `efeito_ruim_${dom}`, `efeito_texto_${dom}`, `duvida_${dom}`])];
+    ...d.domingos.flatMap((dom) => [`nota_${dom}`, `dias_paz_${dom}`, `encontro_${dom}`, `encontro_com_${dom}`, `efeito_ruim_${dom}`, `efeito_texto_${dom}`, `duvida_${dom}`])];
   const linhas = d.participantes.map((p) => {
     const r = d.registros[p.id] || {};
     const sem = d.semanas[p.id] || {};
@@ -179,7 +181,7 @@ function csv(d) {
       r.manhas ?? 0, r.pausas ?? 0, r.noites ?? 0,
       ...d.domingos.flatMap((dom) => {
         const w = sem[dom] || {};
-        return [w.nota ?? '', w.dias_paz ?? '', w.encontro ? 'sim' : '', w.efeito_ruim ? 'sim' : '', w.efeito_texto ?? '', w.duvida ?? ''];
+        return [w.nota ?? '', w.dias_paz ?? '', w.encontro ? 'sim' : '', w.encontro_com ?? '', w.efeito_ruim ? 'sim' : '', w.efeito_texto ?? '', w.duvida ?? ''];
       })];
   });
   return [cab, ...linhas].map((l) => l.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');

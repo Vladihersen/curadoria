@@ -1,0 +1,13 @@
+{
+  "name": "Dia Bem Vivido · Método Bem Viver",
+  "short_name": "Dia Bem Vivido",
+  "start_url": "/dia/",
+  "scope": "/dia/",
+  "display": "standalone",
+  "background_color": "#faf8f3",
+  "theme_color": "#5b7f5a",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/dia/icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
