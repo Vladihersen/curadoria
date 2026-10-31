@@ -148,3 +148,17 @@ audio { width: 100%; margin-top: 8px; }
   background: var(--texto); color: var(--fundo); font-size: .9rem;
 }
 .socorro a { color: var(--verde-escuro); font-weight: 700; }
+
+/* Revisão do método: foco da semana, resultado do respiro e calendário do domingo */
+.cartao.destaque { background: var(--verde-claro); border-color: var(--verde); }
+.resultado { font-weight: 600; color: var(--verde-escuro); }
+.resultado.grande { font-size: 1.3rem; text-align: center; margin: 12px 0 16px; }
+details { margin-top: 10px; }
+summary { cursor: pointer; color: var(--verde-escuro); font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.calendario { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 10px 0; }
+.calendario .dia {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 56px; border: 2px solid var(--linha); border-radius: 10px; font-size: .8rem; color: var(--suave);
+}
+.calendario .dia b { font-size: 1.1rem; min-height: 1.4em; color: var(--verde-escuro); }
+.calendario .dia.feito { border-color: var(--verde); background: var(--verde-claro); color: var(--texto); }

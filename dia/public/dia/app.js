@@ -12,13 +12,24 @@ const PERGUNTAS = [
   { tema: 'Lembrar juntos', pergunta: 'Qual foi o dia mais feliz que vivemos juntos?', gesto: 'Revivam uma boa lembrança, com fotos ou objetos.' },
 ];
 
+// Foco de cada semana do piloto: o ritual fica igual, um pilar ganha destaque e um extra.
+const FOCOS = [
+  { nome: 'Corpo', extra: 'Nesta semana, faça o respiro de 5 minutos todo dia e os três minutos de movimento.' },
+  { nome: 'Pessoas', extra: 'Nesta semana, escreva uma carta de gratidão a alguém vivo, e leia para a pessoa ou envie.' },
+  { nome: 'Encantamento', extra: 'Nesta semana, faça uma caminhada mais longa num lugar bonito, sem celular, por uns 30 minutos.' },
+  { nome: 'Sentido', extra: 'Pergunta da semana: para quem a minha vida faz diferença, e o que eu quero continuar fazendo?' },
+];
+
 const AUDIOS = {
   boasVindas: '/dia/audio/1-boas-vindas.mp3',
-  manha: '/dia/audio/2-gesto-da-manha.mp3',
-  pausa: '/dia/audio/3-pausa-de-suspiro.mp3',
+  manha: '/dia/audio/2-comeco-do-dia.mp3',
+  respiro1: '/dia/audio/3a-respiro-1-minuto.mp3',
+  respiro5: '/dia/audio/3b-respiro-5-minutos.mp3',
   noite: '/dia/audio/4-noite.mp3',
   domingo: '/dia/audio/5-domingo.mp3',
 };
+
+const TESTE_ZONA = 'Zona de Entusiasmo: firme e confortável. Teste: consigo respirar pelo nariz com calma e sorrir? Se não, recue um pouco.';
 
 const VINCULOS = ['Filha ou filho', 'Marido, esposa ou companheiro(a)', 'Amiga ou amigo', 'Irmã ou irmão', 'Mãe ou pai', 'Neta ou neto', 'Outra pessoa'];
 
@@ -235,6 +246,7 @@ function telaEntrar() {
     try {
       const r = await enviar('entrar', { nome: nome.value, whatsapp: whats.value, nota: dados.nota, dias_paz: dados.dias_paz, consentimento: true });
       gravar('id', r.id);
+      gravar('inicio', { nota: dados.nota, dias_paz: dados.dias_paz });
       gravar('nome', nome.value.trim().split(/\s+/)[0]);
       telaBoasVindas();
     } catch (e) {
@@ -252,78 +264,133 @@ function telaBoasVindas() {
   mostrar(
     el('section', { class: 'cartao' },
       el('h2', {}, 'Ouça primeiro'),
-      el('p', {}, 'Três minutos com o Vladimir explicando como funciona.'),
+      el('p', {}, 'Quatro minutos com o Vladimir explicando como funciona.'),
       audio(AUDIOS.boasVindas),
       el('h3', {}, 'Os quatro pilares'),
-      el('p', {}, el('b', {}, 'Bem fazer'), ', de manhã: um gesto de bondade.'),
-      el('p', {}, el('b', {}, 'Bem respirar'), ', ao longo do dia: três pausas de suspiro.'),
-      el('p', {}, el('b', {}, 'Bem ver'), ', à noite: três coisas boas do dia.'),
-      el('p', {}, el('b', {}, 'Bem querer'), ', à noite e uma vez por semana: amor-bondade e um encontro de verdade.'),
+      el('p', {}, el('b', {}, 'Bem respirar'), ': um respiro de 1 minuto na hora do aperto, ou 5 minutos quando houver tempo.'),
+      el('p', {}, el('b', {}, 'Bem fazer'), ': três minutos de movimento ao longo do dia e uma coisa pequena que te dá vida.'),
+      el('p', {}, el('b', {}, 'Bem querer'), ': um contato de verdade por dia e, uma vez por semana, um Encontro de Verdade.'),
+      el('p', {}, el('b', {}, 'Bem ver'), ': à noite, três coisas boas do dia e desejar o bem a quem você ama.'),
+      el('p', {}, 'Em dia corrido, faça a versão mínima: um minuto de cada já conta. Nunca zero, nunca forçado.'),
+      el('p', { class: 'suave' }, TESTE_ZONA),
       el('p', { class: 'suave' }, '"A felicidade vem de uma vida significativa e não de uma vida fácil." Maria Nogueira Maia'),
-      el('button', { type: 'button', onclick: () => irPara('hoje') }, 'Ir para o meu dia'),
+      el('h3', {}, 'O teste de 60 segundos'),
+      el('p', {}, 'Dê uma nota para a sua tensão, faça 1 minuto de respiro e dê a nota de novo. Veja com os seus olhos o que um minuto faz.'),
+      el('button', { type: 'button', onclick: () => fazerRespiro(60) }, 'Fazer o teste agora'),
+      el('button', { type: 'button', class: 'secundario', onclick: () => irPara('hoje') }, 'Ir para o meu dia'),
     ),
   );
 }
 
 // ---------- Hoje ----------
 
+const REGISTRO_VAZIO = { respiros: [], movimento: 0, vida: false, contato: false, noite: false, paz: null };
+
 function registroDe(dia) {
-  return ler('registros', {})[dia] || { manha: false, pausas: 0, noite: false };
+  return { ...REGISTRO_VAZIO, ...(ler('registros', {})[dia] || {}) };
+}
+
+function mediaTensao(respiros) {
+  if (!respiros.length) return null;
+  const soma = respiros.reduce((t, r) => ({ a: t.a + r.antes, d: t.d + r.depois }), { a: 0, d: 0 });
+  return { antes: soma.a / respiros.length, depois: soma.d / respiros.length };
+}
+
+function praticou(reg) {
+  return reg.respiros.length > 0 || reg.movimento > 0 || reg.vida || reg.contato || reg.noite;
 }
 
 function salvarRegistro(dia, reg) {
   const todos = ler('registros', {});
   todos[dia] = reg;
   gravar('registros', todos);
-  enfileirar('registro', dia, { id: ler('id'), dia, ...reg });
+  const m = mediaTensao(reg.respiros);
+  enfileirar('registro', dia, {
+    id: ler('id'), dia,
+    respiros: reg.respiros.length,
+    tensao_antes: m ? Math.round(m.antes * 10) / 10 : null,
+    tensao_depois: m ? Math.round(m.depois * 10) / 10 : null,
+    movimento: reg.movimento, vida: reg.vida, contato: reg.contato, noite: reg.noite, paz: reg.paz,
+  });
+}
+
+function ontem() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return isoLocal(d);
 }
 
 function telaHoje() {
   const dia = hoje();
   const reg = registroDe(dia);
   const semana = semanaDoPiloto();
+  const foco = FOCOS[semana - 1];
   const enc = PERGUNTAS[semana - 1];
   titulo.textContent = `${saudacao()}${ler('nome') ? ', ' + ler('nome') : ''}`;
+  const marcar = (cartao, feito) => cartao.classList.toggle('feito', feito);
 
-  const cManha = el('section', { class: 'cartao' + (reg.manha ? ' feito' : '') },
-    el('p', { class: 'pilar' }, 'Bem fazer · manhã'),
-    el('h2', {}, 'Um gesto de bondade'),
-    el('p', {}, 'Escolha um gesto pequeno para alguém hoje: uma mensagem, um elogio sincero, ouvir sem pressa.'),
-    audio(AUDIOS.manha),
-    botaoMarcar('Fiz meu gesto de hoje', reg.manha, (v) => {
-      reg.manha = v; salvarRegistro(dia, reg); cManha.classList.toggle('feito', v);
-    }),
+  const cFoco = el('section', { class: 'cartao destaque' },
+    el('p', { class: 'pilar' }, `Semana ${semana} de 4 · foco: ${foco.nome}`),
+    el('p', {}, foco.extra),
+    el('p', { class: 'suave' }, TESTE_ZONA),
   );
 
-  const pausas = el('div', { class: 'pausas', role: 'group', 'aria-label': 'Pausas feitas hoje' });
-  const desenharPausas = () => {
-    pausas.replaceChildren(...[1, 2, 3].map((n) => el('button', {
+  const m = mediaTensao(reg.respiros);
+  const cRespiro = el('section', { class: 'cartao' + (reg.respiros.length ? ' feito' : '') },
+    el('p', { class: 'pilar' }, 'Bem respirar · quando apertar'),
+    el('h2', {}, 'Respiro'),
+    el('p', {}, 'Puxe o ar pelo nariz, dê mais uma puxadinha e solte devagar pela boca. Antes e depois, uma nota para a sua tensão.'),
+    m ? el('p', { class: 'resultado' }, `Hoje: ${reg.respiros.length} ${reg.respiros.length === 1 ? 'respiro' : 'respiros'}, tensão média de ${m.antes.toFixed(1).replace('.', ',')} para ${m.depois.toFixed(1).replace('.', ',')}.`) : null,
+    el('button', { type: 'button', onclick: () => fazerRespiro(60) }, 'Respiro de 1 minuto'),
+    el('button', { type: 'button', class: 'secundario', onclick: () => fazerRespiro(300) }, 'Respiro de 5 minutos'),
+    el('details', {}, el('summary', {}, 'Prefere ouvir o Vladimir?'), audio(AUDIOS.respiro1), audio(AUDIOS.respiro5)),
+  );
+
+  const passos = el('div', { class: 'pausas', role: 'group', 'aria-label': 'Minutos de movimento hoje' });
+  const desenharPassos = () => {
+    passos.replaceChildren(...[1, 2, 3].map((n) => el('button', {
       type: 'button',
-      'aria-pressed': String(reg.pausas >= n),
-      'aria-label': `Pausa ${n}`,
+      'aria-pressed': String(reg.movimento >= n),
+      'aria-label': `Minuto de movimento ${n}`,
       onclick: () => {
-        reg.pausas = reg.pausas >= n ? n - 1 : n;
-        salvarRegistro(dia, reg); desenharPausas();
-        cPausa.classList.toggle('feito', reg.pausas === 3);
+        reg.movimento = reg.movimento >= n ? n - 1 : n;
+        salvarRegistro(dia, reg); desenharPassos(); marcar(cCorpo, reg.movimento > 0);
       },
-    }, `${n}ª pausa`)));
+    }, `${n}º minuto`)));
   };
-  const cPausa = el('section', { class: 'cartao' + (reg.pausas === 3 ? ' feito' : '') },
-    el('p', { class: 'pilar' }, 'Bem respirar · ao longo do dia'),
-    el('h2', {}, 'Três pausas de suspiro'),
-    el('p', {}, 'Dois minutos cada. Puxe o ar pelo nariz, dê mais uma puxadinha, e solte devagar pela boca.'),
-    el('button', { type: 'button', onclick: () => telaPausa(() => {
-      reg.pausas = Math.min(3, reg.pausas + 1); salvarRegistro(dia, reg);
-    }) }, 'Fazer uma pausa guiada'),
-    audio(AUDIOS.pausa),
-    pausas,
+  const cCorpo = el('section', { class: 'cartao' + (reg.movimento > 0 ? ' feito' : '') },
+    el('p', { class: 'pilar' }, 'Bem fazer · o corpo'),
+    el('h2', {}, 'Movimento de bolso'),
+    el('p', {}, 'Três vezes hoje, 1 minuto de passo rápido ou escada, preso a algo que já acontece: ir ao ponto, subir para casa, esperar o café. A respiração acelera, mas dá para falar.'),
+    el('p', { class: 'suave' }, 'Dia calmo? Uma caminhada ao ar livre vale pelos três. Andar enquanto faz a ligação do dia também conta.'),
+    audio(AUDIOS.manha),
+    passos,
   );
-  desenharPausas();
+  desenharPassos();
+
+  const escolhida = (ler('amanha', {})[ontem()] || '').trim();
+  const cVida = el('section', { class: 'cartao' + (reg.vida ? ' feito' : '') },
+    el('p', { class: 'pilar' }, 'Bem fazer · a vida'),
+    el('h2', {}, 'A coisa que me dá vida'),
+    escolhida
+      ? el('p', { class: 'pergunta' }, `Você escolheu ontem: "${escolhida}"`)
+      : el('p', {}, 'Escolha agora uma coisa pequena que te dá prazer ou sentido: cozinhar ouvindo música, regar as plantas, ler dez páginas, visitar alguém.'),
+    botaoMarcar('Fiz a coisa que me dá vida', reg.vida, (v) => { reg.vida = v; salvarRegistro(dia, reg); marcar(cVida, v); }),
+  );
+
+  const cContato = el('section', { class: 'cartao' + (reg.contato ? ' feito' : '') },
+    el('p', { class: 'pilar' }, 'Bem querer · durante o dia'),
+    el('h2', {}, 'Um contato de verdade'),
+    el('p', {}, 'Uma mensagem de apreço específica ("lembrei de você porque..."), uma ligação de 5 minutos ou uma conversa com alguém do caminho. Quem recebe costuma ficar mais feliz do que a gente imagina.'),
+    el('p', { class: 'suave' }, 'Se hoje for difícil falar com alguém, escreva a mensagem sem enviar. Também conta.'),
+    botaoMarcar('Fiz meu contato de hoje', reg.contato, (v) => { reg.contato = v; salvarRegistro(dia, reg); marcar(cContato, v); }),
+  );
 
   const boas = ler('boas', {});
   const minhas = boas[dia] || ['', '', ''];
+  const dicas = ['1. Algo bom de hoje, e por quê', '2. Algo bom que veio de uma pessoa', '3. Algo bom que eu mesma fiz'];
   const campos = minhas.map((t, i) => {
-    const c = el('input', { type: 'text', value: t, 'aria-label': `Coisa boa ${i + 1}`, placeholder: `${i + 1}. Algo bom de hoje, e por quê` });
+    const c = el('input', { type: 'text', value: t, 'aria-label': `Coisa boa ${i + 1}`, placeholder: dicas[i] });
     c.addEventListener('input', () => {
       const todas = ler('boas', {});
       todas[dia] = campos.map((x) => x.value);
@@ -331,19 +398,26 @@ function telaHoje() {
     });
     return c;
   });
+  const amanha = el('input', { type: 'text', id: 'amanha', maxlength: '120', value: ler('amanha', {})[dia] || '', placeholder: 'Ex.: ligar para a minha irmã' });
+  amanha.addEventListener('input', () => {
+    const todas = ler('amanha', {});
+    todas[dia] = amanha.value;
+    gravar('amanha', todas);
+  });
   const cNoite = el('section', { class: 'cartao' + (reg.noite ? ' feito' : '') },
     el('p', { class: 'pilar' }, 'Bem ver e Bem querer · noite'),
     el('h2', {}, 'Três coisas boas e amor-bondade'),
-    el('p', {}, 'Lembre três coisas boas do dia e por que aconteceram. Depois deseje o bem a quem você ama, e a você mesma.'),
+    el('p', {}, 'Lembre três coisas boas do dia e por que aconteceram. Escolha uma e fique um minuto com ela, saboreando. Depois deseje o bem a quem você ama, e a você mesma.'),
     ...campos,
     el('p', { class: 'suave' }, 'O que você escreve aqui fica só no seu celular.'),
     el('p', { class: 'frase' }, 'Que você esteja em paz. Que você tenha saúde. Que você seja feliz.'),
     el('p', { class: 'frase' }, 'Que eu esteja em paz. Que eu tenha saúde. Que eu seja feliz.'),
     el('p', { class: 'frase' }, 'Que todos os seres sejam felizes.'),
+    el('label', { for: 'amanha' }, 'Amanhã, a coisa que vai me dar vida'), amanha,
     audio(AUDIOS.noite),
-    botaoMarcar('Fiz a prática da noite', reg.noite, (v) => {
-      reg.noite = v; salvarRegistro(dia, reg); cNoite.classList.toggle('feito', v);
-    }),
+    botaoMarcar('Fiz a prática da noite', reg.noite, (v) => { reg.noite = v; salvarRegistro(dia, reg); marcar(cNoite, v); }),
+    el('label', {}, 'Hoje teve um momento de paz?'),
+    simNao(reg.paz, (v) => { reg.paz = v; salvarRegistro(dia, reg); }),
   );
 
   const cEncontro = el('section', { class: 'cartao' },
@@ -354,22 +428,57 @@ function telaHoje() {
     el('p', { class: 'suave' }, enc.gesto),
   );
 
-  mostrar(cManha, cPausa, cNoite, cEncontro);
+  mostrar(cFoco, cRespiro, cCorpo, cVida, cContato, cNoite, cEncontro);
 }
 
-// Pausa guiada: inspira pelo nariz, puxadinha, solta pela boca. Dois minutos.
-function telaPausa(aoTerminar) {
+// Nota de tensão de 0 a 10, pedida antes e depois de cada respiro.
+function telaTensao(momento, aoEscolher) {
   abas.hidden = true;
-  titulo.textContent = 'Pausa de suspiro';
+  titulo.textContent = momento === 'antes' ? 'Antes de começar' : 'E agora?';
+  mostrar(el('section', { class: 'cartao' },
+    el('h2', {}, momento === 'antes' ? 'Como está a sua tensão agora?' : 'Como está a sua tensão agora, depois do respiro?'),
+    el('p', { class: 'suave' }, 'O primeiro número que vier é o certo.'),
+    escala(0, 10, null, aoEscolher),
+    el('div', { class: 'escala-rotulos' }, el('span', {}, '0 nenhuma'), el('span', {}, '10 muita')),
+    el('button', { type: 'button', class: 'secundario', onclick: () => irPara('hoje') }, 'Voltar'),
+  ));
+}
+
+function fazerRespiro(segundos) {
+  telaTensao('antes', (antes) => {
+    telaPausa(segundos, () => {
+      telaTensao('depois', (depois) => {
+        const dia = hoje();
+        const reg = registroDe(dia);
+        reg.respiros = [...reg.respiros, { antes, depois }];
+        salvarRegistro(dia, reg);
+        const frase = depois < antes
+          ? `Você chegou em ${antes} e saiu em ${depois}.`
+          : `Você chegou em ${antes} e saiu em ${depois}. Tudo bem: às vezes o corpo precisa de mais de um respiro.`;
+        abas.hidden = true;
+        titulo.textContent = 'Pronto';
+        mostrar(el('section', { class: 'cartao' },
+          el('p', { class: 'resultado grande' }, frase),
+          el('button', { type: 'button', onclick: () => irPara('hoje') }, 'Voltar para o meu dia'),
+        ));
+      });
+    });
+  });
+}
+
+// Respiro guiado: inspira pelo nariz, puxadinha, solta pela boca. 1 ou 5 minutos.
+function telaPausa(segundos, aoTerminar) {
+  abas.hidden = true;
+  titulo.textContent = segundos >= 300 ? 'Respiro de 5 minutos' : 'Respiro de 1 minuto';
   const FASES = [
     { texto: 'Puxe o ar pelo nariz, devagar', ms: 2500, escala: 0.9 },
     { texto: 'Mais um pouquinho', ms: 1000, escala: 1 },
     { texto: 'Solte pela boca, bem devagar', ms: 6000, escala: 0.55 },
   ];
-  const TOTAL_MS = 120000;
+  const TOTAL_MS = segundos * 1000;
   const bolha = el('div', { class: 'bolha', 'aria-hidden': 'true' });
   const fase = el('p', { class: 'fase', 'aria-live': 'polite' }, 'Sente-se ou deite-se. Deixe o corpo pesar.');
-  const resta = el('p', { class: 'suave' }, '2 minutos');
+  const resta = el('p', { class: 'suave' }, segundos >= 120 ? `${Math.round(segundos / 60)} minutos` : '1 minuto');
   const parar = el('button', { type: 'button', class: 'secundario' }, 'Parar');
   let ativo = true;
   let tempo;
@@ -377,7 +486,7 @@ function telaPausa(aoTerminar) {
   const fim = (completou) => {
     ativo = false; clearTimeout(tempo);
     if (completou) aoTerminar();
-    irPara('hoje');
+    else irPara('hoje');
   };
   parar.addEventListener('click', () => fim(false));
 
@@ -391,7 +500,7 @@ function telaPausa(aoTerminar) {
       bolha.style.transitionDuration = '2000ms';
       bolha.style.transform = 'scale(.55)';
       resta.textContent = '';
-      parar.replaceWith(el('button', { type: 'button', onclick: () => fim(true) }, 'Concluir a pausa'));
+      parar.replaceWith(el('button', { type: 'button', onclick: () => fim(true) }, 'Concluir'));
       return;
     }
     const f = FASES[i % FASES.length];
@@ -460,22 +569,51 @@ function telaDomingo() {
     botao.textContent = 'Atualizar respostas';
   });
 
-  const diasFeitos = (() => {
-    const regs = ler('registros', {});
-    let n = 0;
-    for (let k = 0; k < 7; k++) {
-      const d = new Date(domingo + 'T12:00:00');
-      d.setDate(d.getDate() - k);
-      const r = regs[isoLocal(d)];
-      if (r && (r.manha || r.noite || r.pausas > 0)) n++;
-    }
-    return n;
-  })();
+  // Calendário da semana: cada dia mostra se houve prática e se houve um momento de paz.
+  const regs = ler('registros', {});
+  const NOMES = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  const diasSemana = [];
+  for (let k = 6; k >= 0; k--) {
+    const d = new Date(domingo + 'T12:00:00');
+    d.setDate(d.getDate() - k);
+    const iso = isoLocal(d);
+    diasSemana.push({ iso, nome: NOMES[d.getDay()], reg: regs[iso] ? { ...REGISTRO_VAZIO, ...regs[iso] } : null });
+  }
+  const diasFeitos = diasSemana.filter((x) => x.reg && praticou(x.reg)).length;
+  const calendario = el('div', { class: 'calendario', role: 'list', 'aria-label': 'Sua semana' },
+    ...diasSemana.map((x) => {
+      const feito = x.reg && praticou(x.reg);
+      const paz = x.reg && x.reg.paz === true;
+      return el('div', { role: 'listitem', class: 'dia' + (feito ? ' feito' : '') + (paz ? ' paz' : ''),
+        'aria-label': `${x.nome}: ${feito ? 'praticou' : 'sem prática'}${paz ? ', com momento de paz' : ''}` },
+      el('span', {}, x.nome), el('b', {}, paz ? '☼' : feito ? '•' : ''));
+    }));
+  const respirosSemana = diasSemana.flatMap((x) => (x.reg ? x.reg.respiros : []));
+  const tensao = mediaTensao(respirosSemana);
+  const virgula = (n) => n.toFixed(1).replace('.', ',');
+
+  // Na semana 4, o retrato do começo ao lado de agora.
+  const inicio = ler('inicio', null);
+  const comparar = semana === 4 && inicio && s.nota !== null
+    ? el('p', { class: 'resultado' }, `No começo: nota ${inicio.nota} e paz em ${inicio.dias_paz} de 7 dias. Agora: nota ${s.nota} e paz em ${s.dias_paz ?? '–'} de 7 dias.`)
+    : null;
+
+  const intencoes = ler('intencoes', {});
+  const intencao = el('input', { type: 'text', id: 'intencao', maxlength: '160', value: intencoes[domingo] || '', placeholder: 'Nesta semana, eu escolho...' });
+  intencao.addEventListener('input', () => {
+    const todas = ler('intencoes', {});
+    todas[domingo] = intencao.value;
+    gravar('intencoes', todas);
+  });
+  const proximo = FOCOS[Math.min(3, semana)];
 
   mostrar(
     el('section', { class: 'cartao' },
       el('h2', {}, `Semana que termina em ${dataCurta(domingo)}`),
-      el('p', { class: 'suave' }, `Você praticou em ${diasFeitos} de 7 dias nesta semana. Não existe resposta certa: o que importa é a verdade.`),
+      calendario,
+      el('p', { class: 'suave' }, `Você praticou em ${diasFeitos} de 7 dias. • prática · ☼ momento de paz`),
+      tensao ? el('p', { class: 'resultado' }, `${respirosSemana.length === 1 ? 'No respiro' : `Nos ${respirosSemana.length} respiros`} da semana, sua tensão foi em média de ${virgula(tensao.antes)} para ${virgula(tensao.depois)}.`) : null,
+      diasFeitos < 7 ? el('p', {}, 'Teve dia em branco? Tudo bem. Recomeçar sem culpa faz parte do método.') : null,
       audio(AUDIOS.domingo),
       el('label', {}, 'De 0 a 10, quão satisfeita você está com a sua vida?'),
       escala(0, 10, s.nota, (v) => { s.nota = v; }),
@@ -490,6 +628,14 @@ function telaDomingo() {
       caixaEfeito,
       el('label', { for: 'duvida' }, 'Tem alguma dúvida para o Vladimir?'), duvida,
       msg, botao,
+      comparar,
+    ),
+    el('section', { class: 'cartao' },
+      el('h2', {}, 'A intenção da semana'),
+      el('p', {}, 'Uma frase em primeira pessoa. Confiança em si mesma se constrói cumprindo pequenas promessas que a gente faz para a gente.'),
+      el('label', { for: 'intencao' }, 'Nesta semana, eu escolho...'), intencao,
+      el('p', { class: 'suave' }, 'Fica só no seu celular.'),
+      semana < 4 ? el('p', {}, `Na próxima semana, o foco é ${proximo.nome.toLowerCase()}. ${proximo.extra.replace(/^Nesta semana, /, '').replace(/^./, (c) => c.toUpperCase())}`) : null,
     ),
   );
 }
@@ -508,12 +654,15 @@ function telaCuidados() {
     el('section', { class: 'cartao' },
       el('h2', {}, 'Antes de começar'),
       el('p', {}, 'O Método Bem Viver é um conjunto de práticas de bem-estar. Ele não substitui tratamento médico nem psicológico. Se você faz algum tratamento, continue com ele e não mude nenhum remédio por conta própria.'),
-      el('p', {}, 'Converse com seu médico antes das pausas de respiração se você tem doença no coração, pressão alta sem controle ou marca-passo; asma, bronquite, enfisema ou outra doença do pulmão; crises de pânico; ou se está grávida.'),
+      el('p', {}, 'Converse com seu médico antes dos respiros se você tem doença no coração, pressão alta sem controle ou marca-passo; asma, bronquite, enfisema ou outra doença do pulmão; crises de pânico; ou se está grávida.'),
       el('h3', {}, 'Durante as práticas'),
       el('p', {}, 'A respiração é suave, nunca forçada. Pare e volte a respirar normal se sentir tontura, formigamento, vista escura, falta de ar, aperto no peito ou coração disparado.'),
-      el('p', {}, 'Faça as pausas sentada ou deitada, nunca dirigindo, na água ou em pé num lugar alto.'),
+      el('p', {}, 'Faça os respiros sentada ou deitada, nunca dirigindo, na água ou em pé num lugar alto.'),
+      el('h3', {}, 'Movimento'),
+      el('p', {}, 'O minuto de passo rápido é na Zona de Entusiasmo: a respiração acelera, mas dá para falar e sorrir. Se você tem doença no coração, marca-passo, pressão alta sem controle ou sente dor ou falta de ar ao esforço, converse com seu médico antes de acelerar o passo. Pare se sentir dor no peito, tontura ou falta de ar forte.'),
       el('h3', {}, 'Sentimentos que podem aparecer'),
       el('p', {}, 'Às vezes, ficar em silêncio ou pensar em pessoas queridas traz tristeza, saudade ou lembranças difíceis. Isso é comum e costuma passar. Se pesar, diminua, pule uma prática ou pare, e conte no domingo.'),
+      el('p', {}, 'Se você está de luto, ou sem alguém por perto, o contato do dia pode doer. Vale escrever a mensagem sem enviar, ou conversar com um vizinho ou atendente. E se você dorme mal há semanas, procure tratamento: existe terapia específica para insônia.'),
     ),
   );
 }

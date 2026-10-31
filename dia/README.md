@@ -6,11 +6,13 @@ a nota de domingo e a tela de cuidados. O painel do Vladimir fica em
 
 ## Áudios
 
-Coloque os 5 áudios em `public/dia/audio/`, em MP3, com estes nomes exatos:
+Coloque os áudios em `public/dia/audio/`, em MP3, com estes nomes exatos
+(roteiros na versão 2, com os pilares revisados e a Zona de Entusiasmo):
 
 - `1-boas-vindas.mp3`
-- `2-gesto-da-manha.mp3`
-- `3-pausa-de-suspiro.mp3`
+- `2-comeco-do-dia.mp3`
+- `3a-respiro-1-minuto.mp3`
+- `3b-respiro-5-minutos.mp3`
 - `4-noite.mp3`
 - `5-domingo.mp3`
 
