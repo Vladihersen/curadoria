@@ -17,7 +17,7 @@ const FOCOS = [
   { nome: 'Corpo', extra: 'Nesta semana, faça o respiro de 5 minutos todo dia e os três minutos de movimento.' },
   { nome: 'Pessoas', extra: 'Nesta semana, escreva uma carta de gratidão a alguém vivo, e leia para a pessoa ou envie.' },
   { nome: 'Encantamento', extra: 'Nesta semana, faça uma caminhada mais longa num lugar bonito, sem celular, por uns 30 minutos.' },
-  { nome: 'Sentido', extra: 'Pergunta da semana: para quem a minha vida faz diferença, e o que eu quero continuar fazendo?' },
+  { nome: 'Sentido', extra: 'Semana da Zona de Entusiasmo. Pergunta: para quem a minha vida faz diferença, e o que eu faço com jeito e entusiasmo que quero continuar fazendo?' },
 ];
 
 const AUDIOS = {
@@ -273,7 +273,7 @@ function telaBoasVindas() {
       el('p', {}, el('b', {}, 'Bem ver'), ': à noite, três coisas boas do dia e desejar o bem a quem você ama.'),
       el('p', {}, 'Em dia corrido, faça a versão mínima: um minuto de cada já conta. Nunca zero, nunca forçado.'),
       el('p', { class: 'suave' }, TESTE_ZONA),
-      el('p', { class: 'suave' }, 'Quando você está nesse ponto, presente e sem luta, brota um ânimo tranquilo: o entusiasmo. Siga esse sinal.'),
+      el('p', { class: 'suave' }, 'Zona de Entusiasmo: quando o que você faz combina com o seu propósito e com aquilo para que você tem jeito. Na Presença você pratica; no Entusiasmo você descobre para onde a sua vida quer ir.'),
       el('p', { class: 'suave' }, '"A felicidade vem de uma vida significativa e não de uma vida fácil." Maria Nogueira Maia'),
       el('h3', {}, 'O teste de 60 segundos'),
       el('p', {}, 'Dê uma nota para a sua tensão, faça 1 minuto de respiro e dê a nota de novo. Veja com os seus olhos o que um minuto faz.'),
@@ -375,7 +375,7 @@ function telaHoje() {
     el('h2', {}, 'A coisa que me dá vida'),
     escolhida
       ? el('p', { class: 'pergunta' }, `Você escolheu ontem: "${escolhida}"`)
-      : el('p', {}, 'Escolha agora uma coisa pequena que te dá prazer ou sentido: cozinhar ouvindo música, regar as plantas, ler dez páginas, visitar alguém. Na dúvida, repare no que te dá um entusiasmo tranquilo só de imaginar.'),
+      : el('p', {}, 'Escolha agora uma coisa pequena que te dá prazer ou sentido: cozinhar ouvindo música, regar as plantas, ler dez páginas, visitar alguém. Na dúvida, repare no que te dá um entusiasmo tranquilo só de imaginar: é uma pista da sua Zona de Entusiasmo.'),
     botaoMarcar('Fiz a coisa que me dá vida', reg.vida, (v) => { reg.vida = v; salvarRegistro(dia, reg); marcar(cVida, v); }),
   );
 
