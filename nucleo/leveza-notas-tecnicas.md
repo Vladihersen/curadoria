@@ -76,20 +76,20 @@ para +4 dB (oração: +2 dB). iPhone sem mudança.
 
 ## Entretenimento Meditativo de 15 minutos — 02/nov/2026
 
-- Nova jornada `jornada3`: 4,5 min Coerente → 2,5 min Suspiro → 5 min SoHam (ordem
-  pedida pelo usuário, igual à de 10 min). Diferente das outras, aqui o rótulo é a
-  duração REAL: 14min57s com anúncios, pausas, sinos e encerramento (a primeira
-  versão, 5/3/7, dava 18 min e o usuário pediu 15 reais). `totalMin:15` no BMODES
-  faz a tela mostrar "~15 min".
-- SoHam da jornada3: 4 ciclos (33s) → voz → silêncio 35s → 4 ciclos → voz →
-  silêncio **1min** → 4 ciclos → voz → silêncio final **1min01** → 3 sinos.
-  `fixedSoham` ganhou `s1`/`s2` opcionais (só a jornada3 usa: `{s2:60, sf:60.8}`).
+- Nova jornada `jornada3`: 3 min Coerente → 2 min Suspiro → 7 min SoHam (ordem e
+  Meditação de 7 min pedidas pelo usuário). Diferente das outras, aqui o rótulo é a
+  duração REAL: 15min00s exatos com anúncios, pausas, sinos e encerramento.
+  Histórico: 5/3/7 dava 18 min; 4,5/2,5/5 dava 15 mas a Meditação ficava curta.
+  `totalMin:15` no BMODES faz a tela mostrar "~15 min".
+- SoHam da jornada3 (divisão padrão de 7 min): 7 ciclos (58s) → voz → silêncio 51s →
+  7 ciclos → voz → silêncio 1min10 → 4 ciclos (33s) → voz → silêncio final 1min50 →
+  3 sinos. `fixedSoham` aceita `s1`/`s2` opcionais (hoje ninguém usa).
 - `JOURNEY_SEQ.jornada3`, `buildJornada3Timeline()` (cópia da estrutura da
   jornada2, pausas de 15 s), `journeyKeyOf()` substitui os ternários que só
   conheciam jornada/jornada2. Botões na tela inicial (entre 10 e 23) e na tela
   Respirar; nome na tela de bloqueio (`setMediaSession`).
-- Anúncios: Coerente e Suspiro só pelo nome (não há gravação "quatro e meio"/"dois
-  e meio"); a Meditação usa "Meditação, cinco minutos".
+- Anúncios: as três só pelo nome (não há gravações de "três"/"dois"/"sete minutos"
+  para essas práticas).
 - Testado: jornadas de 10 e 23 min e SoHam avulso (5/10/15/20) idênticos aos de antes.
 - Manual (Parte 10) ainda não menciona a jornada de 15 min.
 - Backup da versão anterior: `backups/leveza/index-BACKUP-funcionando-26out.html`.
