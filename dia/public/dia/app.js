@@ -29,7 +29,7 @@ const AUDIOS = {
   domingo: '/dia/audio/5-domingo.mp3',
 };
 
-const TESTE_ZONA = 'Zona de Entusiasmo: firme e confortável. Teste: consigo respirar pelo nariz com calma e sorrir? Se não, recue um pouco.';
+const TESTE_ZONA = 'Zona de Presença: firme e confortável. Teste: consigo respirar pelo nariz com calma e sorrir? Se não, recue um pouco.';
 
 const VINCULOS = ['Filha ou filho', 'Marido, esposa ou companheiro(a)', 'Amiga ou amigo', 'Irmã ou irmão', 'Mãe ou pai', 'Neta ou neto', 'Outra pessoa'];
 
@@ -273,6 +273,7 @@ function telaBoasVindas() {
       el('p', {}, el('b', {}, 'Bem ver'), ': à noite, três coisas boas do dia e desejar o bem a quem você ama.'),
       el('p', {}, 'Em dia corrido, faça a versão mínima: um minuto de cada já conta. Nunca zero, nunca forçado.'),
       el('p', { class: 'suave' }, TESTE_ZONA),
+      el('p', { class: 'suave' }, 'Quando você está nesse ponto, presente e sem luta, brota um ânimo tranquilo: o entusiasmo. Siga esse sinal.'),
       el('p', { class: 'suave' }, '"A felicidade vem de uma vida significativa e não de uma vida fácil." Maria Nogueira Maia'),
       el('h3', {}, 'O teste de 60 segundos'),
       el('p', {}, 'Dê uma nota para a sua tensão, faça 1 minuto de respiro e dê a nota de novo. Veja com os seus olhos o que um minuto faz.'),
@@ -374,7 +375,7 @@ function telaHoje() {
     el('h2', {}, 'A coisa que me dá vida'),
     escolhida
       ? el('p', { class: 'pergunta' }, `Você escolheu ontem: "${escolhida}"`)
-      : el('p', {}, 'Escolha agora uma coisa pequena que te dá prazer ou sentido: cozinhar ouvindo música, regar as plantas, ler dez páginas, visitar alguém.'),
+      : el('p', {}, 'Escolha agora uma coisa pequena que te dá prazer ou sentido: cozinhar ouvindo música, regar as plantas, ler dez páginas, visitar alguém. Na dúvida, repare no que te dá um entusiasmo tranquilo só de imaginar.'),
     botaoMarcar('Fiz a coisa que me dá vida', reg.vida, (v) => { reg.vida = v; salvarRegistro(dia, reg); marcar(cVida, v); }),
   );
 
@@ -659,7 +660,7 @@ function telaCuidados() {
       el('p', {}, 'A respiração é suave, nunca forçada. Pare e volte a respirar normal se sentir tontura, formigamento, vista escura, falta de ar, aperto no peito ou coração disparado.'),
       el('p', {}, 'Faça os respiros sentada ou deitada, nunca dirigindo, na água ou em pé num lugar alto.'),
       el('h3', {}, 'Movimento'),
-      el('p', {}, 'O minuto de passo rápido é na Zona de Entusiasmo: a respiração acelera, mas dá para falar e sorrir. Se você tem doença no coração, marca-passo, pressão alta sem controle ou sente dor ou falta de ar ao esforço, converse com seu médico antes de acelerar o passo. Pare se sentir dor no peito, tontura ou falta de ar forte.'),
+      el('p', {}, 'O minuto de passo rápido é na Zona de Presença: a respiração acelera, mas dá para falar e sorrir. Se você tem doença no coração, marca-passo, pressão alta sem controle ou sente dor ou falta de ar ao esforço, converse com seu médico antes de acelerar o passo. Pare se sentir dor no peito, tontura ou falta de ar forte.'),
       el('h3', {}, 'Sentimentos que podem aparecer'),
       el('p', {}, 'Às vezes, ficar em silêncio ou pensar em pessoas queridas traz tristeza, saudade ou lembranças difíceis. Isso é comum e costuma passar. Se pesar, diminua, pule uma prática ou pare, e conte no domingo.'),
       el('p', {}, 'Se você está de luto, ou sem alguém por perto, o contato do dia pode doer. Vale escrever a mensagem sem enviar, ou conversar com um vizinho ou atendente. E se você dorme mal há semanas, procure tratamento: existe terapia específica para insônia.'),
