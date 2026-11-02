@@ -102,3 +102,11 @@ para +4 dB (oração: +2 dB). iPhone sem mudança.
 - No passo 4/9, "Resposta: 404" é normal: só testa se a internet chega na Cloudflare.
 - Se o Wrangler perguntar sobre atualizar "Cloudflare skills": responder N; e em
   "parar de perguntar": Y. Não afeta o app.
+
+## Manual — 02/nov/2026
+
+- As jornadas ficam descritas na **Parte 6** (`#s06`, áudio `audio/06-entretenimento.mp3`).
+  A Parte 10 (`10-jornada.mp3`) é só o sentido da jornada, sem tempos.
+- Parte 6 e sumário corrigidos para 10, 15 e 23 minutos (antes diziam "12 e 25" e
+  "10 e 25"). Backup do manual anterior em `backups/leveza/`.
+- Falta regravar `06-entretenimento.mp3` e o `manual-completo.mp3`.

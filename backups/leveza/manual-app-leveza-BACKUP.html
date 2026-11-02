@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual do App Leveza de Viver</title>
+<style>
+  :root{
+    --teal:#005F6B;
+    --noite:#1A2A3A;
+    --areia:#D9C5A8;
+    --areia-bg:#F6EFE3;
+    --offwhite:#FBF8F3;
+    --sage:#7A9E7E;
+    --texto:16px;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; padding:0;
+    background:var(--offwhite);
+    color:var(--noite);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: var(--texto);
+    line-height:1.7;
+  }
+  .wrap{ max-width:760px; margin:0 auto; padding:24px 20px 80px; }
+
+  /* Cabeçalho */
+  header.topo{
+    text-align:center; padding:40px 20px 28px;
+    background: linear-gradient(180deg, var(--noite) 0%, #234459 100%);
+    color:#fff;
+  }
+  header.topo .eyebrow{
+    letter-spacing:.12em; text-transform:uppercase; font-size:.78rem;
+    color:var(--areia); margin-bottom:10px; font-weight:600;
+  }
+  header.topo h1{
+    margin:0 0 10px; font-size:clamp(1.7rem, 5vw, 2.5rem); font-weight:700;
+  }
+  header.topo p.sub{ margin:0 auto; max-width:520px; color:rgba(255,255,255,.82); font-size:1.05rem; }
+
+  /* Barra de acessibilidade */
+  .a11y-bar{
+    display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
+    margin-top:20px;
+  }
+  .a11y-bar button{
+    background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.35);
+    border-radius:999px; padding:10px 18px; font-size:.95rem; cursor:pointer; min-height:44px;
+  }
+  .a11y-bar button:hover{ background:rgba(255,255,255,.24); }
+
+  /* Player principal */
+  .player-principal{
+    background:var(--areia-bg); border:1px solid var(--areia);
+    border-radius:16px; padding:20px; margin:26px 0 10px; text-align:center;
+  }
+  .player-principal .titulo-player{ font-weight:700; color:var(--teal); margin-bottom:10px; font-size:1.05rem; }
+  audio{ width:100%; max-width:100%; }
+
+  /* Índice / sumário */
+  nav.sumario{
+    background:#fff; border:1px solid #e6ddc9; border-radius:16px;
+    padding:18px 20px; margin:26px 0;
+  }
+  nav.sumario h2{ margin:0 0 12px; font-size:1.1rem; color:var(--teal); }
+  nav.sumario ol{ margin:0; padding-left:22px; columns:1; }
+  nav.sumario li{ margin-bottom:8px; }
+  nav.sumario a{ color:var(--noite); text-decoration:none; border-bottom:1px dotted var(--sage); }
+  nav.sumario a:hover{ color:var(--teal); }
+
+  /* Seções */
+  section.parte{
+    background:#fff; border:1px solid #ece4d4; border-radius:18px;
+    padding:26px 24px; margin:22px 0; scroll-margin-top:16px;
+    page-break-inside:avoid;
+  }
+  section.parte h2{
+    display:flex; align-items:center; gap:10px;
+    color:var(--teal); font-size:1.4rem; margin:0 0 14px;
+  }
+  section.parte h2 .num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:34px; height:34px; border-radius:50%;
+    background:var(--teal); color:#fff; font-size:1rem; flex:none;
+  }
+  section.parte p.lead{ margin:0 0 16px; font-size:1.08rem; }
+
+  .passo-a-passo{
+    background:var(--areia-bg); border-radius:12px; padding:16px 18px; margin:16px 0;
+  }
+  .passo-a-passo .rotulo{ font-weight:700; color:var(--teal); margin-bottom:10px; display:block; }
+  .passo-a-passo ol{ margin:0; padding-left:0; list-style:none; counter-reset:passo; }
+  .passo-a-passo li{
+    counter-increment:passo; position:relative; padding:6px 0 6px 40px; margin-bottom:6px; font-size:1.03rem;
+  }
+  .passo-a-passo li::before{
+    content: counter(passo); position:absolute; left:0; top:4px;
+    width:28px; height:28px; border-radius:50%; background:var(--teal); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:.9rem; font-weight:700;
+  }
+  .botao-app{
+    display:inline-block; background:var(--noite); color:#fff; padding:2px 10px;
+    border-radius:6px; font-size:.92em; white-space:nowrap;
+  }
+
+  .audio-box{
+    display:flex; align-items:center; gap:12px; margin-top:16px;
+    background:#fff; border:1px dashed var(--sage); border-radius:12px; padding:12px 14px;
+    flex-wrap:wrap;
+  }
+  .audio-box .rotulo-audio{ font-weight:600; color:var(--teal); white-space:nowrap; }
+  .audio-box audio{ flex:1; min-width:220px; }
+
+  .voltar-topo{ display:block; text-align:right; margin-top:10px; }
+  .voltar-topo a{ color:var(--sage); font-size:.9rem; text-decoration:none; }
+  .voltar-topo a:hover{ color:var(--teal); }
+
+  .nota{
+    background:#FFF7E6; border-left:4px solid #E9C46A; border-radius:8px;
+    padding:12px 16px; margin:16px 0; font-size:.98rem;
+  }
+
+  footer{
+    text-align:center; padding:36px 20px 60px; color:#6b7280; font-size:.92rem;
+  }
+  footer a{ color:var(--teal); }
+
+  @media (prefers-color-scheme: dark){
+    :root{ --offwhite:#141b1f; --noite:#EDEDED; --areia-bg:#1f2933; --areia:#3a4855; }
+    body{ background:var(--offwhite); color:#EDEDED; }
+    section.parte, nav.sumario, .audio-box{ background:#1b232a; border-color:#33414d; }
+    .nota{ background:#2a2410; }
+  }
+
+  @media print{
+    header.topo{ background:none !important; color:#000 !important; }
+    header.topo .eyebrow{ color:#555 !important; }
+    header.topo p.sub{ color:#333 !important; }
+    .a11y-bar, .audio-box, .player-principal, .voltar-topo{ display:none !important; }
+    section.parte{ border:1px solid #ccc; break-inside:avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topo" id="topo">
+  <div class="eyebrow">Curadoria de Evolução Humana</div>
+  <h1>Manual do App<br>Leveza de Viver</h1>
+  <p class="sub">Um guia simples, passo a passo, para toda a família — dos 12 aos 80 anos. Leia com calma, ou toque em "Ouvir" para escutar cada parte.</p>
+  <div class="a11y-bar">
+    <button onclick="mudarLetra(1)">A+ Aumentar letra</button>
+    <button onclick="mudarLetra(-1)">A- Diminuir letra</button>
+    <button onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="player-principal">
+    <div class="titulo-player">👋 Mensagem de boas-vindas</div>
+    <audio controls preload="none" src="audio/00-intro.mp3"></audio>
+  </div>
+
+  <div class="player-principal">
+    <div class="titulo-player">▶ Ouvir o manual inteiro (cerca de 8 minutos)</div>
+    <audio controls preload="none" src="manual-completo.mp3"></audio>
+  </div>
+
+  <nav class="sumario" aria-label="Sumário">
+    <h2>O que você vai encontrar aqui</h2>
+    <ol>
+      <li><a href="#s01">O que é o Leveza de Viver</a></li>
+      <li><a href="#s02">Como colocar o app no seu celular</a></li>
+      <li><a href="#s03">Conhecendo a Tela Início</a></li>
+      <li><a href="#s04">Como fazer uma respiração guiada</a></li>
+      <li><a href="#s05">Conhecendo as 4 práticas</a></li>
+      <li><a href="#s05b">O potencial psíquico-emocional real</a></li>
+      <li><a href="#s06">Entretenimento Meditativo (12 e 25 minutos)</a></li>
+      <li><a href="#s07">O som de fundo (paisagem sonora)</a></li>
+      <li><a href="#s08">Meu Diário</a></li>
+      <li><a href="#s09">Como Estou? (o Diagnóstico)</a></li>
+      <li><a href="#s10">A Jornada: o sentido do Entretenimento Meditativo</a></li>
+      <li><a href="#s11">Shanti</a></li>
+      <li><a href="#s12">Compartilhar sua evolução</a></li>
+      <li><a href="#s13">Usar o app sem internet</a></li>
+      <li><a href="#s14">Dúvidas comuns e ajuda</a></li>
+    </ol>
+  </nav>
+
+  <!-- 01 -->
+  <section class="parte" id="s01">
+    <h2><span class="num">1</span>O que é o Leveza de Viver</h2>
+    <p class="lead">O <strong>Leveza de Viver</strong> é um aplicativo de respiração e meditação guiada. Ele foi feito para te ajudar a acalmar a mente e cuidar do seu bem-estar, todos os dias, em poucos minutos.</p>
+    <div class="passo-a-passo">
+      <span class="rotulo">Bom saber:</span>
+      <ol>
+        <li>Você <strong>não precisa criar conta</strong>, nem senha, nem e-mail.</li>
+        <li>É só abrir e usar — tudo o que você faz fica guardado no seu próprio aparelho.</li>
+        <li>Ele funciona no celular e no computador, sem precisar instalar nada de loja de aplicativos.</li>
+      </ol>
+    </div>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/01-oque-e.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 02 -->
+  <section class="parte" id="s02">
+    <h2><span class="num">2</span>Como colocar o app no seu celular</h2>
+    <p class="lead">Você pode colocar um ícone do Leveza de Viver na tela do seu celular, exatamente como qualquer outro aplicativo — abrindo com um toque, sem precisar digitar o endereço toda vez.</p>
+    <div class="passo-a-passo">
+      <span class="rotulo">📱 No Android (navegador Chrome)</span>
+      <ol>
+        <li>Abra o link do app no Chrome.</li>
+        <li>Toque nos <span class="botao-app">⋮</span> três pontinhos, no canto de cima.</li>
+        <li>Toque em <span class="botao-app">Instalar aplicativo</span> ou <span class="botao-app">Adicionar à tela inicial</span>.</li>
+      </ol>
+    </div>
+    <div class="passo-a-passo">
+      <span class="rotulo">🍎 No iPhone (navegador Safari)</span>
+      <ol>
+        <li>Abra o link do app no Safari.</li>
+        <li>Toque no ícone de <span class="botao-app">Compartilhar</span> (o quadrado com uma seta para cima).</li>
+        <li>Toque em <span class="botao-app">Adicionar à Tela de Início</span>.</li>
+      </ol>
+    </div>
+    <div class="nota">💡 Depois disso, o ícone do Leveza de Viver aparece junto dos seus outros aplicativos. Não precisa mais abrir o navegador — é só tocar no ícone.</div>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/02-instalar.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 03 -->
+  <section class="parte" id="s03">
+    <h2><span class="num">3</span>Conhecendo a Tela Início</h2>
+    <p class="lead">Assim que você abre o app, chega na tela <strong>Início</strong>. É dali que você acessa tudo o mais.</p>
+    <div class="passo-a-passo">
+      <span class="rotulo">O que você encontra na tela Início</span>
+      <ol>
+        <li>Uma saudação, como "Bom dia" ou "Boa noite".</li>
+        <li>Atalhos para <span class="botao-app">Respiração</span> e <span class="botao-app">Meu diário</span>, além de um convite para conversar com a <span class="botao-app">Shanti</span>.</li>
+        <li>Depois de usar o app algumas vezes: quantas práticas você já fez desde o início.</li>
+        <li>No rodapé da tela fica o <strong>menu principal</strong>, sempre visível, para ir e voltar entre as telas.</li>
+      </ol>
+    </div>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/03-tela-inicial.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 04 -->
+  <section class="parte" id="s04">
+    <h2><span class="num">4</span>Como fazer uma respiração guiada</h2>
+    <p class="lead">Esta é a função principal do app. Todas as práticas de respiração funcionam do mesmo jeito simples.</p>
+    <div class="passo-a-passo">
+      <span class="rotulo">Passo a passo</span>
+      <ol>
+        <li>Toque em <span class="botao-app">Respiração</span> no menu.</li>
+        <li>Escolha uma prática, tocando em um dos botões (ex: <span class="botao-app">Respiração Coerente</span>).</li>
+        <li>Escolha por quantos minutos você quer praticar.</li>
+        <li>Toque no botão <span class="botao-app">Iniciar</span>. Uma voz vai anunciar a prática antes de começar.</li>
+        <li>Se quiser parar no meio, toque em <span class="botao-app">Pausar</span>. Para continuar de onde parou, toque em <span class="botao-app">Retomar</span>.</li>
+        <li>Se quiser começar tudo de novo, toque no mesmo botão — agora chamado <span class="botao-app">Reiniciar</span>.</li>
+      </ol>
+    </div>
+    <div class="nota">💡 Não existe jeito errado de fazer. Se você se distrair no meio, é só voltar a acompanhar a respiração — o app continua do seu lado, no seu tempo.</div>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/04-respirar-geral.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 05 -->
+  <section class="parte" id="s05">
+    <h2><span class="num">5</span>Conhecendo as 4 práticas</h2>
+    <p class="lead">Cada prática respira num ritmo diferente. Você pode experimentar todas e escolher a que mais combina com você.</p>
+    <div class="passo-a-passo">
+      <ol>
+        <li><strong>Respiração Coerente</strong> — a mais simples: inspire e expire devagar, no mesmo tempo, acompanhando o som do sino.</li>
+        <li><strong>Suspiro Fisiológico</strong> — duas inspirações curtas seguidas, e depois uma expiração bem longa. Ótima para acalmar rápido.</li>
+        <li><strong>4:7:8</strong> (quatro-sete-oito) — encha o ar em 4 tempos, segure em 7 tempos, solte em 8 tempos, com uma pequena pausa de repouso antes do próximo ciclo. Você escolhe entre 4 repetições (ótimo para começar) ou 8 repetições (para quem já está adaptado).</li>
+        <li><strong>Meditação SoHam</strong> — guiada por voz: pense em "SO" ao inspirar e "HAM" ao expirar, com silêncios para mergulhar mais fundo.</li>
+      </ol>
+    </div>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/05-praticas.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 05b — potencial real da pratica, a pedido do Vladimir (22/jul/2026) -->
+  <section class="parte" id="s05b">
+    <h2><span class="num">✦</span>O potencial psíquico-emocional real</h2>
+    <p class="lead">Aqui tem base sólida, não é só intenção poética:</p>
+    <div class="passo-a-passo">
+      <ol>
+        <li><strong>Suspiro Fisiológico</strong> é uma técnica com evidência real (o "physiological sigh", estudado por laboratórios de neurociência): duas inspirações + expiração longa reduzem a ativação simpática em tempo real, de forma mensurável. É a ferramenta mais rápida das quatro pra "descer do pico" de ansiedade.</li>
+        <li><strong>Respiração Coerente</strong> em ~5,5 segundos por fase está bem próxima da "frequência de ressonância" documentada para maximizar a variabilidade da frequência cardíaca — regulação vagal genuína, não placebo.</li>
+        <li><strong>SoHam</strong> é mantra clássico de concentração (dharana) dentro da tradição védica — "So'ham" = "Eu sou Aquilo". Como prática de foco em um único ponto, é exatamente o tipo de técnica que as tradições usam como degrau em direção a dhyana (absorção meditativa sustentada).</li>
+      </ol>
+    </div>
+    <p class="lead"><strong>Isso é real.</strong> Não é papo vazio — é <strong>engenharia sonora</strong>, é <strong>neurociência</strong>, é <strong>vivência de quem guia</strong> (a experiência real do Curador, não teoria de livro), é <strong>Paz e Amor colocados em prática</strong>, respiração após respiração. Uma sessão de 12 a 25 minutos, feita com regularidade, genuinamente regula o sistema nervoso, cultiva presença, e dá gostinhos reais de silêncio mental.</p>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 06 -->
+  <section class="parte" id="s06">
+    <h2><span class="num">6</span>Entretenimento Meditativo (10 e 25 minutos)</h2>
+    <p class="lead">Além das 4 práticas soltas, existem dois roteiros mais longos e completos, chamados <strong>Entretenimento Meditativo</strong> — <em>um Passatempo Divino</em> — de <strong>10 minutos</strong> e de <strong>25 minutos</strong>.</p>
+    <div class="passo-a-passo">
+      <span class="rotulo">O que eles fazem</span>
+      <ol>
+        <li>Juntam várias práticas de respiração, uma depois da outra, numa sequência só.</li>
+        <li>Você não precisa escolher nada no meio — é só tocar em <span class="botao-app">Iniciar</span> e seguir a voz.</li>
+        <li>Ficam dentro da mesma tela <span class="botao-app">Respiração</span>, junto com as outras 4 práticas.</li>
+      </ol>
+    </div>
+    <div class="passo-a-passo">
+      <span class="rotulo">A jornada de 10 minutos</span>
+      <ol>
+        <li>3 min de Respiração Coerente, para harmonizar o coração.</li>
+        <li>1,5 min de Suspiro Fisiológico, para renovar o corpo.</li>
+        <li>5 min de Meditação SoHam, para aquietar a mente.</li>
+      </ol>
+    </div>
+    <div class="passo-a-passo">
+      <span class="rotulo">A jornada de 25 minutos</span>
+      <ol>
+        <li>3 min de Suspiro Fisiológico, para renovar o corpo.</li>
+        <li>5 min de Respiração Coerente, para harmonizar o coração.</li>
+        <li>15 min de Meditação SoHam, para mergulhar na quietude — terminando com um convite ao silêncio livre e o sino de encerramento.</li>
+      </ol>
+    </div>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/06-entretenimento.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 07 -->
+  <section class="parte" id="s07">
+    <h2><span class="num">7</span>O som de fundo (paisagem sonora)</h2>
+    <p class="lead">Enquanto você pratica, toca uma música suave de fundo — o som de uma tigela tibetana, o mar, passarinhos e uma brisa bem fraquinha.</p>
+    <div class="passo-a-passo">
+      <span class="rotulo">Como ajustar</span>
+      <ol>
+        <li>Durante a prática, aparece uma barrinha com o ícone 🎵.</li>
+        <li>Arraste para a direita para deixar mais alta, ou para a esquerda para deixar mais baixa.</li>
+        <li>Se arrastar até o final (zero), a música para de tocar — é assim que se "silencia" o som de fundo.</li>
+      </ol>
+    </div>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/07-som-fundo.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 08 -->
+  <section class="parte" id="s08">
+    <h2><span class="num">8</span>Meu Diário</h2>
+    <p class="lead">O <strong>Meu diário</strong> é um espaço de escrita livre: todo dia, uma página em branco para você escrever o que quiser sobre o seu momento.</p>
+    <div class="passo-a-passo">
+      <span class="rotulo">Como usar</span>
+      <ol>
+        <li>Toque em <span class="botao-app">Diário</span> no menu.</li>
+        <li>Escreva com liberdade, sem perguntas fixas nem categorias — o espaço de hoje é só seu.</li>
+        <li>Toque em <span class="botao-app">Salvar diário</span>.</li>
+      </ol>
+    </div>
+    <div class="passo-a-passo">
+      <span class="rotulo">Prefere falar a escrever?</span>
+      <ol>
+        <li>No celular, toque no ícone de microfone do teclado.</li>
+        <li>No notebook ou tablet, toque no botão <span class="botao-app">🎤 Falar em vez de escrever</span>, logo abaixo da caixa de texto.</li>
+      </ol>
+    </div>
+    <div class="passo-a-passo">
+      <span class="rotulo">Diários anteriores</span>
+      <ol>
+        <li>Abaixo do diário de hoje, ficam os dias anteriores que você já escreveu.</li>
+        <li>Você pode editar ou apagar qualquer entrada, de hoje ou de dias passados, quando quiser.</li>
+      </ol>
+    </div>
+    <div class="nota">🔒 O que você escreve fica só no seu aparelho. Ninguém mais lê, a não ser que você mesma decida compartilhar (veja a Parte 12).</div>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/08-diario.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 09 -->
+  <section class="parte" id="s09">
+    <h2><span class="num">9</span>Como Estou? (o Diagnóstico)</h2>
+    <p class="lead">O app acompanha um retrato do seu momento de vida — o que chamamos de <strong>Índice de Evolução Humana</strong> — mas você não precisa preencher nenhum formulário separado para isso.</p>
+    <div class="passo-a-passo">
+      <span class="rotulo">Como funciona hoje</span>
+      <ol>
+        <li>Esse retrato é calculado automaticamente a partir das suas conversas com a <span class="botao-app">Shanti</span> (veja a Parte 11).</li>
+        <li>Basta contar pra ela, com suas próprias palavras, como você está — não existe mais uma tela separada de barrinhas para arrastar.</li>
+        <li>Se você tem um curador ou mentora te acompanhando, essa evolução pode ser compartilhada com ela (veja a Parte 12).</li>
+      </ol>
+    </div>
+    <p>Ou seja: quanto mais você conversa com a Shanti ao longo dos dias, mais completo fica esse retrato — sem nenhum passo extra da sua parte.</p>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/09-diagnostico.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 10 -->
+  <section class="parte" id="s10">
+    <h2><span class="num">10</span>A Jornada: o sentido do Entretenimento Meditativo</h2>
+    <p class="lead">O Entretenimento Meditativo é um conjunto de técnicas que nos permite experimentar um <strong>Passatempo Divino</strong> — um prolongamento na permanência de um momento do dia dedicado ao sagrado.</p>
+    <p>Não é só juntar três práticas numa sequência: é um convite para alongar, de propósito, o tempo que você reserva pra si — corpo, coração e mente caminhando juntos, até chegar na quietude.</p>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/10-jornada.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 11 -->
+  <section class="parte" id="s11">
+    <h2><span class="num">11</span>Shanti</h2>
+    <p class="lead">A <strong>Shanti</strong> é como aquela amiga que guarda segredo — o que você contar aqui fica só entre vocês duas. Criada a partir do método do Vladimir, ela não julga e não resolve por você: escuta de verdade e devolve um olhar cuidadoso sobre o que você trouxer.</p>
+    <div class="passo-a-passo">
+      <span class="rotulo">Passo a passo</span>
+      <ol>
+        <li>Toque em <span class="botao-app">Shanti</span>, no menu.</li>
+        <li>Em "Seu nome", escreva como você prefere ser chamada(o) — só na primeira vez.</li>
+        <li>Em "O que está passando em você esta semana?", fale ou escreva como se estivesse contando para uma amiga de confiança. Duas linhas sinceras já bastam.</li>
+        <li>Toque em <span class="botao-app">Receber a presença da Shanti ✦</span>.</li>
+      </ol>
+    </div>
+    <p>Em poucos segundos aparece uma mensagem de acolhimento, pensada para o momento que você está vivendo. As conversas anteriores ficam guardadas abaixo, e você pode editar ou apagar qualquer uma delas quando quiser.</p>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/11-curador.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 12 -->
+  <section class="parte" id="s12">
+    <h2><span class="num">12</span>Compartilhar sua evolução</h2>
+    <p class="lead">Se você quiser, pode compartilhar como está evoluindo com a pessoa que te acompanha (o seu curador).</p>
+    <div class="passo-a-passo">
+      <ol>
+        <li>No topo desta aba <span class="botao-app">Manual</span>, toque em <span class="botao-app">✦ Já é mentorada? Compartilhar evolução com meu curador</span>.</li>
+        <li>Escolha entre <strong>ativar um acompanhamento automático</strong>, ou apenas <strong>enviar um resumo pelo WhatsApp</strong>, quando você quiser.</li>
+      </ol>
+    </div>
+    <div class="nota">🔒 Nada é enviado sem você tocar no botão. Você decide o que compartilhar, e quando.</div>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/12-compartilhar.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 13 -->
+  <section class="parte" id="s13">
+    <h2><span class="num">13</span>Usar o app sem internet</h2>
+    <p class="lead">Depois que você abre o app pela primeira vez, ele continua funcionando <strong>mesmo sem internet</strong> — no avião, numa área sem sinal, ou economizando os seus dados.</p>
+    <div class="passo-a-passo">
+      <ol>
+        <li>Abra o app pelo menos uma vez com internet, para ele guardar tudo no seu aparelho.</li>
+        <li>Depois disso, pode abrir sem internet, normalmente.</li>
+        <li>De vez em quando aparece um aviso de versão nova: toque em <span class="botao-app">Atualizar</span> quando for conveniente.</li>
+      </ol>
+    </div>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/13-offline.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+  <!-- 14 -->
+  <section class="parte" id="s14">
+    <h2><span class="num">14</span>Dúvidas comuns e ajuda</h2>
+    <p class="lead">Se alguma coisa não funcionar como o esperado, tente estas soluções simples antes de pedir ajuda.</p>
+    <div class="passo-a-passo">
+      <ol>
+        <li><strong>O app travou ou está estranho?</strong> Feche por completo e abra de novo.</li>
+        <li><strong>O som não toca?</strong> Verifique se o celular não está no modo silencioso.</li>
+        <li><strong>Quer sair de uma prática no meio?</strong> Use a seta no canto de cima, ou o menu de baixo.</li>
+        <li><strong>Ainda com dúvida?</strong> Fale com a nossa equipe pelo WhatsApp — vamos te ajudar com carinho.</li>
+      </ol>
+    </div>
+    <div class="audio-box"><span class="rotulo-audio">🔊 Ouvir esta parte</span><audio controls preload="none" src="audio/14-duvidas.mp3"></audio></div>
+    <div class="voltar-topo"><a href="#topo">↑ Voltar ao topo</a></div>
+  </section>
+
+</div>
+
+<footer>
+  Manual do App Leveza de Viver — Curadoria de Evolução Humana<br>
+  Feito com carinho para acompanhar você em cada respiração.
+</footer>
+
+<script>
+  var TAMANHOS = [15,16,17,18,20,22,24];
+  function tamanhoAtual(){
+    var v = parseInt(localStorage.getItem('lv_manual_letra')||'16',10);
+    return TAMANHOS.indexOf(v) >= 0 ? v : 16;
+  }
+  function aplicarLetra(v){
+    document.documentElement.style.setProperty('--texto', v+'px');
+    localStorage.setItem('lv_manual_letra', v);
+  }
+  function mudarLetra(dir){
+    var atual = tamanhoAtual();
+    var idx = TAMANHOS.indexOf(atual);
+    idx = Math.max(0, Math.min(TAMANHOS.length-1, idx + dir));
+    aplicarLetra(TAMANHOS[idx]);
+  }
+  aplicarLetra(tamanhoAtual());
+</script>
+
+</body>
+</html>
