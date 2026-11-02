@@ -74,6 +74,23 @@ para +4 dB (oração: +2 dB). iPhone sem mudança.
   **Se o arquivo da oração for reeditado, nunca reaproveitar curva antiga.**
   Depois, a pedido do usuário, `MANTRA_VOL` 0.605 → 0.847 (+40%).
 
+## Entretenimento Meditativo de 15 minutos — 02/nov/2026
+
+- Nova jornada `jornada3`: 5 min Coerente → 3 min Suspiro → 7 min SoHam (ordem
+  pedida pelo usuário, igual à de 10 min). Duração real com anúncios, pausas e
+  encerramento: ~18 min (a de 10 dá ~12,7 e a de 23 dá ~25,9 — o rótulo é a soma
+  das práticas).
+- `JOURNEY_SEQ.jornada3`, `buildJornada3Timeline()` (cópia da estrutura da
+  jornada2, pausas de 15 s), `journeyKeyOf()` substitui os ternários que só
+  conheciam jornada/jornada2. Botões na tela inicial (entre 10 e 23) e na tela
+  Respirar; nome na tela de bloqueio (`setMediaSession`).
+- SoHam de 7 min usa a divisão proporcional padrão do `buildSohamTimeline` (sem
+  `fixedSoham`): 7 ciclos, silêncio, 7 ciclos, silêncio, 4 ciclos, silêncio final ~1min50s.
+- Não há gravação "sete minutos": a Meditação é anunciada só pelo nome.
+- Testado: as jornadas de 10 e 23 min ficaram idênticas às de antes.
+- Manual (Parte 10) ainda não menciona a jornada de 15 min.
+- Backup da versão anterior: `backups/leveza/index-BACKUP-funcionando-26out.html`.
+
 ## Publicação
 
 - `PUBLICAR_TUDO.bat` publica os dois apps a partir do mesmo `index.html`/`sw.js`:
