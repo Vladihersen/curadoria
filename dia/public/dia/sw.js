@@ -1,5 +1,5 @@
 // Guarda as telas do app para abrir sem internet. A API nunca passa pelo cache.
-const CACHE = 'dia-v1';
+const CACHE = 'dia-v2';
 const ARQUIVOS = ['/dia/', '/dia/app.css', '/dia/app.js', '/dia/manifest.webmanifest', '/dia/icone.svg'];
 
 self.addEventListener('install', (ev) => {
