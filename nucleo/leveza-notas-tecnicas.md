@@ -110,3 +110,20 @@ para +4 dB (oração: +2 dB). iPhone sem mudança.
 - Parte 6 e sumário corrigidos para 10, 15 e 23 minutos (antes diziam "12 e 25" e
   "10 e 25"). Backup do manual anterior em `backups/leveza/`.
 - Falta regravar `06-entretenimento.mp3` e o `manual-completo.mp3`.
+
+### Revisão completa do manual — 02/nov/2026
+- Índice: era `<ol>` numerando 1–15 sozinho, mas as seções vão 1–5, ✦, 6–14 → tudo a
+  partir do 6 ficava com número errado. Item ✦ agora sem número (`li.extra`) e
+  `<li value="6">` no seguinte.
+- Modo escuro do celular deixava o topo ilegível (branco sobre cinza) e títulos
+  apagados. Bloco `prefers-color-scheme: dark` removido: o manual fica sempre claro,
+  igual ao app.
+- Textos corrigidos: Parte 3 (faltava o Entretenimento na tela Início), Parte 4
+  (menu se chama "Respirar"; 4:7:8 escolhe repetições), Parte 5 (Coerente é 5s/5,5s
+  com toque de cristal, não "mesmo tempo"), Parte 11 (Shanti é IA: texto vai pela
+  internet; conversas ficam no aparelho em `lv_shanti_log`), Parte 12 (acompanhamento
+  automático envia práticas e TEXTO DO DIÁRIO ao painel — `syncDiarios`), Parte 13
+  (Shanti e Manual precisam de internet — /manual/ fica fora do cache do sw.js),
+  Parte 14 (dica "toque na tela" do `destravaAudio`).
+- localStorage do tamanho de letra protegido com try/catch.
+- Áudios que não batem mais com o texto: 03, 04, 05, 11 (e 12, 13, 14 só nas notas novas).
