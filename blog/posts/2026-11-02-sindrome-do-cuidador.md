@@ -1,10 +1,10 @@
 ---
-titulo: "Cansaço de Quem Cuida: Quem Cuida de Quem Cuida?"
-slug: cansaco-de-quem-cuida
+titulo: "Síndrome do Cuidador: Quando Cuidar dos Pais Esgota Você"
+slug: sindrome-do-cuidador
 categoria: Acolhimento & Sobriedade
 data: 2026-11-02
 leitura: 6
-resumo: "Cuida dos pais, dos filhos, da casa, e não sobra nada para você? Entenda o esgotamento de quem cuida e uma prática de um minuto, o suspiro fisiológico, para atravessar o dia sem se perder."
+resumo: "Cansaço de cuidar dos pais idosos, dos filhos, da casa? Entenda a síndrome do cuidador, os sinais de esgotamento e uma prática de um minuto, o suspiro fisiológico, para atravessar o dia."
 ---
 
 *Quem sustenta a família costuma ser o último da fila. Este post é sobre colocar você de volta nela, um minuto por vez.*
@@ -13,17 +13,17 @@ Você conhece a cena.
 
 O dia começa antes de você acordar de verdade. O remédio da mãe, a lancheira do filho, a conta que vence hoje, a mensagem do grupo da família perguntando quem vai levar o pai ao médico. Todo mundo sabe que pode contar com você. E você dá conta. Até o momento em que, sozinho no carro ou no banheiro, percebe que não lembra a última vez que alguém perguntou como **você** está.
 
-Se você se reconhece aqui, comece por isto: **esse cansaço não é fraqueza, e não é falta de amor.** É o que acontece com qualquer corpo que passa meses em estado de prontidão, sempre de plantão para a próxima necessidade de alguém.
+Se você se reconhece aqui, comece por isto: **o cansaço de cuidar não é fraqueza, e não é falta de amor.** Nem quando ele vira impaciência com quem você cuida. É o que acontece com qualquer corpo que passa meses em estado de prontidão, sempre de plantão para a próxima necessidade de alguém.
 
 ## Por que o cansaço de quem cuida é diferente
 
 Não é só cansaço físico. É um cansaço que o sono não resolve, porque o corpo nunca sai totalmente do alerta. Mesmo descansando, uma parte de você continua escutando: o telefone, o barulho no quarto ao lado, a lista que não acaba.
 
-Esse estado tem nome: **sobrecarga do cuidador.** Ela aparece devagar. Primeiro, a paciência fica curta. Depois, o sono fica leve, o corpo dói sem motivo, a alegria das coisas pequenas some. E junto vem a culpa: "como eu posso estar cansado de cuidar de quem eu amo?".
+Esse estado tem nome: **síndrome do cuidador**, ou sobrecarga do cuidador. Ela aparece devagar. Primeiro, a paciência fica curta. Depois, o sono fica leve, o corpo dói sem motivo, a alegria das coisas pequenas some. E junto vem a culpa: "como eu posso estar cansado de cuidar de quem eu amo?".
 
 Cansaço e amor podem morar juntos. Um não anula o outro. O amor é o motivo de você estar ali. O cansaço é o aviso de que o seu corpo também precisa de cuidado, e ignorar esse aviso não torna você um cuidador melhor. Torna você um cuidador esgotado.
 
-## Quem cuida de quem cuida?
+## E quem cuida de você?
 
 A resposta honesta, na maioria das casas, é: ninguém. Por isso o cuidado com você precisa caber dentro da rotina que já existe, sem depender de férias, de alguém assumir o seu lugar ou de uma hora livre que nunca chega.
 
@@ -47,11 +47,11 @@ A segunda inspiração reabre os pequenos alvéolos que se fecham quando passamo
 
 Três suspiros não resolvem a sobrecarga. O que eles fazem é devolver ao corpo, várias vezes ao dia, a informação de que naquele instante não há perigo. E um corpo que sai do alerta, mesmo por um minuto, descansa de um jeito que o sofá na frente da televisão não consegue.
 
-## Um cuidado importante
+## Quando o cuidador não aguenta mais
 
 Se sentir tontura, você está enchendo demais os pulmões: respire mais leve ou volte a respirar normalmente.
 
-E um cuidado de outra ordem: se o cansaço vem junto com tristeza que não passa, choro fácil, sono muito ruim ou a sensação de que não aguenta mais, procure um médico ou um psicólogo. A sobrecarga do cuidador pode virar depressão, e pedir ajuda é parte do cuidado, não falha nele. Se em algum momento pensar em desistir de tudo, ligue 188, o CVV, que atende de graça, 24 horas.
+E um cuidado de outra ordem: se o cansaço vem junto com tristeza que não passa, choro fácil, sono muito ruim ou a sensação de que não aguenta mais, procure um médico ou um psicólogo. A síndrome do cuidador pode virar depressão, e pedir ajuda é parte do cuidado, não falha nele. Se em algum momento pensar em desistir de tudo, ligue 188, o CVV, que atende de graça, 24 horas.
 
 ## Para ir mais fundo
 
