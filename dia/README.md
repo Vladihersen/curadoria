@@ -1,4 +1,4 @@
-# App do Método Bem Viver (Dia Bem Vivido)
+# App do Método Bem Viver
 
 App do piloto em `vladimirhersen.com.br/dia/`: as práticas do dia, a pausa guiada,
 a nota de domingo e a tela de cuidados. O painel do Vladimir fica em

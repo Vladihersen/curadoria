@@ -1,4 +1,4 @@
-// App do Método Bem Viver: o ritual Dia Bem Vivido e a nota de domingo do piloto.
+// App do Método Bem Viver: as práticas do dia e a nota de domingo do piloto.
 // Tudo fica guardado no celular (localStorage) e é enviado para /dia/api/ quando há internet.
 // As "três coisas boas" escritas à noite nunca saem do celular.
 'use strict';
@@ -17,7 +17,7 @@ const FOCOS = [
   { nome: 'Corpo', extra: 'Nesta semana, faça o respiro de 5 minutos todo dia e os três minutos de movimento.' },
   { nome: 'Pessoas', extra: 'Nesta semana, escreva uma carta de gratidão a alguém vivo, e leia para a pessoa ou envie.' },
   { nome: 'Encantamento', extra: 'Nesta semana, faça uma caminhada mais longa num lugar bonito, sem celular, por uns 30 minutos.' },
-  { nome: 'Sentido', extra: 'Semana da Zona de Entusiasmo. Pergunta: para quem a minha vida faz diferença, e o que eu faço com jeito e entusiasmo que quero continuar fazendo?' },
+  { nome: 'Sentido', extra: 'Nesta semana, procure a sua Zona de Entusiasmo: para quem a minha vida faz diferença, e o que eu faço com jeito e entusiasmo que quero continuar fazendo?' },
 ];
 
 const AUDIOS = {
@@ -208,7 +208,7 @@ function mostrar(...filhos) {
 
 function telaEntrar() {
   abas.hidden = true;
-  titulo.textContent = 'Dia Bem Vivido';
+  titulo.textContent = 'Método Bem Viver';
   const dados = { nota: null, dias_paz: null };
   const nome = el('input', { type: 'text', id: 'nome', autocomplete: 'given-name', maxlength: '80' });
   const whats = el('input', { type: 'tel', id: 'whats', autocomplete: 'tel', inputmode: 'tel', placeholder: '(21) 99999-9999', maxlength: '30' });
@@ -269,13 +269,13 @@ function telaBoasVindas() {
       el('h3', {}, 'Os quatro pilares'),
       el('p', {}, el('b', {}, 'Bem respirar'), ': um respiro de 1 minuto na hora do aperto, ou 5 minutos quando houver tempo.'),
       el('p', {}, el('b', {}, 'Bem fazer'), ': três minutos de movimento ao longo do dia e uma coisa pequena que te dá vida.'),
-      el('p', {}, el('b', {}, 'Bem querer'), ': um contato de verdade por dia e, uma vez por semana, um Encontro de Verdade.'),
+      el('p', {}, el('b', {}, 'Bem querer'), ': uma mensagem ou ligação para alguém por dia e, uma vez por semana, um Encontro de Verdade.'),
       el('p', {}, el('b', {}, 'Bem ver'), ': à noite, três coisas boas do dia e desejar o bem a quem você ama.'),
       el('p', {}, 'Em dia corrido, faça a versão mínima: um minuto de cada já conta. Nunca zero, nunca forçado.'),
       el('p', { class: 'suave' }, TESTE_ZONA),
       el('p', { class: 'suave' }, 'Zona de Entusiasmo: quando o que você faz combina com o seu propósito e com aquilo para que você tem jeito. Na Presença você pratica; no Entusiasmo você descobre para onde a sua vida quer ir.'),
       el('p', { class: 'suave' }, '"A felicidade vem de uma vida significativa e não de uma vida fácil." Maria Nogueira Maia'),
-      el('h3', {}, 'O teste de 60 segundos'),
+      el('h3', {}, 'Experimente agora'),
       el('p', {}, 'Dê uma nota para a sua tensão, faça 1 minuto de respiro e dê a nota de novo. Veja com os seus olhos o que um minuto faz.'),
       el('button', { type: 'button', onclick: () => fazerRespiro(60) }, 'Fazer o teste agora'),
       el('button', { type: 'button', class: 'secundario', onclick: () => irPara('hoje') }, 'Ir para o meu dia'),
@@ -331,7 +331,7 @@ function telaHoje() {
   const marcar = (cartao, feito) => cartao.classList.toggle('feito', feito);
 
   const cFoco = el('section', { class: 'cartao destaque' },
-    el('p', { class: 'pilar' }, `Semana ${semana} de 4 · foco: ${foco.nome}`),
+    el('p', { class: 'pilar' }, `Semana ${semana} de 4`),
     el('p', {}, foco.extra),
     el('p', { class: 'suave' }, TESTE_ZONA),
   );
@@ -361,7 +361,7 @@ function telaHoje() {
   };
   const cCorpo = el('section', { class: 'cartao' + (reg.movimento > 0 ? ' feito' : '') },
     el('p', { class: 'pilar' }, 'Bem fazer · o corpo'),
-    el('h2', {}, 'Movimento de bolso'),
+    el('h2', {}, 'Três minutos de movimento'),
     el('p', {}, 'Três vezes hoje, 1 minuto de passo rápido ou escada, preso a algo que já acontece: ir ao ponto, subir para casa, esperar o café. A respiração acelera, mas dá para falar.'),
     el('p', { class: 'suave' }, 'Dia calmo? Uma caminhada ao ar livre vale pelos três. Andar enquanto faz a ligação do dia também conta.'),
     audio(AUDIOS.manha),
@@ -381,7 +381,7 @@ function telaHoje() {
 
   const cContato = el('section', { class: 'cartao' + (reg.contato ? ' feito' : '') },
     el('p', { class: 'pilar' }, 'Bem querer · durante o dia'),
-    el('h2', {}, 'Um contato de verdade'),
+    el('h2', {}, 'Uma mensagem ou ligação'),
     el('p', {}, 'Uma mensagem de apreço específica ("lembrei de você porque..."), uma ligação de 5 minutos ou uma conversa com alguém do caminho. Quem recebe costuma ficar mais feliz do que a gente imagina.'),
     el('p', { class: 'suave' }, 'Se hoje for difícil falar com alguém, escreva a mensagem sem enviar. Também conta.'),
     botaoMarcar('Fiz meu contato de hoje', reg.contato, (v) => { reg.contato = v; salvarRegistro(dia, reg); marcar(cContato, v); }),
@@ -407,7 +407,7 @@ function telaHoje() {
   });
   const cNoite = el('section', { class: 'cartao' + (reg.noite ? ' feito' : '') },
     el('p', { class: 'pilar' }, 'Bem ver e Bem querer · noite'),
-    el('h2', {}, 'Três coisas boas e amor-bondade'),
+    el('h2', {}, 'Três coisas boas e desejar o bem'),
     el('p', {}, 'Lembre três coisas boas do dia e por que aconteceram. Escolha uma e fique um minuto com ela, saboreando. Depois deseje o bem a quem você ama, e a você mesma.'),
     ...campos,
     el('p', { class: 'suave' }, 'O que você escreve aqui fica só no seu celular.'),
@@ -636,7 +636,7 @@ function telaDomingo() {
       el('p', {}, 'Uma frase em primeira pessoa. Confiança em si mesma se constrói cumprindo pequenas promessas que a gente faz para a gente.'),
       el('label', { for: 'intencao' }, 'Nesta semana, eu escolho...'), intencao,
       el('p', { class: 'suave' }, 'Fica só no seu celular.'),
-      semana < 4 ? el('p', {}, `Na próxima semana, o foco é ${proximo.nome.toLowerCase()}. ${proximo.extra.replace(/^Nesta semana, /, '').replace(/^./, (c) => c.toUpperCase())}`) : null,
+      semana < 4 ? el('p', {}, `Na próxima semana: ${proximo.extra.replace(/^Nesta semana, /, '')}`) : null,
     ),
   );
 }
