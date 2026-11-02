@@ -127,3 +127,27 @@ para +4 dB (oração: +2 dB). iPhone sem mudança.
   Parte 14 (dica "toque na tela" do `destravaAudio`).
 - localStorage do tamanho de letra protegido com try/catch.
 - Áudios que não batem mais com o texto: 03, 04, 05, 11 (e 12, 13, 14 só nas notas novas).
+
+## Revisão completa do app — 02/nov/2026
+
+Método: ESLint (no-undef etc.) no JS sem os base64; checagem de onclick/ids;
+testes Playwright servindo o app em http://localhost (com paisagem de teste) nos
+modos iPhone, Android e desktop: 13 variações de prática × iniciar/pausar/retomar/
+fim (relógio adiantado)/limpeza 5 s depois, sair no meio, reiniciar 3×, diário,
+Shanti (fetch simulado), service worker, aba Manual, layout a 360 px. Scripts em
+`backups/leveza/testes/` (rodar com NODE_PATH do playwright global).
+
+Bugs achados e corrigidos:
+1. Dial da paisagem em 0 desligava a paisagem (stopSoundscape) e não dava pra subir
+   de novo. Agora só fica muda (ganho 0.0001) e continua tocando.
+2. Retomar forçava a paisagem ao volume cheio, mesmo em silêncio do SoHam / pausa
+   entre práticas (medido: 0.032 → 0.18). `resumeSoundscape()` agora não mexe.
+3. Shanti sem resposta do servidor ficava "carregando" pra sempre: AbortController
+   de 60 s → mostra "Sem conexão".
+4. Controle de volume fixo cobria o fim da tela da prática: padding-bottom 90px no
+   #scr-respirar enquanto o controle aparece.
+5. Botões 10/15/23 da tela inicial quebravam o texto desigual a 360 px: flex 1 1 0,
+   título 13px nowrap.
+6. Ramo morto da MANTRA_LEVEL_CURVE removido.
+Resultado final: 39/39 rodadas OK, zero erros de console, lint limpo.
+Versão final: `backups/leveza/index-revisado-02nov.html`.
