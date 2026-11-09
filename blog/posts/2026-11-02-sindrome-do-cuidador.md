@@ -57,8 +57,6 @@ E um cuidado de outra ordem: se o cansaço vem junto com tristeza que não passa
 
 O e-book **Vol. 1 da Trilogia de Respiração Consciente** é todo dedicado ao suspiro fisiológico, com o passo a passo e como usá-lo nos momentos de pico. Os três livretos estão em [e-books da Trilogia de Respiração Consciente](/ebooks-respiracao/). Se o cansaço já chegou na paciência, veja também [Como ter mais paciência](/blog/como-ter-mais-paciencia/).
 
-E se você quiser uma manhã inteira de cuidado para você: no sábado, **7 de novembro**, das 8h às 12h, faço a **Oficina de Meditação** no Centro Terra Viva, no Itanhangá, Rio de Janeiro, num salão aberto para a Mata Atlântica. Vamos praticar o suspiro fisiológico, a respiração coerente, posturas suaves e meditação. São só 30 vagas, e quem participa leva de presente a Trilogia de Respiração e um ano do App Leveza de Viver. A inscrição é R$ 180, ou R$ 270 para duas pessoas, em [vladimirhersen.com.br/oficina](/oficina).
-
 Hoje, antes de entrar no quarto de quem você cuida, faça três suspiros. Um minuto. Esse minuto é seu.
 
 Que todos os seres sejam felizes e vivam em paz.
