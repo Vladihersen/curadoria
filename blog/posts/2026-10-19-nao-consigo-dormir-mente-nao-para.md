@@ -58,8 +58,6 @@ Se sentir tontura, volte a respirar normalmente. Se a insônia dura semanas, con
 
 O e-book **Vol. 2 da Trilogia de Respiração Consciente** é todo dedicado à 4-7-8: as variações de dia e de noite, os erros mais comuns e um plano de quatro semanas para transformar a prática em hábito. Os três livretos estão em [e-books da Trilogia de Respiração Consciente](/ebooks-respiracao/).
 
-E se você quiser praticar comigo, ao vivo: no sábado, **7 de novembro**, das 8h às 12h, faço a **Oficina de Meditação** no Centro Terra Viva, no Itanhangá, Rio de Janeiro, num salão aberto para a Mata Atlântica. Vamos praticar o suspiro fisiológico, a respiração coerente, posturas suaves e meditação. São só 30 vagas, e quem participa leva de presente a Trilogia de Respiração e um ano do App Leveza de Viver. A inscrição é R$ 180, ou R$ 270 para duas pessoas, em [vladimirhersen.com.br/oficina](/oficina).
-
 Hoje à noite, antes de dormir, experimente quatro ciclos. Só quatro. E repare no que muda.
 
 Que todos os seres sejam felizes e vivam em paz.
