@@ -63,8 +63,6 @@ E um cuidado de outra ordem: se a irritação é constante, se vem junto com can
 
 O e-book **Vol. 3 da Trilogia de Respiração Consciente** é todo dedicado à respiração coerente, com o passo a passo e como levá-la para a sua rotina. Os três livretos estão em [e-books da Trilogia de Respiração Consciente](/ebooks-respiracao/). Se a sua dificuldade é dormir, veja também [Não consigo dormir, minha mente não para](/blog/nao-consigo-dormir-mente-nao-para/).
 
-E se você quiser praticar comigo, ao vivo: no sábado, **7 de novembro**, das 8h às 12h, faço a **Oficina de Meditação** no Centro Terra Viva, no Itanhangá, Rio de Janeiro, num salão aberto para a Mata Atlântica. Vamos praticar a respiração coerente, o suspiro fisiológico, posturas suaves e meditação. São só 30 vagas, e quem participa leva de presente a Trilogia de Respiração e um ano do App Leveza de Viver. A inscrição é R$ 180, ou R$ 270 para duas pessoas, em [vladimirhersen.com.br/oficina](/oficina).
-
 Hoje, antes de entrar em casa, faça seis respirações. Um minuto. E repare em como você chega.
 
 Que todos os seres sejam felizes e vivam em paz.
