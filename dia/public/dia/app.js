@@ -568,6 +568,8 @@ function telaDomingo() {
     msg.className = 'ok';
     msg.textContent = navigator.onLine ? 'Recebido. Obrigado por responder.' : 'Guardado. Será enviado quando a internet voltar.';
     botao.textContent = 'Atualizar respostas';
+    const novo = cartaoEvolucao();
+    if (novo) { if (evolucao) evolucao.replaceWith(novo); else intencaoCartao.before(novo); evolucao = novo; }
   });
 
   // Calendário da semana: cada dia mostra se houve prática e se houve um momento de paz.
@@ -608,6 +610,15 @@ function telaDomingo() {
   });
   const proximo = FOCOS[Math.min(3, semana)];
 
+  let evolucao = cartaoEvolucao();
+  const intencaoCartao = el('section', { class: 'cartao' },
+    el('h2', {}, 'A intenção da semana'),
+    el('p', {}, 'Uma frase em primeira pessoa. Confiança em si mesma se constrói cumprindo pequenas promessas que a gente faz para a gente.'),
+    el('label', { for: 'intencao' }, 'Nesta semana, eu escolho...'), intencao,
+    el('p', { class: 'suave' }, 'Fica só no seu celular.'),
+    semana < 4 ? el('p', {}, `Na próxima semana: ${proximo.extra.replace(/^Nesta semana, /, '')}`) : null,
+  );
+
   mostrar(
     el('section', { class: 'cartao' },
       el('h2', {}, `Semana que termina em ${dataCurta(domingo)}`),
@@ -631,13 +642,89 @@ function telaDomingo() {
       msg, botao,
       comparar,
     ),
-    el('section', { class: 'cartao' },
-      el('h2', {}, 'A intenção da semana'),
-      el('p', {}, 'Uma frase em primeira pessoa. Confiança em si mesma se constrói cumprindo pequenas promessas que a gente faz para a gente.'),
-      el('label', { for: 'intencao' }, 'Nesta semana, eu escolho...'), intencao,
-      el('p', { class: 'suave' }, 'Fica só no seu celular.'),
-      semana < 4 ? el('p', {}, `Na próxima semana: ${proximo.extra.replace(/^Nesta semana, /, '')}`) : null,
-    ),
+    evolucao,
+    intencaoCartao,
+  );
+}
+
+// ---------- Gráficos de evolução (domingo) ----------
+// Mostra só as respostas da própria participante: a inscrição como ponto de partida
+// e cada domingo respondido. Tudo vem do que está guardado no celular.
+
+const SVG = 'http://www.w3.org/2000/svg';
+
+function svg(tag, attrs = {}, texto) {
+  const n = document.createElementNS(SVG, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (texto != null) n.textContent = texto;
+  return n;
+}
+
+function pontosEvolucao() {
+  const pontos = [];
+  const inicio = ler('inicio', null);
+  if (inicio && inicio.nota != null) pontos.push({ rotulo: 'Início', nota: inicio.nota, dias_paz: inicio.dias_paz });
+  const semanas = ler('semanas', {});
+  for (const domingo of Object.keys(semanas).sort()) {
+    const x = semanas[domingo];
+    if (x && x.nota != null) pontos.push({ rotulo: dataCurta(domingo), nota: x.nota, dias_paz: x.dias_paz });
+  }
+  return pontos;
+}
+
+// Linha simples com o valor escrito em cada ponto: fácil de ler sem tocar em nada.
+function graficoLinha(pontos, campo, max, nome) {
+  const L = 320, A = 170, esq = 30, dir = 22, topo = 26, base = 34;
+  const larg = L - esq - dir, alt = A - topo - base;
+  const n = pontos.length;
+  const x = (i) => esq + (n === 1 ? larg / 2 : (i * larg) / (n - 1));
+  const y = (v) => topo + alt - (v / max) * alt;
+  const validos = pontos.map((p, i) => ({ ...p, i })).filter((p) => p[campo] != null);
+  const descricao = validos.map((p) => `${p.rotulo}: ${p[campo]}`).join('; ');
+  const g = svg('svg', { viewBox: `0 0 ${L} ${A}`, class: 'grafico', role: 'img', 'aria-label': `${nome}. ${descricao}.` });
+
+  for (const v of (max % 2 === 0 ? [0, max / 2, max] : [0, max])) {
+    const vv = v;
+    g.append(svg('line', { x1: esq, x2: L - dir, y1: y(v), y2: y(v), class: v === 0 ? 'eixo' : 'grade' }));
+    g.append(svg('text', { x: esq - 8, y: y(v) + 4, class: 'escala-num', 'text-anchor': 'end' }, String(vv).replace('.', ',')));
+  }
+  if (validos.length > 1) {
+    g.append(svg('polyline', { points: validos.map((p) => `${x(p.i)},${y(p[campo])}`).join(' '), class: 'linha' }));
+  }
+  validos.forEach((p, k) => {
+    const ultimo = k === validos.length - 1;
+    g.append(svg('circle', { cx: x(p.i), cy: y(p[campo]), r: ultimo ? 7 : 5, class: ultimo ? 'ponto atual' : 'ponto' }));
+    g.append(svg('text', { x: x(p.i), y: y(p[campo]) - 12, class: 'valor', 'text-anchor': 'middle' }, String(p[campo])));
+  });
+  pontos.forEach((p, i) => {
+    g.append(svg('text', { x: x(i), y: A - 10, class: 'rotulo-x', 'text-anchor': 'middle' }, p.rotulo));
+  });
+  return g;
+}
+
+function cartaoEvolucao() {
+  const pontos = pontosEvolucao();
+  if (!pontos.length) return null;
+  const primeiro = pontos[0], ultimo = pontos[pontos.length - 1];
+  const variacao = (campo, um, varios) => {
+    if (pontos.length < 2 || primeiro[campo] == null || ultimo[campo] == null) return null;
+    const d = ultimo[campo] - primeiro[campo];
+    const qtd = (k) => `${k} ${k === 1 ? um : varios}`;
+    return d === 0 ? 'igual ao começo' : d > 0 ? `${qtd(d)} a mais que no começo` : `${qtd(-d)} a menos que no começo`;
+  };
+  const vNota = variacao('nota', 'ponto', 'pontos'), vPaz = variacao('dias_paz', 'dia', 'dias');
+  return el('section', { class: 'cartao evolucao' },
+    el('h2', {}, 'Sua evolução'),
+    pontos.length === 1
+      ? el('p', { class: 'suave' }, 'Este é o seu ponto de partida. A cada domingo respondido, o gráfico ganha um ponto.')
+      : el('p', { class: 'suave' }, 'Começa na sua inscrição e ganha um ponto a cada domingo respondido.'),
+    el('h3', {}, 'Satisfação com a vida (0 a 10)'),
+    graficoLinha(pontos, 'nota', 10, 'Satisfação com a vida, de 0 a 10'),
+    vNota ? el('p', { class: 'resultado' }, `Agora: ${ultimo.nota}, ${vNota}.`) : null,
+    el('h3', {}, 'Dias de paz na semana (0 a 7)'),
+    graficoLinha(pontos, 'dias_paz', 7, 'Dias de paz na semana, de 0 a 7'),
+    vPaz ? el('p', { class: 'resultado' }, `Agora: paz em ${ultimo.dias_paz} de 7 dias, ${vPaz}.`) : null,
+    pontos.length > 1 ? el('p', { class: 'suave' }, 'Semanas difíceis acontecem e fazem parte. O que conta é a direção ao longo das quatro semanas.') : null,
   );
 }
 
