@@ -112,7 +112,9 @@ function respiracao(titulo, linhas, arquivo) {
   const descricao = fases.map(f => `${NOME_FASE[f.fase].toLowerCase()} ${fmt(f.dur)}`).join(', ');
   const alt = `${titulo}. Um ciclo: ${descricao} (${un}). Total: ${fmt(total)} ${un}.`;
 
-  return `<figure class="grafico">
+  // Ritmo para o botão "Respire comigo" (cada tempo conta como 1 segundo).
+  const ritmo = JSON.stringify(fases.map(f => ({ f: f.fase, d: f.dur, n: f.ate })));
+  return `<figure class="grafico grafico-respiracao" data-ritmo="${esc(ritmo)}" data-titulo="${esc(titulo)}">
 <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(alt)}" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans, Helvetica, sans-serif">
   <rect x="0" y="0" width="${W}" height="${H}" rx="14" fill="${COR.fundo}"/>${faixas}
   <path d="${area}" fill="${COR.inspira}" opacity="0.08"/>
@@ -121,6 +123,7 @@ function respiracao(titulo, linhas, arquivo) {
   <text x="${W - MR}" y="${H - 10}" text-anchor="end" font-size="15" fill="${COR.texto}">Um ciclo: ${fmt(total)} ${esc(un)}</text>
   <text x="${ML}" y="${H - 10}" font-size="15" fill="${COR.texto}">Ar nos pulmões (desenho)</text>
 </svg>
+<button type="button" class="respire-comigo" hidden>▶ Respire comigo</button>
 <figcaption>${esc(titulo)}</figcaption>
 </figure>`;
 }
