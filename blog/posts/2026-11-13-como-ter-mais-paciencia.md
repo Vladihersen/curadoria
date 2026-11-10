@@ -61,7 +61,7 @@ E um cuidado de outra ordem: se a irritação é constante, se vem junto com can
 
 ## Para ir mais fundo
 
-O e-book **Vol. 3 da Trilogia de Respiração Consciente** é todo dedicado à respiração coerente, com o passo a passo e como levá-la para a sua rotina. Os três livretos estão no meu site, na página [e-books da Trilogia de Respiração Consciente](/ebooks-respiracao/). Se a sua dificuldade é dormir, veja também [Não consigo dormir, minha mente não para](/blog/nao-consigo-dormir-mente-nao-para/).
+O e-book **Vol. 3 da Trilogia de Respiração Consciente** é todo dedicado à respiração coerente, com o passo a passo e como levá-la para a sua rotina. Os três livretos estão no meu site, na página dos e-books da Trilogia de Respiração Consciente: [vladimirhersen.com.br/ebooks-respiracao](/ebooks-respiracao/). Se a sua dificuldade é dormir, veja também [Não consigo dormir, minha mente não para](/blog/nao-consigo-dormir-mente-nao-para/).
 
 Hoje, antes de entrar em casa, faça seis respirações. Um minuto. E repare em como você chega.
 
