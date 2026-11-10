@@ -2,7 +2,7 @@
 titulo: "Como Ter Mais Paciência: a Respiração Coerente que Acalma o Corpo"
 slug: como-ter-mais-paciencia
 categoria: Neurobiologia Aplicada
-data: 2026-10-26
+data: 2026-11-13
 leitura: 6
 resumo: "Falta de paciência e irritação com quem você ama? Paciência não é só virtude, é fisiologia. Entenda o que causa a falta de paciência e como ter mais paciência com a respiração coerente, em um minuto."
 ---
