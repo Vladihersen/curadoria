@@ -4,6 +4,7 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { grafico } from './graficos.mjs';
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), '..');
 const pastaPosts = join(raiz, 'posts');
@@ -42,10 +43,20 @@ function inline(s) {
     .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
 }
 
-// Markdown simples: parágrafos, ## títulos, > citações, listas, imagens.
-function markdown(texto) {
-  const blocos = texto.replace(/\r/g, '').trim().split(/\n\s*\n/);
+// Markdown simples: parágrafos, ## títulos, > citações, listas, imagens
+// e gráficos entre linhas ":::" (ver scripts/graficos.mjs).
+function markdown(texto, arquivo) {
+  const graficos = [];
+  const limpo = texto.replace(/\r/g, '').replace(/^:::(\w+)[ \t]*(.*)\n([\s\S]*?)\n:::[ \t]*$/gm, (_, tipo, titulo, miolo) => {
+    const linhas = miolo.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+    graficos.push(grafico(tipo.toLowerCase(), titulo.trim(), linhas, arquivo));
+    return `\n\n@@GRAFICO${graficos.length - 1}@@\n\n`;
+  });
+  if (/^:::/m.test(limpo)) throw new Error(`${arquivo}: bloco ":::" de gráfico sem fechamento.`);
+  const blocos = limpo.trim().split(/\n\s*\n/);
   return blocos.map(b => {
+    const g = b.match(/^@@GRAFICO(\d+)@@$/);
+    if (g) return graficos[Number(g[1])];
     const linhas = b.split('\n');
     if (/^#{2,3} /.test(b)) {
       const n = b.startsWith('###') ? 3 : 2;
@@ -66,6 +77,12 @@ function markdown(texto) {
   }).join('\n');
 }
 
+// Nome do tema (categoria) vira endereço: "Presença & Contentamento" -> presenca-contentamento
+function slugTema(nome) {
+  return nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
 const posts = [];
 const slugs = new Set();
 for (const arquivo of readdirSync(pastaPosts).filter(f => f.endsWith('.md')).sort()) {
@@ -83,14 +100,21 @@ for (const arquivo of readdirSync(pastaPosts).filter(f => f.endsWith('.md')).sor
     titulo: dados.titulo,
     slug: dados.slug,
     categoria: dados.categoria,
+    tema: slugTema(dados.categoria),
+    relacionados: (dados.relacionados || '').split(',').map(r => r.trim()).filter(Boolean),
     data: dados.data,
     leitura: Number(dados.leitura) || Math.max(1, Math.round(palavras / 200)),
     resumo: dados.resumo,
     imagem: dados.imagem || '',
-    html: markdown(corpo),
+    html: markdown(corpo, arquivo),
   });
 }
 posts.sort((a, b) => b.data.localeCompare(a.data) || a.titulo.localeCompare(b.titulo));
+for (const p of posts) {
+  for (const r of p.relacionados) {
+    if (!slugs.has(r)) throw new Error(`post "${p.slug}": em "relacionados", o post "${r}" não existe.`);
+  }
+}
 
 writeFileSync(saida, '// Gerado por scripts/build.mjs a partir de posts/*.md. Não edite à mão.\nexport const POSTS = ' + JSON.stringify(posts, null, 2) + ';\n');
 console.log(`${posts.length} posts gerados em src/posts.generated.js`);
