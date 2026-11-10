@@ -37,11 +37,56 @@ Campos opcionais no cabeçalho:
 - `imagem: /img/capa.jpg` define a imagem da prévia no WhatsApp e redes (padrão: o banner do site).
 - `rascunho: sim` guarda o post sem publicar.
 
+- `relacionados: slug-um, slug-dois` escolhe os textos que aparecem em "Leia também" no fim do post.
+  Se faltar, o blog escolhe sozinho: primeiro os do mesmo tema, depois os mais recentes.
+
+## Temas
+
+A `categoria` de cada post vira um tema com página própria em `/blog/tema/<nome-do-tema>/`
+(ex.: `Neurobiologia Aplicada` → `/blog/tema/neurobiologia-aplicada/`). A página lista os posts do tema
+e entra no sitemap. O nome do tema no topo de cada post leva para essa página, e a lista do blog
+mostra todos os temas em "Explore por tema". Escreva a categoria sempre igual (mesmos acentos e `&`),
+senão vira outro tema.
+
+## Gráficos dentro do post
+
+Escreva o gráfico entre duas linhas `:::`, sem linhas em branco no meio. Ele vira imagem (SVG) na publicação.
+
+Ritmo de uma respiração (fases: `inspira`, `segura`, `expira`, `pausa`; `unidade` é opcional, padrão segundos):
+
+```
+:::respiracao O ritmo da 4:7:8: a saída do ar dura o dobro da entrada
+inspira 4
+segura 7
+expira 8
+pausa 1
+unidade: tempos
+:::
+```
+
+Barras com números (a linha `fonte:` é obrigatória: sem ela a publicação para com erro):
+
+```
+:::barras Título do gráfico
+Antes: 42
+Depois: 17
+unidade: %
+fonte: Nome do estudo, instituição, ano
+:::
+```
+
+Todo gráfico de respiração ganha o botão **Respire comigo**: abre uma tela com um círculo que cresce e
+diminui no ritmo do gráfico, com o nome da fase e a contagem (cada tempo = 1 segundo), até a pessoa tocar em Parar.
+Os cliques aparecem no Google Analytics como os eventos `respire_comigo` e `respire_comigo_parar` (com o número de ciclos).
+
+O gráfico de respiração é um desenho do ritmo da técnica, não uma medição. Números de estudo só entram com a fonte.
+
 Posts com `data` no futuro ficam guardados e aparecem sozinhos no dia (o blog é republicado todo dia às 6h).
 
 ## O que o blog gera
 
 - `/blog/` lista de posts
+- `/blog/tema/<tema>/` posts de cada tema
 - `/blog/<slug>/` cada post com título, descrição, prévia para WhatsApp e marcação de artigo para o Google
 - `/blog/sitemap.xml` sitemap só do blog
 - `/blog/feed.xml` feed RSS, que serve para e-mail automático de post novo

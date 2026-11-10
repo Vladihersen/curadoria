@@ -133,6 +133,39 @@ async function getMedia(env, mediaId, channel) {
   }
 }
 
+// Nome de quem mandou DM: reaproveita o que já sabemos dessa pessoa; senão pergunta à Meta
+async function getSender(env, fromId, channel) {
+  if (!fromId) return null;
+  try {
+    const prev = await sb(env, `ig_interactions?from_id=eq.${encodeURIComponent(fromId)}&from_username=not.is.null&select=from_username&limit=1`);
+    if (prev?.[0]?.from_username) return prev[0].from_username;
+  } catch (_) {}
+  try {
+    const url = channel === "facebook"
+      ? `${FB_GRAPH}/${fromId}?fields=name&access_token=${encodeURIComponent(env.FB_PAGE_TOKEN)}`
+      : `${GRAPH}/${fromId}?fields=username,name&access_token=${encodeURIComponent(await getToken(env))}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j.username || j.name || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// De onde veio a DM: resposta a story, post/reel compartilhado, menção em story
+function dmRef(msg) {
+  const story = msg.reply_to?.story;
+  if (story) return { label: "Respondendo ao seu story", caption: "", permalink: story.url || "" };
+  for (const a of msg.attachments || []) {
+    const pl = a.payload || {};
+    if (a.type === "story_mention") return { label: "Mencionou você no story", caption: "", permalink: pl.url || "" };
+    if (["share", "ig_reel", "reel", "ig_post", "post"].includes(a.type))
+      return { label: a.type.includes("reel") ? "Compartilhou um reel" : "Compartilhou uma postagem", caption: (pl.title || "").trim(), permalink: pl.url || "" };
+  }
+  return null;
+}
+
 // ---------- filtro barato (sem IA) ----------
 const SIMPLES = new Set([
   "amem", "amém", "lindo", "linda", "lindos", "lindas", "obrigado", "obrigada", "gratidao", "gratidão", "namaste", "verdade",
@@ -173,7 +206,8 @@ async function getTom(env) {
 }
 
 async function suggest(env, row, media) {
-  let ctx = media?.caption ? `Legenda da postagem comentada:\n${media.caption.slice(0, 600)}\n\n` : "";
+  let ctx = media?.label ? `Contexto da mensagem: ${media.label}.\n` : "";
+  if (media?.caption) ctx += `Legenda da postagem${media.label ? "" : " comentada"}:\n${media.caption.slice(0, 600)}\n\n`;
   if (row.kind === "dm" && row.from_id) {
     const prev = await sb(env, `ig_interactions?from_id=eq.${row.from_id}&kind=eq.dm&id=neq.${row.id}&order=created_at.desc&limit=3&select=text,final_text,status`);
     const lines = (prev || []).reverse().flatMap((p) => [p.text ? `Pessoa: ${p.text}` : null, p.status === "sent" && p.final_text ? `Vladimir: ${p.final_text}` : null]).filter(Boolean);
@@ -212,20 +246,34 @@ function cardText(row, note, media) {
   let post = "";
   if (media) {
     const cap = media.caption.split("\n")[0].slice(0, 120);
-    post = `\n📌 Na postagem: ${cap ? `“${cap}${media.caption.length > cap.length ? "…" : ""}”` : "(sem legenda)"}${media.permalink ? `\n${media.permalink}` : ""}\n`;
+    const desc = cap ? `“${cap}${media.caption.length > cap.length ? "…" : ""}”` : media.label ? "" : "(sem legenda)";
+    post = `\n📌 ${media.label || "Na postagem"}${desc ? `: ${desc}` : ""}${media.permalink ? `\n${media.permalink}` : ""}\n`;
   }
   return `${head}\n${post}\n“${(row.text || "").slice(0, 700)}”\n\n— Sugestão —\n${row.final_text || row.suggestion || ""}${note ? `\n\n${note}` : ""}\n\n#${row.id}`;
 }
 async function sendCard(env, row, note, media) {
-  if (media === undefined && row.kind === "comment") media = await getMedia(env, row.media_id, row.channel);
+  if (media === undefined) media = row.kind === "comment" ? await getMedia(env, row.media_id, row.channel) : row.ref || null;
   const r = await tg(env, "sendMessage", { chat_id: env.TELEGRAM_CHAT_ID, text: cardText(row, note, media), reply_markup: KB(row.id), link_preview_options: { is_disabled: true } });
   if (r.ok) await patchRow(env, row.id, { telegram_message_id: r.result.message_id });
+}
+
+// Marca o card no Telegram (selo no topo, sem botões) para não ser aprovado de novo
+const SELO = { sent: "✅ PUBLICADO", discarded: "🗑 DESCARTADO", edited: "✏️ EDITADO — use o card novo abaixo" };
+async function markCard(env, row, selo, baseText) {
+  if (!row?.telegram_message_id || !selo) return;
+  let base = baseText;
+  if (!base) {
+    const media = row.kind === "comment" ? await getMedia(env, row.media_id, row.channel) : row.ref || null;
+    base = cardText(row, "", media);
+  }
+  base = base.replace(/^(✅ PUBLICADO|🗑 DESCARTADO|✏️ EDITADO[^\n]*)\n\n/, "");
+  await tg(env, "editMessageText", { chat_id: env.TELEGRAM_CHAT_ID, message_id: row.telegram_message_id, text: `${selo}\n\n${base}`.slice(0, 4096), link_preview_options: { is_disabled: true } });
 }
 
 // ---------- processamento de um evento recebido ----------
 async function handleIncoming(env, ev) {
   const reason = filterReason(ev.text);
-  const base = { channel: ev.channel || "instagram", kind: ev.kind, ig_event_id: ev.id, from_id: ev.from_id, from_username: ev.from_username || null, text: ev.text || null, media_id: ev.media_id || null };
+  const base = { channel: ev.channel || "instagram", kind: ev.kind, ig_event_id: ev.id, from_id: ev.from_id, from_username: ev.from_username || null, text: ev.text || null, media_id: ev.media_id || null, ref: ev.ref || null };
   let row;
   try {
     const ins = await sb(env, "ig_interactions?on_conflict=ig_event_id", {
@@ -240,7 +288,11 @@ async function handleIncoming(env, ev) {
   }
   if (!row || reason) return; // duplicado (Meta reenvia) ou filtrado: sem IA, sem aviso
   try {
-    const media = row.kind === "comment" ? await getMedia(env, row.media_id, row.channel) : null;
+    const media = row.kind === "comment" ? await getMedia(env, row.media_id, row.channel) : row.ref || null;
+    if (row.kind === "dm" && !row.from_username) {
+      const name = await getSender(env, row.from_id, row.channel);
+      if (name) { row.from_username = name; await patchRow(env, row.id, { from_username: name }); }
+    }
     let s = await suggest(env, row, media);
     let note = "";
     if (/^\[(ATENÇÃO|ATENCAO)\]/i.test(s)) { note = "⚠️ ATENÇÃO: possível sofrimento — revise com cuidado."; s = s.replace(/^\[[^\]]+\]\s*/, ""); }
@@ -267,7 +319,7 @@ async function handleMeta(env, payload) {
     for (const m of entry.messaging || []) {
       const msg = m.message;
       if (!msg || msg.is_echo || m.sender?.id === env.IG_USER_ID) continue;
-      await handleIncoming(env, { kind: "dm", id: msg.mid, text: msg.text, from_id: m.sender?.id });
+      await handleIncoming(env, { kind: "dm", id: msg.mid, text: msg.text, from_id: m.sender?.id, ref: dmRef(msg) });
     }
   }
 }
@@ -292,7 +344,7 @@ async function handleFacebook(env, payload) {
 }
 
 // ---------- ações (Telegram e painel compartilham) ----------
-async function approve(env, id, textOverride) {
+async function approve(env, id, textOverride, marcar = true) {
   const row = await getRow(env, id);
   if (!row) return { ok: false, msg: "Não encontrado." };
   if (row.status !== "pending" && row.status !== "error") return { ok: false, msg: `Já está “${row.status}”.` };
@@ -303,15 +355,17 @@ async function approve(env, id, textOverride) {
   if (!claimed?.length) return { ok: false, msg: "Já processado." };
   try {
     await sendToInstagram(env, row, text);
-    await patchRow(env, id, { sent_at: new Date().toISOString() });
+    const [done] = await patchRow(env, id, { sent_at: new Date().toISOString() });
+    if (marcar) await markCard(env, done, SELO.sent).catch(() => {});
     return { ok: true, msg: "Publicado ✅" };
   } catch (e) {
     await patchRow(env, id, { status: "error", error: String(e.message).slice(0, 500) });
     return { ok: false, msg: "Falha ao enviar: " + e.message };
   }
 }
-async function discard(env, id) {
+async function discard(env, id, marcar = true) {
   const r = await sb(env, `ig_interactions?id=eq.${id}&status=in.(pending,error)`, { method: "PATCH", body: { status: "discarded", updated_at: new Date().toISOString() }, prefer: "return=representation" });
+  if (r?.length && marcar) await markCard(env, r[0], SELO.discarded).catch(() => {});
   return r?.length ? { ok: true, msg: "Descartado 🗑" } : { ok: false, msg: "Já processado." };
 }
 
@@ -329,13 +383,17 @@ async function handleTelegram(env, upd) {
     const [act, id] = (cq.data || "").split(":");
     const mid = cq.message.message_id;
     if (act === "a") {
-      const r = await approve(env, id);
-      await tg(env, "answerCallbackQuery", { callback_query_id: cq.id, text: r.msg });
-      if (r.ok) await tg(env, "editMessageText", { chat_id: chat, message_id: mid, text: cq.message.text + "\n\n✅ PUBLICADO" });
+      const r = await approve(env, id, undefined, false);
+      await tg(env, "answerCallbackQuery", { callback_query_id: cq.id, text: r.msg, show_alert: !r.ok });
+      const row = await getRow(env, id);
+      const selo = r.ok ? SELO.sent : SELO[row?.status];
+      if (selo) await markCard(env, { ...row, telegram_message_id: mid }, selo, cq.message.text);
     } else if (act === "d") {
-      const r = await discard(env, id);
+      const r = await discard(env, id, false);
       await tg(env, "answerCallbackQuery", { callback_query_id: cq.id, text: r.msg });
-      if (r.ok) await tg(env, "editMessageText", { chat_id: chat, message_id: mid, text: cq.message.text + "\n\n🗑 DESCARTADO" });
+      const row = await getRow(env, id);
+      const selo = SELO[row?.status];
+      if (selo) await markCard(env, { ...row, telegram_message_id: mid }, selo, cq.message.text);
     } else if (act === "e") {
       await tg(env, "answerCallbackQuery", { callback_query_id: cq.id });
       const row = await getRow(env, id);
@@ -362,6 +420,7 @@ async function handleTelegram(env, upd) {
     const t = m.text.trim();
     const final = t.startsWith("+") ? `${row.final_text || row.suggestion || ""} ${t.slice(1).trim()}`.trim() : t;
     const [upd2] = await patchRow(env, row.id, { final_text: final, status: "pending" });
+    await markCard(env, row, SELO.edited).catch(() => {});
     await sendCard(env, upd2, "✏️ Texto editado — confirme para publicar.");
   }
 }
@@ -440,6 +499,18 @@ ${actionable ? `<form method="post" action="/act"><input type="hidden" name="id"
   return html(page(nav + (cards || `<p>Nada por aqui. 🌿</p>`)));
 }
 
+async function logWebhook(env, raw, assinatura) {
+  let p = {};
+  try { p = JSON.parse(raw); } catch {}
+  const obj = String(p.object || "desconhecido");
+  const campos = (p.entry || []).flatMap((e) => [...(e.changes || []).map((c) => c.field + (c.value?.item ? ":" + c.value.item : "")), ...((e.messaging || []).length ? ["messaging"] : [])]);
+  await sb(env, "ig_settings?on_conflict=key", {
+    method: "POST",
+    prefer: "resolution=merge-duplicates",
+    body: { key: "ultimo_webhook_" + obj, value: { em: new Date().toISOString(), assinatura, campos }, updated_at: new Date().toISOString() },
+  });
+}
+
 // ---------- roteador ----------
 export default {
   async fetch(req, env, ctx) {
@@ -456,7 +527,11 @@ export default {
       const raw = await req.text();
       const sig = (req.headers.get("x-hub-signature-256") || "").replace("sha256=", "");
       // Instagram e Facebook assinam com segredos de app diferentes
-      const okSig = safeEq(sig, await hmacHex(env.IG_APP_SECRET, raw)) || (!!env.FB_APP_SECRET && safeEq(sig, await hmacHex(env.FB_APP_SECRET, raw)));
+      const okIg = safeEq(sig, await hmacHex(env.IG_APP_SECRET, raw));
+      const okFb = !!env.FB_APP_SECRET && safeEq(sig, await hmacHex(env.FB_APP_SECRET, raw));
+      const okSig = okIg || okFb;
+      // diagnóstico: último aviso da Meta por tipo (sem conteúdo das mensagens)
+      ctx.waitUntil(logWebhook(env, raw, { ig: okIg, fb: okFb, tem_fb_secret: !!env.FB_APP_SECRET }).catch(() => {}));
       if (!okSig) return new Response("bad signature", { status: 401 });
       let payload;
       try { payload = JSON.parse(raw); } catch { return new Response("bad json", { status: 400 }); }

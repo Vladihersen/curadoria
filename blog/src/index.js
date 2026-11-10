@@ -5,6 +5,7 @@
  * Os textos ficam em blog/posts/*.md. Este arquivo só monta as páginas.
  *   /blog/               lista de posts
  *   /blog/<slug>/        post completo
+ *   /blog/tema/<tema>/   posts de um tema (categoria)
  *   /blog/sitemap.xml    sitemap só do blog
  *   /blog/feed.xml       feed RSS (para e-mail automático e leitores)
  *   /robots.txt          robots do site inteiro, já apontando o sitemap do blog
@@ -45,6 +46,16 @@ export default {
       return xml(feed(publicados), 'application/rss+xml');
     }
 
+    if (path === '/blog/tema') return Response.redirect(BASE, 301);
+    const t = path.match(/^\/blog\/tema\/([a-z0-9-]+)$/);
+    if (t) {
+      const tema = temas(publicados).find(x => x.slug === t[1]);
+      if (tema) {
+        if (!url.pathname.endsWith('/')) return Response.redirect(BASE + 'tema/' + tema.slug + '/', 301);
+        return html(paginaTema(tema, publicados));
+      }
+    }
+
     const m = path.match(/^\/blog\/([a-z0-9-]+)$/);
     if (m) {
       const post = publicados.find(p => p.slug === m[1]);
@@ -64,6 +75,128 @@ function postsPublicados() {
   const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
   return POSTS.filter(p => p.data <= hoje);
 }
+
+// Temas = categorias dos posts publicados, do que tem mais textos para o que tem menos.
+function temas(posts) {
+  const mapa = new Map();
+  for (const p of posts) {
+    if (!mapa.has(p.tema)) mapa.set(p.tema, { slug: p.tema, nome: p.categoria, posts: [] });
+    mapa.get(p.tema).posts.push(p);
+  }
+  return [...mapa.values()].sort((a, b) => b.posts.length - a.posts.length || a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
+// "Leia também": primeiro os que o post indica no campo "relacionados",
+// depois os do mesmo tema, depois os mais recentes.
+function relacionados(p, todos, quantos = 3) {
+  const escolhidos = [];
+  const add = o => { if (o && o.slug !== p.slug && !escolhidos.includes(o)) escolhidos.push(o); };
+  for (const s of p.relacionados || []) add(todos.find(o => o.slug === s));
+  for (const o of todos) if (o.tema === p.tema) add(o);
+  for (const o of todos) add(o);
+  return escolhidos.slice(0, quantos);
+}
+
+function linkTema(p, classe = '') {
+  return `<a href="/blog/tema/${p.tema}/" class="uppercase tracking-wider font-bold text-brand-teal hover:underline ${classe}">${esc(p.categoria)}</a>`;
+}
+
+function chipsTemas(lista, atual = '') {
+  return `
+    <nav aria-label="Temas do blog" class="flex flex-wrap justify-center gap-2">${lista.map(t => `
+      <a href="/blog/tema/${t.slug}/" class="px-4 py-2 rounded-full border text-sm transition-colors ${t.slug === atual ? 'bg-brand-teal border-brand-teal text-white' : 'bg-white border-brand-border text-brand-night hover:border-brand-teal hover:text-brand-teal'}">${esc(t.nome)} <span class="opacity-60">· ${t.posts.length}</span></a>`).join('')}
+    </nav>`;
+}
+
+// Botão "Respire comigo": abre uma tela com um círculo que cresce e diminui
+// no ritmo do gráfico de respiração do post. Sem o script, o botão fica escondido.
+const RESPIRE_COMIGO = `
+  <style>
+    .respire-comigo { display: inline-flex; align-items: center; gap: .4rem; margin: .9rem auto 0; padding: .7rem 1.3rem; border-radius: 999px; background: #005F6B; color: #fff; border: 0; cursor: pointer; font-family: inherit; font-weight: 600; font-size: .95rem; letter-spacing: .02em; }
+    .respire-comigo:hover { background: #004A54; }
+    .respire-comigo[hidden] { display: none; }
+    .grafico-respiracao { text-align: center; }
+    .rc-tela { position: fixed; inset: 0; z-index: 100; background: #1A2A3A; color: #F8F9F9; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px; text-align: center; }
+    .rc-titulo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.35rem; max-width: 30rem; line-height: 1.3; opacity: .85; }
+    .rc-palco { position: relative; width: min(78vw, 340px); height: min(78vw, 340px); margin: 28px 0; display: flex; align-items: center; justify-content: center; }
+    .rc-circulo { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 50% 40%, #7A9E93, #005F6B); transform: scale(.5); transition-property: transform, background-color; transition-timing-function: ease-in-out; box-shadow: 0 0 60px rgba(122,158,147,.35); }
+    .rc-centro { position: relative; display: flex; flex-direction: column; align-items: center; }
+    .rc-fase { font-size: 1.6rem; font-weight: 600; }
+    .rc-num { font-size: 2.6rem; font-weight: 300; line-height: 1.1; min-height: 2.9rem; }
+    .rc-ciclos { font-size: 1rem; opacity: .8; }
+    .rc-dica { font-size: .9rem; opacity: .65; max-width: 26rem; margin-top: .6rem; }
+    .rc-parar { margin-top: 22px; padding: .75rem 2rem; border-radius: 999px; border: 1px solid #D9C5A8; background: transparent; cursor: pointer; font-family: inherit; color: #D9C5A8; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; font-size: .85rem; }
+    .rc-parar:hover { background: #D9C5A8; color: #1A2A3A; }
+    @media (prefers-reduced-motion: reduce) { .rc-circulo { transition: none !important; } }
+  </style>
+  <script>
+  (function () {
+    var NOME = { inspira: 'Inspire', segura: 'Segure', expira: 'Solte o ar', pausa: 'Pausa' };
+    var tela = null, timers = [], volta = null;
+    function limpar() { timers.forEach(clearTimeout); timers.forEach(clearInterval); timers = []; }
+    function escala(n) { return 0.45 + 0.55 * n; }
+    function parar(ciclos, titulo) {
+      limpar();
+      if (tela) { tela.remove(); tela = null; }
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', tecla);
+      if (window.gtag) gtag('event', 'respire_comigo_parar', { tecnica: titulo, ciclos: ciclos });
+      if (volta) volta.focus();
+    }
+    function tecla(e) { if (e.key === 'Escape' && tela) tela.querySelector('.rc-parar').click(); }
+    function iniciar(fig, botao) {
+      var ritmo = JSON.parse(fig.getAttribute('data-ritmo'));
+      var titulo = fig.getAttribute('data-titulo') || '';
+      volta = botao;
+      tela = document.createElement('div');
+      tela.className = 'rc-tela';
+      tela.setAttribute('role', 'dialog');
+      tela.setAttribute('aria-modal', 'true');
+      tela.setAttribute('aria-label', 'Respire comigo');
+      tela.innerHTML = '<p class="rc-titulo"></p><div class="rc-palco"><div class="rc-circulo"></div><div class="rc-centro" aria-live="polite"><span class="rc-fase">Prepare-se</span><span class="rc-num">3</span></div></div><p class="rc-ciclos">Sente-se confortável e solte os ombros</p><p class="rc-dica">Respire com suavidade, sem forçar. Se sentir tontura, pare e respire normalmente.</p><button type="button" class="rc-parar">Parar</button>';
+      tela.querySelector('.rc-titulo').textContent = titulo;
+      document.body.appendChild(tela);
+      document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', tecla);
+      var circulo = tela.querySelector('.rc-circulo'), fase = tela.querySelector('.rc-fase'), num = tela.querySelector('.rc-num'), info = tela.querySelector('.rc-ciclos');
+      var ciclo = 0;
+      tela.querySelector('.rc-parar').onclick = function () { parar(ciclo, titulo); };
+      tela.querySelector('.rc-parar').focus();
+      if (window.gtag) gtag('event', 'respire_comigo', { tecnica: titulo });
+      circulo.style.transitionDuration = '0s';
+      circulo.style.transform = 'scale(' + escala(0.12) + ')';
+      function contar(seg) {
+        var resta = Math.ceil(seg);
+        num.textContent = resta;
+        var t = setInterval(function () { resta -= 1; if (resta >= 1) num.textContent = resta; }, 1000);
+        timers.push(t);
+        return t;
+      }
+      function passo(i) {
+        if (!tela) return;
+        if (i === 0) { ciclo += 1; info.textContent = 'Ciclo ' + ciclo; }
+        var f = ritmo[i];
+        limpar();
+        var antes = ritmo[(i - 1 + ritmo.length) % ritmo.length];
+        fase.textContent = (f.f === 'inspira' && antes.f === 'inspira' && ritmo.length > 1) ? 'Mais um pouco' : (NOME[f.f] || f.f);
+        circulo.style.transitionDuration = f.d + 's';
+        circulo.style.transform = 'scale(' + escala(f.n) + ')';
+        contar(f.d);
+        timers.push(setTimeout(function () { passo((i + 1) % ritmo.length); }, f.d * 1000));
+      }
+      contar(3);
+      timers.push(setTimeout(function () { passo(0); }, 3000));
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.grafico-respiracao').forEach(function (fig) {
+        var b = fig.querySelector('.respire-comigo');
+        if (!b) return;
+        b.hidden = false;
+        b.addEventListener('click', function () { iniciar(fig, b); });
+      });
+    });
+  })();
+  </script>`;
 
 function html(corpo, status = 200) {
   return new Response(corpo, {
@@ -163,6 +296,9 @@ function head({ titulo, descricao, url, imagem = IMAGEM_PADRAO, tipo = 'website'
     .texto a { color: #005F6B; text-decoration: underline; }
     .texto strong { color: #1A2A3A; font-weight: 600; }
     .texto figure { margin: 1.75rem 0; } .texto img { border-radius: .75rem; width: 100%; }
+    .texto .grafico svg { width: 100%; height: auto; display: block; }
+    .texto .grafico figcaption { margin-top: .6rem; font-size: .9rem; color: #3A4B48; text-align: center; font-style: italic; }
+    .texto .grafico .fonte { display: block; font-size: .78rem; font-style: normal; opacity: .75; margin-top: .2rem; }
   </style>
   <script>
     function toggleMobileMenu() {
@@ -215,6 +351,8 @@ function paginaLista(posts) {
       <p class="mt-4 text-base sm:text-lg text-brand-mineral leading-relaxed max-w-2xl mx-auto font-light text-balance">
         Não escrevo para entreter a mente com teorias abstratas. Escrevo para ajudar você a soltar o peso dos ombros, restabelecer o fôlego e reencontrar o ânimo de viver.
       </p>
+      <p class="mt-10 mb-4 text-xs tracking-widest uppercase font-semibold text-brand-mineral">Explore por tema</p>
+      ${chipsTemas(temas(posts))}
     </div>
   </section>
 
@@ -231,7 +369,7 @@ function paginaLista(posts) {
 function paginaPost(p, todos) {
   const url = BASE + p.slug + '/';
   const imagem = p.imagem ? (p.imagem.startsWith('http') ? p.imagem : SITE + p.imagem) : IMAGEM_PADRAO;
-  const outros = todos.filter(o => o.slug !== p.slug).slice(0, 2);
+  const outros = relacionados(p, todos);
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -262,7 +400,7 @@ function paginaPost(p, todos) {
 
     <article class="mt-6 p-8 md:p-12 rounded-2xl bg-white border border-brand-border shadow-sm border-t-4 border-t-brand-teal">
       <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-mineral pb-4 mb-6 border-b border-brand-border">
-        <span class="uppercase tracking-wider font-bold text-brand-teal">${esc(p.categoria)}</span>
+        ${linkTema(p)}
         <span>Por Vladimir Hersen · ${dataExtenso(p.data)} · ${p.leitura} min de leitura</span>
       </div>
       <h1 class="font-serif text-3xl sm:text-5xl text-brand-night font-bold leading-tight text-balance">${esc(p.titulo)}</h1>
@@ -283,11 +421,59 @@ ${p.html}
     </aside>
 ${outros.length ? `
     <section class="mt-14">
-      <h2 class="font-serif text-2xl text-brand-night font-bold mb-6">Continue lendo</h2>
+      <h2 class="font-serif text-2xl text-brand-night font-bold mb-6">Leia também</h2>
       <div class="space-y-8">${outros.map(cartao).join('')}
       </div>
+      <p class="mt-8 text-sm text-brand-mineral">Mais textos sobre ${linkTema(p, 'normal-case tracking-normal')} ou <a href="/blog/" class="text-brand-teal font-semibold hover:underline">todos os textos</a>.</p>
     </section>` : ''}
   </main>
+
+  ${footer()}${p.html.includes('grafico-respiracao') ? RESPIRE_COMIGO : ''}
+</body>
+</html>`;
+}
+
+function paginaTema(tema, todos) {
+  const url = BASE + 'tema/' + tema.slug + '/';
+  const descricao = `Textos de Vladimir Hersen sobre ${tema.nome}: ${tema.posts.length === 1 ? '1 artigo' : tema.posts.length + ' artigos'} do blog ${NOME_BLOG}.`;
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: tema.nome,
+    description: descricao,
+    url,
+    inLanguage: 'pt-BR',
+    isPartOf: { '@type': 'Blog', name: NOME_BLOG, url: BASE },
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Blog', item: BASE },
+        { '@type': 'ListItem', position: 2, name: tema.nome, item: url }
+      ]
+    },
+    hasPart: tema.posts.map(p => ({ '@type': 'BlogPosting', headline: p.titulo, url: BASE + p.slug + '/', datePublished: p.data }))
+  };
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>${head({ titulo: `${tema.nome} · ${NOME_BLOG} · Vladimir Hersen`, descricao, url, jsonLd })}
+</head>
+<body class="font-sans antialiased">
+  ${navBar('/blog', BG)}
+
+  <section class="pt-16 pb-12 md:pt-24 md:pb-16 border-b border-brand-border/60">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <a href="/blog/" class="text-sm text-brand-teal font-medium hover:underline">← Todos os textos</a>
+      <p class="mt-8 text-xs tracking-widest uppercase font-semibold text-brand-mineral">Tema</p>
+      <h1 class="mt-2 font-serif text-4xl sm:text-5xl text-brand-teal tracking-tight leading-[1.12] text-balance font-bold">${esc(tema.nome)}</h1>
+      <p class="mt-4 text-base text-brand-mineral font-light">${tema.posts.length === 1 ? '1 texto' : tema.posts.length + ' textos'} neste tema</p>
+      <div class="mt-10">${chipsTemas(temas(todos), tema.slug)}</div>
+    </div>
+  </section>
+
+  <section class="py-16 max-w-4xl mx-auto px-6">
+    <div class="space-y-10">${tema.posts.map(cartao).join('')}
+    </div>
+  </section>
 
   ${footer()}
 </body>
@@ -313,7 +499,11 @@ function pagina404(posts) {
 }
 
 function sitemap(posts) {
-  const urls = [{ loc: BASE, lastmod: posts[0]?.data }, ...posts.map(p => ({ loc: BASE + p.slug + '/', lastmod: p.data }))];
+  const urls = [
+    { loc: BASE, lastmod: posts[0]?.data },
+    ...temas(posts).map(t => ({ loc: BASE + 'tema/' + t.slug + '/', lastmod: t.posts[0].data })),
+    ...posts.map(p => ({ loc: BASE + p.slug + '/', lastmod: p.data }))
+  ];
   return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
     urls.map(u => `  <url><loc>${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ''}</url>`).join('\n') +
     '\n</urlset>\n';

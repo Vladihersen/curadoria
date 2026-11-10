@@ -45,6 +45,14 @@ Faça de 3 a 5 ciclos, cerca de 1 a 2 minutos. Encha só uns 80% dos pulmões: o
 3. Segure o ar, com calma, contando até 7.
 4. Solte o ar devagar pelo nariz, contando até 8. Esta é a minha variação para a noite, feita na cama. No método clássico do Dr. Andrew Weil, o ar sai pela boca com um sopro suave, que é o melhor caminho de dia, para quem está começando ou com o nariz entupido.
 
+:::respiracao O ritmo da 4:7:8: a saída do ar dura o dobro da entrada
+inspira 4
+segura 7
+expira 8
+pausa 1
+unidade: tempos
+:::
+
 Entre um ciclo e outro, deixe uma pausa natural de 1 ou 2 tempos. Na primeira semana, faça 4 ciclos; vá subindo aos poucos até 8 na quarta semana, e não passe de 8 seguidos. O que importa é a proporção, não a força: se sentir tontura, encha os pulmões pela metade.
 
 **Por que funciona:** a expiração duas vezes mais longa que a inspiração inclina o sistema nervoso para o lado do repouso, e a contagem ocupa a mente que estava ruminando. O método foi sistematizado pelo médico Andrew Weil a partir do pranayama do yoga. Ele não é um sedativo; é um convite para o corpo sair do estado de alerta, e o sono costuma chegar mais fácil a partir daí.
@@ -56,6 +64,11 @@ Entre um ciclo e outro, deixe uma pausa natural de 1 ou 2 tempos. Na primeira se
 **Quando usar:** nos dias de sobrecarga, mente dispersa e pouca paciência. É a prática de manutenção, não de emergência.
 
 **Como fazer:** sente-se confortável e respire só pelo nariz, sem pausas, em um ritmo contínuo: 5 segundos para o ar entrar e 5,5 segundos para sair, enchendo uns 80% dos pulmões. Dá cerca de seis respirações por minuto. Pratique de 5 a 20 minutos: 5 ao acordar, de 10 a 15 para descomprimir no fim do dia. Salivar mais ou sentir calor no peito é normal.
+
+:::respiracao O ritmo da respiração coerente: contínuo, sem pausas, cerca de seis respirações por minuto
+inspira 5
+expira 5,5
+:::
 
 **Por que funciona:** nesse ritmo, a respiração e os batimentos entram em ressonância. A variabilidade da frequência cardíaca aumenta, que é um sinal de um sistema nervoso mais flexível e capaz de se recuperar do estresse. É como se coração e mente voltassem a andar no mesmo compasso.
 
