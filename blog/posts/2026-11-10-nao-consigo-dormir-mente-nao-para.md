@@ -2,7 +2,7 @@
 titulo: "Não Consigo Dormir, Minha Mente Não Para: a Respiração 4-7-8"
 slug: nao-consigo-dormir-mente-nao-para
 categoria: Neurobiologia Aplicada
-data: 2026-10-19
+data: 2026-11-10
 leitura: 6
 resumo: "Não consegue dormir porque a mente não para? Entenda por que a cabeça não desliga à noite e como fazer a respiração 4-7-8 para dormir, passo a passo e com os cuidados certos."
 ---
