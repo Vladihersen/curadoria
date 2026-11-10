@@ -34,6 +34,14 @@ Esta é a respiração que mais indico para a hora de deitar. Faça na cama, já
 3. Segure o ar, com calma, contando até **7**.
 4. Solte o ar devagar pelo nariz, contando até **8**.
 
+:::respiracao O ritmo da 4-7-8: a saída do ar dura o dobro da entrada
+inspira 4
+segura 7
+expira 8
+pausa 1
+unidade: tempos
+:::
+
 Essa é a minha variação para a noite, com o ar saindo pelo nariz, mais silenciosa e mais fácil de manter deitado. No método clássico, sistematizado pelo médico Andrew Weil a partir do pranayama do yoga, o ar sai pela boca com um sopro suave. Ele é o melhor caminho de dia, para quem está começando ou para quem está com o nariz entupido.
 
 Entre um ciclo e outro, deixe uma pausa natural de 1 ou 2 tempos. Na primeira semana, faça **4 ciclos**. Vá subindo aos poucos até 8 na quarta semana, e não passe de 8 seguidos. O que importa é a proporção, não a força: se sentir tontura, encha os pulmões só pela metade.
