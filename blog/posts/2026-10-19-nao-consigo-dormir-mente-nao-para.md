@@ -50,7 +50,7 @@ A 4-7-8 foi estudada em pesquisas pequenas, que observaram melhora na variabilid
 
 ## Cuidados com o sono: o que ajuda a respiração a funcionar
 
-A respiração é a porta, mas a noite começa antes de deitar. Estes são os cuidados que eu mesmo sigo e que costumo indicar:
+A respiração é a porta, mas a noite começa antes de deitar. Estes cuidados preparam o terreno:
 
 **Rotina**
 - Deite e acorde em horários parecidos, inclusive no fim de semana. O relógio do corpo gosta de constância.
