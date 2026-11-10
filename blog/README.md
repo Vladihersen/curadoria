@@ -75,6 +75,10 @@ fonte: Nome do estudo, instituição, ano
 :::
 ```
 
+Todo gráfico de respiração ganha o botão **Respire comigo**: abre uma tela com um círculo que cresce e
+diminui no ritmo do gráfico, com o nome da fase e a contagem (cada tempo = 1 segundo), até a pessoa tocar em Parar.
+Os cliques aparecem no Google Analytics como os eventos `respire_comigo` e `respire_comigo_parar` (com o número de ciclos).
+
 O gráfico de respiração é um desenho do ritmo da técnica, não uma medição. Números de estudo só entram com a fonte.
 
 Posts com `data` no futuro ficam guardados e aparecem sozinhos no dia (o blog é republicado todo dia às 6h).
