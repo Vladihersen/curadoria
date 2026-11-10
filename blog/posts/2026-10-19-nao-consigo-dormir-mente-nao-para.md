@@ -48,6 +48,26 @@ Há também um efeito mais simples, e muito útil à noite: **contar ocupa a men
 
 A 4-7-8 foi estudada em pesquisas pequenas, que observaram melhora na variabilidade da frequência cardíaca, um sinal de um sistema nervoso mais flexível. Ainda é pouco para falar em tratamento, e eu não falo. Ela não é um sedativo. É um convite para o corpo sair do alerta, e é a partir daí que o sono costuma chegar.
 
+## Cuidados com o sono: o que ajuda a respiração a funcionar
+
+A respiração é a porta, mas a noite começa antes de deitar. Estes são os cuidados que eu mesmo sigo e que costumo indicar:
+
+**Rotina**
+- Deite e acorde em horários parecidos, inclusive no fim de semana. O relógio do corpo gosta de constância.
+- Deixe o celular e as telas de lado pelo menos meia hora antes de deitar. A luz forte da tela pode atrasar a melatonina, o hormônio que avisa ao corpo que é noite.
+
+**Quarto**
+- Escuro, silencioso e com temperatura agradável, nem quente nem frio.
+
+**Comida e bebida à noite**
+- Evite refeições pesadas, doces e cafeína no fim do dia. Lembre que café, chá preto, chá verde, mate e refrigerante de cola têm cafeína.
+- Uma xícara de chá quente sem cafeína pode virar o seu ritual de desacelerar.
+- Se sentir fome, prefira uma ceia leve, como meio abacate ou um iogurte natural.
+
+**Respiração e relaxamento**
+- Já na cama, os 4 ciclos da 4-7-8. Se você está no grupo que não deve segurar o ar, a respiração coerente.
+- Alguns usam magnésio à noite para ajudar no relaxamento muscular. Suplemento, só com orientação do seu médico ou nutricionista, principalmente se você tem algum problema nos rins ou toma remédios.
+
 ## Um cuidado importante
 
 A 4-7-8 segura o ar. Por isso não é indicada na gravidez, com pressão alta não controlada, glaucoma ou descolamento de retina, doença cardíaca grave ou marcapasso. Para quem está nesses casos, a **respiração coerente** é o melhor caminho: 5 segundos para o ar entrar e 5,5 para sair, só pelo nariz, sem pausas. Ela também acalma e é segura para quem tem histórico cardíaco, pressão alta ou está grávida. Eu explico as duas, e o suspiro fisiológico, em [3 respirações para ansiedade e sono](/blog/respiracao-para-ansiedade-e-sono/).
