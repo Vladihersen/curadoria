@@ -2,7 +2,7 @@
 titulo: "Síndrome do Cuidador: Quando Cuidar dos Pais Esgota Você"
 slug: sindrome-do-cuidador
 categoria: Acolhimento & Sobriedade
-data: 2026-11-02
+data: 2026-11-16
 leitura: 6
 resumo: "Cansaço de cuidar dos pais idosos, dos filhos, da casa? Entenda a síndrome do cuidador, os sinais de esgotamento e uma prática de um minuto, o suspiro fisiológico, para atravessar o dia."
 ---
