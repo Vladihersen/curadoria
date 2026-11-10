@@ -84,7 +84,7 @@ Se sentir tontura, volte a respirar normalmente. Se a insônia dura semanas, con
 
 ## Para ir mais fundo
 
-O e-book **Vol. 2 da Trilogia de Respiração Consciente** é todo dedicado à 4-7-8: as variações de dia e de noite, os erros mais comuns e um plano de quatro semanas para transformar a prática em hábito. Os três livretos estão em [e-books da Trilogia de Respiração Consciente](/ebooks-respiracao/).
+O e-book **Vol. 2 da Trilogia de Respiração Consciente** é todo dedicado à 4-7-8: as variações de dia e de noite, os erros mais comuns e um plano de quatro semanas para transformar a prática em hábito. Os três livretos estão no meu site, na página [e-books da Trilogia de Respiração Consciente](/ebooks-respiracao/).
 
 Hoje à noite, antes de dormir, experimente quatro ciclos. Só quatro. E repare no que muda.
 
