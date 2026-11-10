@@ -55,7 +55,7 @@ E um cuidado de outra ordem: se o cansaço vem junto com tristeza que não passa
 
 ## Para ir mais fundo
 
-O e-book **Vol. 1 da Trilogia de Respiração Consciente** é todo dedicado ao suspiro fisiológico, com o passo a passo e como usá-lo nos momentos de pico. Os três livretos estão no meu site, na página [e-books da Trilogia de Respiração Consciente](/ebooks-respiracao/). Se o cansaço já chegou na paciência, veja também [Como ter mais paciência](/blog/como-ter-mais-paciencia/).
+O e-book **Vol. 1 da Trilogia de Respiração Consciente** é todo dedicado ao suspiro fisiológico, com o passo a passo e como usá-lo nos momentos de pico. Os três livretos estão no meu site, na página dos e-books da Trilogia de Respiração Consciente: [vladimirhersen.com.br/ebooks-respiracao](/ebooks-respiracao/). Se o cansaço já chegou na paciência, veja também [Como ter mais paciência](/blog/como-ter-mais-paciencia/).
 
 Hoje, antes de entrar no quarto de quem você cuida, faça três suspiros. Um minuto. Esse minuto é seu.
 
