@@ -183,3 +183,7 @@ summary { cursor: pointer; color: var(--verde-escuro); font-weight: 600; min-hei
 }
 .aviso-atualizar[hidden] { display: none; }
 .aviso-atualizar button { margin: 0; width: auto; min-height: 44px; padding: 0 18px; background: #fff; color: var(--verde-escuro); border-color: #fff; }
+
+/* Só na cópia de teste: faixa para simular a data */
+.faixa-teste { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #fdf1d8; color: #6b4e00; font-size: .9rem; font-weight: 600; }
+.faixa-teste select { margin: 0; width: auto; flex: 1; min-height: 36px; padding: 4px 8px; font-size: .9rem; }

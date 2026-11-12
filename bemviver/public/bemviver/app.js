@@ -3,6 +3,52 @@
 // As "três coisas boas" escritas à noite nunca saem do celular.
 'use strict';
 
+// ---------- Só na cópia de teste (*.workers.dev): simular a data ----------
+// No endereço oficial este bloco não faz nada.
+const COPIA_DE_TESTE = /\.workers\.dev$/.test(location.hostname);
+if (COPIA_DE_TESTE) {
+  let alvo = null;
+  try { alvo = localStorage.getItem('bemviver.simular'); } catch { /* segue com a data real */ }
+  if (alvo && /^\d{4}-\d{2}-\d{2}$/.test(alvo)) {
+    const DataReal = Date;
+    const agora = new DataReal();
+    const [a, m, d] = alvo.split('-').map(Number);
+    const desloc = new DataReal(a, m - 1, d, agora.getHours(), agora.getMinutes(), agora.getSeconds()) - agora;
+    class DataSimulada extends DataReal {
+      constructor(...args) { if (args.length) super(...args); else super(DataReal.now() + desloc); }
+      static now() { return DataReal.now() + desloc; }
+    }
+    window.Date = DataSimulada;
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const opcoes = [
+      ['', 'Data real (hoje)'],
+      ['2026-11-18', '18/11: antes do início'],
+      ['2026-11-24', '24/11: semana 1, dia comum'],
+      ['2026-11-29', '29/11: 1º domingo'],
+      ['2026-12-16', '16/12: semana 4'],
+      ['2026-12-20', '20/12: último domingo'],
+    ];
+    const sel = document.createElement('select');
+    sel.setAttribute('aria-label', 'Simular a data');
+    for (const [v, t] of opcoes) {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = t; o.selected = v === (alvo || '');
+      sel.append(o);
+    }
+    sel.addEventListener('change', () => {
+      try { if (sel.value) localStorage.setItem('bemviver.simular', sel.value); else localStorage.removeItem('bemviver.simular'); } catch { /* */ }
+      location.reload();
+    });
+    const faixa = document.createElement('div');
+    faixa.className = 'faixa-teste';
+    const rot = document.createElement('span');
+    rot.textContent = 'Cópia de teste · ';
+    faixa.append(rot, sel);
+    document.body.prepend(faixa);
+  });
+}
+
 const INICIO_PILOTO = '2026-11-23'; // segunda-feira da semana 1 (piloto de 23/11 a 20/12/2026)
 
 const PERGUNTAS = [
