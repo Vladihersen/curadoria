@@ -240,7 +240,7 @@ a.botao{display:inline-block;margin-top:8px;padding:10px 14px;background:#5b7f5a
 <h1>Painel do piloto · ${d.participantes.length} participantes</h1>
 <p>Cada domingo mostra a nota de satisfação (0 a 10) · os dias de paz na semana (0 a 7). "!" marca quem relatou algo que fez mal ou ficou difícil. A tensão (0 a 10) é a média dada antes e depois do suspiro fisiológico.</p>
 <div class="tab"><table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Início (nota · dias de paz)</th>
-${d.domingos.map((dom) => `<th>${esc(dom.slice(8, 10) + '/' + dom.slice(5, 7))}</th>`).join('')}<th>Dias praticados</th><th>Suspiros · tensão antes → depois</th><th>Dias: movimento · vida · contato · noite</th></tr></thead>
+${d.domingos.map((dom) => `<th>${esc(dom.slice(8, 10) + '/' + dom.slice(5, 7))}</th>`).join('')}<th>Dias praticados</th><th>Suspiros · tensão antes → depois</th><th>Dias: movimento · vida · gesto de carinho · noite</th></tr></thead>
 <tbody>${linhas || '<tr><td colspan="6">Ninguém entrou ainda.</td></tr>'}</tbody></table></div>
 <h2>Relatos de efeito ruim</h2><ul>${listaAlertas || '<li>Nenhum.</li>'}</ul>
 <h2>Dúvidas</h2><ul>${duvidas || '<li>Nenhuma.</li>'}</ul>
