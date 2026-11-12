@@ -58,6 +58,15 @@ function isoLocal(d) {
 
 function hoje() { return isoLocal(new Date()); }
 
+// Antes de 23/11 o app já funciona: a pessoa entra, instala, guarda os áudios e
+// experimenta o suspiro, mas as práticas e o domingo só contam a partir do início.
+function antesDoInicio() { return hoje() < INICIO_PILOTO; }
+
+function diasParaComecar() {
+  const a = new Date(hoje() + 'T12:00:00'), b = new Date(INICIO_PILOTO + 'T12:00:00');
+  return Math.round((b - a) / 86400000);
+}
+
 function domingoDaSemana() {
   const d = new Date();
   d.setDate(d.getDate() + ((7 - d.getDay()) % 7)); // domingo que fecha a semana (hoje, se for domingo)
@@ -219,7 +228,7 @@ function controlesTelaBloqueada(player, titulo) {
       title: titulo,
       artist: 'Vladimir Hersen',
       album: 'Método Bem Viver',
-      artwork: [{ src: '/bemviver/icone.svg', sizes: 'any', type: 'image/svg+xml' }],
+      artwork: [{ src: '/bemviver/icone-512.png', sizes: '512x512', type: 'image/png' }],
     });
     const acoes = {
       play: () => player.play(),
@@ -282,15 +291,18 @@ function telaEntrar() {
   abas.hidden = true;
   titulo.textContent = 'Método Bem Viver';
   const dados = { nota: null, dias_paz: null };
-  const nome = el('input', { type: 'text', id: 'nome', autocomplete: 'given-name', maxlength: '80' });
-  const whats = el('input', { type: 'tel', id: 'whats', autocomplete: 'tel', inputmode: 'tel', placeholder: '(21) 99999-9999', maxlength: '30' });
+  // O link do email pode trazer o nome e o WhatsApp já preenchidos (?nome=...&whatsapp=...).
+  const doLink = new URLSearchParams(location.search);
+  const limpo = (v) => (v && !/^\{\$/.test(v) ? v.trim() : ''); // ignora campo vazio do MailerLite
+  const nome = el('input', { type: 'text', id: 'nome', autocomplete: 'given-name', maxlength: '80', value: limpo(doLink.get('nome')) });
+  const whats = el('input', { type: 'tel', id: 'whats', autocomplete: 'tel', inputmode: 'tel', placeholder: '(21) 99999-9999', maxlength: '30', value: limpo(doLink.get('whatsapp')) });
   const aceite = el('input', { type: 'checkbox', id: 'aceite' });
   const msg = el('p', { role: 'status' });
   const botao = el('button', { type: 'submit' }, 'Começar');
 
   const form = el('form', { class: 'cartao', novalidate: true },
     el('h2', {}, 'Boas-vindas ao piloto'),
-    el('p', {}, 'Quatro semanas de práticas de poucos minutos por dia, com o Vladimir Hersen.'),
+    el('p', {}, 'Quatro semanas de práticas de poucos minutos por dia, com o Vladimir Hersen, de 23 de novembro a 20 de dezembro.'),
     el('label', { for: 'nome' }, 'Seu nome'), nome,
     el('label', { for: 'whats' }, 'WhatsApp com DDD'), whats,
     el('p', { class: 'suave' }, 'Só o Vladimir vê esse número, para falar com você se precisar.'),
@@ -393,6 +405,7 @@ function ontem() {
 }
 
 function telaHoje() {
+  if (antesDoInicio()) return telaPreparacao();
   const dia = hoje();
   const reg = registroDe(dia);
   const semana = semanaDoPiloto();
@@ -500,7 +513,151 @@ function telaHoje() {
     el('p', { class: 'suave' }, enc.gesto),
   );
 
-  mostrar(cFoco, cRespiro, cCorpo, cVida, cContato, cNoite, cEncontro);
+  mostrar(cFoco, cRespiro, cCorpo, cVida, cContato, cNoite, cEncontro, ...cartoesPreparo(false));
+}
+
+// ---------- Antes do início: preparação ----------
+
+function telaPreparacao() {
+  const n = diasParaComecar();
+  titulo.textContent = `${saudacao()}${ler('nome') ? ', ' + ler('nome') : ''}`;
+  mostrar(
+    el('section', { class: 'cartao destaque' },
+      el('p', { class: 'pilar' }, n === 1 ? 'Começa amanhã' : `Faltam ${n} dias`),
+      el('h2', {}, 'O piloto começa na segunda-feira, 23 de novembro'),
+      el('p', {}, 'Sua inscrição no app está feita. Até lá, deixe tudo pronto com calma: são quatro passos de poucos minutos. No dia 23, esta tela passa a mostrar as práticas do dia.'),
+    ),
+    el('section', { class: 'cartao' },
+      el('p', { class: 'pilar' }, 'Passo 1'),
+      el('h2', {}, 'Ouça as boas-vindas'),
+      el('p', {}, 'Cinco minutos com o Vladimir explicando como funciona cada dia.'),
+      audio(AUDIOS.boasVindas, 'Boas-vindas'),
+    ),
+    ...cartoesPreparo(true),
+    el('section', { class: 'cartao' },
+      el('p', { class: 'pilar' }, 'Passo 4'),
+      el('h2', {}, 'Experimente o suspiro fisiológico'),
+      el('p', {}, 'Dê uma nota para a sua tensão, faça 1 minuto de suspiro fisiológico e dê a nota de novo. Pode repetir quantas vezes quiser até o dia 23: é só para conhecer.'),
+      el('button', { type: 'button', onclick: () => fazerRespiro(60) }, 'Experimentar agora'),
+    ),
+    el('section', { class: 'cartao' },
+      el('h2', {}, 'Ficou alguma dúvida?'),
+      el('p', {}, 'Responda ao email do Vladimir: vale qualquer pergunta sobre o app ou sobre as práticas. Se você tem alguma condição de saúde, leia antes a aba Cuidados e, se for o caso, converse com o seu médico.'),
+    ),
+  );
+}
+
+// Instalar na tela do celular e guardar os áudios. Na preparação aparecem sempre;
+// depois do início, só enquanto faltar algum dos dois.
+let pedidoInstalar = null;
+window.addEventListener('beforeinstallprompt', (ev) => { ev.preventDefault(); pedidoInstalar = ev; });
+
+function instalado() {
+  return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+
+function sistema() {
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
+  if (/Android/.test(ua)) return 'android';
+  return 'outro';
+}
+
+function cartaoInstalar(numerado) {
+  const titulo = el('h2', {}, 'Coloque o app na tela do celular');
+  const cartao = el('section', { class: 'cartao' }, numerado ? el('p', { class: 'pilar' }, 'Passo 2') : null, titulo);
+  if (instalado()) {
+    cartao.classList.add('feito');
+    cartao.append(el('p', {}, 'Pronto: o app já está na tela do seu celular, com o ícone da borboleta.'));
+    return cartao;
+  }
+  cartao.append(el('p', {}, 'Assim ele abre com um toque, como os outros aplicativos, sem precisar procurar o link.'));
+  const so = sistema();
+  if (so === 'ios') {
+    cartao.append(
+      el('p', {}, el('b', {}, 'No iPhone:'), ' abra este link no Safari. Toque no botão de compartilhar (o quadrado com a seta para cima), depois em "Adicionar à Tela de Início" e em "Adicionar".'),
+    );
+  } else {
+    const botao = el('button', { type: 'button' }, 'Instalar o app');
+    botao.addEventListener('click', async () => {
+      if (!pedidoInstalar) return;
+      pedidoInstalar.prompt();
+      const r = await pedidoInstalar.userChoice.catch(() => null);
+      pedidoInstalar = null;
+      if (r && r.outcome === 'accepted') botao.replaceWith(el('p', { class: 'ok' }, 'Instalado. Procure o ícone da borboleta na tela do celular.'));
+    });
+    if (pedidoInstalar) cartao.append(botao);
+    cartao.append(el('p', { class: pedidoInstalar ? 'suave' : '' },
+      el('b', {}, 'No Android:'), ' ', pedidoInstalar ? 'se o botão não funcionar, ' : '',
+      'no Chrome, toque nos três pontinhos no canto de cima e depois em "Instalar app" ou "Adicionar à tela inicial".'));
+  }
+  return cartao;
+}
+
+const LISTA_AUDIOS = Object.values(AUDIOS);
+const CACHE_AUDIOS = 'bemviver-audios-v1'; // o mesmo nome usado no sw.js
+
+async function audiosGuardados() {
+  if (!('caches' in window)) return null;
+  try {
+    const c = await caches.open(CACHE_AUDIOS);
+    const tem = await Promise.all(LISTA_AUDIOS.map((u) => c.match(u)));
+    return tem.filter(Boolean).length;
+  } catch { return null; }
+}
+
+function cartaoAudios(numerado) {
+  const estado = el('p', { role: 'status' });
+  const botao = el('button', { type: 'button' }, 'Guardar os áudios no celular');
+  const cartao = el('section', { class: 'cartao' },
+    numerado ? el('p', { class: 'pilar' }, 'Passo 3') : null,
+    el('h2', {}, 'Guarde os áudios no celular'),
+    el('p', {}, 'Assim eles tocam mesmo sem internet. São 6 áudios, cerca de 19 MB: de preferência, faça isso no wi-fi.'),
+    botao, estado,
+  );
+  const pronto = () => {
+    cartao.classList.add('feito');
+    botao.remove();
+    estado.className = 'ok';
+    estado.textContent = 'Pronto: os 6 áudios estão no seu celular e tocam sem internet.';
+  };
+  audiosGuardados().then((q) => {
+    if (q === null) { cartao.hidden = true; return; } // navegador sem esse recurso
+    if (q === LISTA_AUDIOS.length) pronto();
+  });
+  botao.addEventListener('click', async () => {
+    botao.disabled = true;
+    estado.className = 'suave';
+    try {
+      const c = await caches.open(CACHE_AUDIOS);
+      for (let i = 0; i < LISTA_AUDIOS.length; i++) {
+        estado.textContent = `Guardando ${i + 1} de ${LISTA_AUDIOS.length}…`;
+        const u = LISTA_AUDIOS[i];
+        if (await c.match(u)) continue;
+        const r = await fetch(u, { cache: 'no-store' });
+        if (!r.ok) throw new Error('falhou');
+        await c.put(u, r);
+      }
+      pronto();
+    } catch {
+      botao.disabled = false;
+      estado.className = 'erro';
+      estado.textContent = navigator.onLine
+        ? 'Não deu para guardar todos agora. Tente de novo; os que já foram guardados ficam.'
+        : 'Você está sem internet. Conecte-se, de preferência no wi-fi, e tente de novo.';
+    }
+  });
+  return cartao;
+}
+
+function cartoesPreparo(naPreparacao) {
+  if (naPreparacao) return [cartaoInstalar(true), cartaoAudios(true)];
+  const lista = [];
+  if (!instalado()) lista.push(cartaoInstalar(false));
+  const audios = cartaoAudios(false);
+  audiosGuardados().then((q) => { if (q === LISTA_AUDIOS.length) audios.remove(); });
+  lista.push(audios);
+  return lista;
 }
 
 // Nota de tensão de 0 a 10, pedida antes e depois de cada respiro.
@@ -520,10 +677,12 @@ function fazerRespiro(segundos) {
   telaTensao('antes', (antes) => {
     telaPausa(segundos, () => {
       telaTensao('depois', (depois) => {
-        const dia = hoje();
-        const reg = registroDe(dia);
-        reg.respiros = [...reg.respiros, { antes, depois }];
-        salvarRegistro(dia, reg);
+        if (!antesDoInicio()) { // antes de 23/11 é só experiência: não entra nos resultados
+          const dia = hoje();
+          const reg = registroDe(dia);
+          reg.respiros = [...reg.respiros, { antes, depois }];
+          salvarRegistro(dia, reg);
+        }
         const frase = depois < antes
           ? `Você chegou em ${antes} e saiu em ${depois}.`
           : `Você chegou em ${antes} e saiu em ${depois}. Tudo bem: às vezes o corpo precisa de mais de uma rodada.`;
@@ -599,6 +758,14 @@ function telaPausa(segundos, aoTerminar) {
 // ---------- Domingo ----------
 
 function telaDomingo() {
+  if (antesDoInicio()) {
+    titulo.textContent = 'Domingo';
+    return mostrar(el('section', { class: 'cartao' },
+      el('h2', {}, 'As perguntas de domingo começam em 29 de novembro'),
+      el('p', {}, 'Todo domingo do piloto, aqui, você responde duas perguntas: uma nota de 0 a 10 para a sua satisfação com a vida e em quantos dias da semana você sentiu paz. Também tem um espaço livre, se quiser escrever.'),
+      el('p', {}, 'A cada domingo respondido, você vê aqui um gráfico da sua evolução desde a inscrição.'),
+    ));
+  }
   const domingo = domingoDaSemana();
   const salvos = ler('semanas', {})[domingo] || {};
   const s = {
@@ -862,6 +1029,6 @@ if ('serviceWorker' in navigator) {
 
 if (!ler('id')) telaEntrar();
 else {
-  irPara(new Date().getDay() === 0 ? 'domingo' : 'hoje');
+  irPara(new Date().getDay() === 0 && !antesDoInicio() ? 'domingo' : 'hoje');
   esvaziarFila();
 }

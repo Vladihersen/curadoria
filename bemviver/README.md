@@ -5,7 +5,12 @@ as práticas do dia, o suspiro fisiológico guiado, as perguntas de domingo (com
 livre opcional) e a tela de cuidados. O painel do Vladimir fica em
 `/bemviver/painel?chave=...` (a chave é o secret `ADMIN_KEY`).
 
-A data de início fica em `INICIO_PILOTO`, no topo de `public/bemviver/app.js`.
+A data de início fica em `INICIO_PILOTO`, no topo de `public/bemviver/app.js`. Antes dela,
+a aba Hoje mostra a preparação (boas-vindas, instalar na tela do celular, guardar os áudios,
+experimentar o suspiro sem contar nos resultados) e a aba Domingo só explica o que vem.
+
+O link do email pode trazer o nome e o WhatsApp preenchidos:
+`/bemviver/?nome=...&whatsapp=...` (no MailerLite, com os campos de personalização).
 
 ## Áudios
 
@@ -18,7 +23,8 @@ Os seis áudios aprovados ficam em `public/bemviver/audio/`, em MP3:
 - `4-noite.mp3`
 - `5-domingo.mp3`
 
-Se um arquivo faltar, o app mostra "O áudio guiado chega em breve". Enquanto um áudio
+Com o botão "Guardar os áudios no celular", os seis ficam no aparelho e tocam sem
+internet (o `sw.js` responde aos pedidos do player a partir do que foi guardado). Se um arquivo faltar, o app mostra "O áudio guiado chega em breve". Enquanto um áudio
 toca, ou enquanto o suspiro guiado está na tela, a tela do celular fica acesa, e a tela
 bloqueada mostra o nome do áudio com os botões de tocar e pausar.
 
