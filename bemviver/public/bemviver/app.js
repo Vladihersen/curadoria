@@ -1,9 +1,9 @@
 // App do Método Bem Viver: as práticas do dia e a nota de domingo do piloto.
-// Tudo fica guardado no celular (localStorage) e é enviado para /dia/api/ quando há internet.
+// Tudo fica guardado no celular (localStorage) e é enviado para /bemviver/api/ quando há internet.
 // As "três coisas boas" escritas à noite nunca saem do celular.
 'use strict';
 
-const INICIO_PILOTO = '2026-11-16'; // segunda-feira da semana 1
+const INICIO_PILOTO = '2026-11-23'; // segunda-feira da semana 1 (piloto de 23/11 a 20/12/2026)
 
 const PERGUNTAS = [
   { tema: 'Escutar sem consertar', pergunta: 'O que está pesando para você agora?', gesto: 'Ouça até o fim, sem dar conselho.' },
@@ -14,19 +14,19 @@ const PERGUNTAS = [
 
 // Foco de cada semana do piloto: o ritual fica igual, um pilar ganha destaque e um extra.
 const FOCOS = [
-  { nome: 'Corpo', extra: 'Nesta semana, faça o respiro de 5 minutos todo dia e os três minutos de movimento.' },
+  { nome: 'Corpo', extra: 'Nesta semana, faça o suspiro fisiológico de 5 minutos todo dia e os três minutos de movimento.' },
   { nome: 'Pessoas', extra: 'Nesta semana, escreva uma carta de gratidão a alguém vivo, e leia para a pessoa ou envie.' },
   { nome: 'Encantamento', extra: 'Nesta semana, faça uma caminhada mais longa num lugar bonito, sem celular, por uns 30 minutos.' },
   { nome: 'Sentido', extra: 'Nesta semana, procure a sua Zona de Entusiasmo: para quem a minha vida faz diferença, e o que eu faço com jeito e entusiasmo que quero continuar fazendo?' },
 ];
 
 const AUDIOS = {
-  boasVindas: '/dia/audio/1-boas-vindas.mp3',
-  manha: '/dia/audio/2-comeco-do-dia.mp3',
-  respiro1: '/dia/audio/3a-respiro-1-minuto.mp3',
-  respiro5: '/dia/audio/3b-respiro-5-minutos.mp3',
-  noite: '/dia/audio/4-noite.mp3',
-  domingo: '/dia/audio/5-domingo.mp3',
+  boasVindas: '/bemviver/audio/1-boas-vindas.mp3',
+  manha: '/bemviver/audio/2-comeco-do-dia.mp3',
+  respiro1: '/bemviver/audio/3a-respiro-1-minuto.mp3',
+  respiro5: '/bemviver/audio/3b-respiro-5-minutos.mp3',
+  noite: '/bemviver/audio/4-noite.mp3',
+  domingo: '/bemviver/audio/5-domingo.mp3',
 };
 
 const TESTE_ZONA = 'Zona de Presença: firme e confortável. Teste: consigo respirar pelo nariz com calma e sorrir? Se não, recue um pouco.';
@@ -37,7 +37,7 @@ const VINCULOS = ['Filha ou filho', 'Marido, esposa ou companheiro(a)', 'Amiga o
 
 function ler(chave, padrao) {
   try {
-    const v = localStorage.getItem('dia.' + chave);
+    const v = localStorage.getItem('bemviver.' + chave);
     return v === null ? padrao : JSON.parse(v);
   } catch {
     return padrao;
@@ -45,7 +45,7 @@ function ler(chave, padrao) {
 }
 
 function gravar(chave, valor) {
-  try { localStorage.setItem('dia.' + chave, JSON.stringify(valor)); } catch { /* modo privado: segue sem guardar */ }
+  try { localStorage.setItem('bemviver.' + chave, JSON.stringify(valor)); } catch { /* modo privado: segue sem guardar */ }
 }
 
 // ---------- Datas (sempre no fuso do celular) ----------
@@ -82,7 +82,7 @@ function saudacao() {
 // ---------- Envio com fila para quando não há internet ----------
 
 async function enviar(rota, dados) {
-  const r = await fetch('/dia/api/' + rota, {
+  const r = await fetch('/bemviver/api/' + rota, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(dados),
@@ -184,12 +184,81 @@ function simNao(valor, aoEscolher) {
   return caixa;
 }
 
-// Player que dá lugar a um aviso enquanto o áudio não foi gravado.
+// ---------- Tela acesa e controles na tela bloqueada ----------
+// Enquanto um áudio toca ou o suspiro guiado está na tela, o celular não apaga a tela
+// (Screen Wake Lock). Nos celulares sem esse recurso, o app segue normalmente.
+
+const motivosTelaAcesa = new Set();
+let travaTela = null;
+
+async function pedirTelaAcesa() {
+  if (!('wakeLock' in navigator) || travaTela || document.visibilityState !== 'visible') return;
+  try {
+    travaTela = await navigator.wakeLock.request('screen');
+    travaTela.addEventListener('release', () => { travaTela = null; });
+  } catch { travaTela = null; /* economia de bateria ou sem permissão: segue sem */ }
+}
+
+function manterTelaAcesa(motivo, ligar) {
+  if (ligar) motivosTelaAcesa.add(motivo); else motivosTelaAcesa.delete(motivo);
+  if (motivosTelaAcesa.size) pedirTelaAcesa();
+  else if (travaTela) { travaTela.release().catch(() => {}); travaTela = null; }
+}
+
+// O navegador solta a trava quando a pessoa sai do app; ao voltar, pede de novo.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && motivosTelaAcesa.size) pedirTelaAcesa();
+});
+
+// Nome do áudio, do Vladimir e do método na tela bloqueada, com tocar, pausar e voltar 10 s.
+function controlesTelaBloqueada(player, titulo) {
+  if (!('mediaSession' in navigator)) return;
+  const ms = navigator.mediaSession;
+  try {
+    ms.metadata = new MediaMetadata({
+      title: titulo,
+      artist: 'Vladimir Hersen',
+      album: 'Método Bem Viver',
+      artwork: [{ src: '/bemviver/icone.svg', sizes: 'any', type: 'image/svg+xml' }],
+    });
+    const acoes = {
+      play: () => player.play(),
+      pause: () => player.pause(),
+      seekbackward: (d) => { player.currentTime = Math.max(0, player.currentTime - ((d && d.seekOffset) || 10)); },
+      seekforward: (d) => { player.currentTime = Math.min(player.duration || Infinity, player.currentTime + ((d && d.seekOffset) || 10)); },
+      seekto: (d) => { if (d && d.seekTime != null) player.currentTime = d.seekTime; },
+    };
+    for (const [acao, fn] of Object.entries(acoes)) {
+      try { ms.setActionHandler(acao, fn); } catch { /* ação não suportada neste celular */ }
+    }
+  } catch { /* navegador antigo: segue sem controles */ }
+}
+
+// Player que dá lugar a um aviso enquanto o áudio não existir.
+// Só um áudio toca por vez; enquanto toca, a tela fica acesa.
 const audioExiste = {};
-function audio(src) {
+let playerAtivo = null;
+function audio(src, titulo = 'Método Bem Viver') {
   const caixa = el('div');
   const emBreve = () => caixa.replaceChildren(el('p', { class: 'suave' }, 'O áudio guiado chega em breve.'));
-  const tocar = () => caixa.replaceChildren(el('audio', { controls: true, preload: 'none', src }));
+  const tocar = () => {
+    const player = el('audio', { controls: true, preload: 'none', src });
+    player.addEventListener('play', () => {
+      if (playerAtivo && playerAtivo !== player) playerAtivo.pause();
+      playerAtivo = player;
+      controlesTelaBloqueada(player, titulo);
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+      manterTelaAcesa('audio', true);
+    });
+    const parou = () => {
+      if (playerAtivo !== player) return;
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+      manterTelaAcesa('audio', false);
+    };
+    player.addEventListener('pause', parou);
+    player.addEventListener('ended', parou);
+    caixa.replaceChildren(player);
+  };
   audioExiste[src] ??= fetch(src, { method: 'HEAD' }).then((r) => r.ok).catch(() => null);
   audioExiste[src].then((ok) => (ok === false ? emBreve() : tocar()));
   return caixa;
@@ -200,6 +269,9 @@ const titulo = document.getElementById('titulo');
 const abas = document.getElementById('abas');
 
 function mostrar(...filhos) {
+  // Ao trocar de tela, o áudio que estava tocando para (o elemento sai da página).
+  if (playerAtivo) { playerAtivo.pause(); playerAtivo = null; manterTelaAcesa('audio', false); }
+  manterTelaAcesa('pausa', false);
   app.replaceChildren(...filhos);
   window.scrollTo(0, 0);
 }
@@ -222,7 +294,7 @@ function telaEntrar() {
     el('label', { for: 'nome' }, 'Seu nome'), nome,
     el('label', { for: 'whats' }, 'WhatsApp com DDD'), whats,
     el('p', { class: 'suave' }, 'Só o Vladimir vê esse número, para falar com você se precisar.'),
-    el('label', {}, 'De 0 a 10, quão satisfeita você está com a sua vida hoje?'),
+    el('label', {}, 'De 0 a 10, qual é a sua satisfação com a sua vida hoje?'),
     escala(0, 10, null, (v) => { dados.nota = v; }),
     el('div', { class: 'escala-rotulos' }, el('span', {}, '0 nada'), el('span', {}, '10 totalmente')),
     el('label', {}, 'Na última semana, em quantos dias você sentiu paz?'),
@@ -264,19 +336,18 @@ function telaBoasVindas() {
   mostrar(
     el('section', { class: 'cartao' },
       el('h2', {}, 'Ouça primeiro'),
-      el('p', {}, 'Quatro minutos com o Vladimir explicando como funciona.'),
-      audio(AUDIOS.boasVindas),
+      el('p', {}, 'Cinco minutos com o Vladimir explicando como funciona.'),
+      audio(AUDIOS.boasVindas, 'Boas-vindas'),
       el('h3', {}, 'Os quatro pilares'),
-      el('p', {}, el('b', {}, 'Bem respirar'), ': um respiro de 1 minuto na hora do aperto, ou 5 minutos quando houver tempo.'),
+      el('p', {}, el('b', {}, 'Bem respirar'), ': o suspiro fisiológico, 1 minuto na hora do aperto, ou 5 minutos quando houver tempo.'),
       el('p', {}, el('b', {}, 'Bem fazer'), ': três minutos de movimento ao longo do dia e uma coisa pequena que te dá vida.'),
       el('p', {}, el('b', {}, 'Bem querer'), ': uma mensagem ou ligação para alguém por dia e, uma vez por semana, um Encontro de Verdade.'),
       el('p', {}, el('b', {}, 'Bem ver'), ': à noite, três coisas boas do dia e desejar o bem a quem você ama.'),
       el('p', {}, 'Em dia corrido, faça a versão mínima: um minuto de cada já conta. Nunca zero, nunca forçado.'),
       el('p', { class: 'suave' }, TESTE_ZONA),
-      el('p', { class: 'suave' }, 'Zona de Entusiasmo: quando o que você faz combina com o seu propósito e com aquilo para que você tem jeito. Na Presença você pratica; no Entusiasmo você descobre para onde a sua vida quer ir.'),
       el('p', { class: 'suave' }, '"A felicidade vem de uma vida significativa e não de uma vida fácil." Maria Nogueira Maia'),
       el('h3', {}, 'Experimente agora'),
-      el('p', {}, 'Dê uma nota para a sua tensão, faça 1 minuto de respiro e dê a nota de novo. Veja com os seus olhos o que um minuto faz.'),
+      el('p', {}, 'Dê uma nota para a sua tensão, faça 1 minuto de suspiro fisiológico e dê a nota de novo. Veja com os seus próprios olhos o que um minuto faz.'),
       el('button', { type: 'button', onclick: () => fazerRespiro(60) }, 'Fazer o teste agora'),
       el('button', { type: 'button', class: 'secundario', onclick: () => irPara('hoje') }, 'Ir para o meu dia'),
     ),
@@ -339,12 +410,12 @@ function telaHoje() {
   const m = mediaTensao(reg.respiros);
   const cRespiro = el('section', { class: 'cartao' + (reg.respiros.length ? ' feito' : '') },
     el('p', { class: 'pilar' }, 'Bem respirar · quando apertar'),
-    el('h2', {}, 'Respiro'),
-    el('p', {}, 'Puxe o ar pelo nariz, dê mais uma puxadinha e solte devagar pela boca. Antes e depois, uma nota para a sua tensão.'),
-    m ? el('p', { class: 'resultado' }, `Hoje: ${reg.respiros.length} ${reg.respiros.length === 1 ? 'respiro' : 'respiros'}, tensão média de ${m.antes.toFixed(1).replace('.', ',')} para ${m.depois.toFixed(1).replace('.', ',')}.`) : null,
-    el('button', { type: 'button', onclick: () => fazerRespiro(60) }, 'Respiro de 1 minuto'),
-    el('button', { type: 'button', class: 'secundario', onclick: () => fazerRespiro(300) }, 'Respiro de 5 minutos'),
-    el('details', {}, el('summary', {}, 'Prefere ouvir o Vladimir?'), audio(AUDIOS.respiro1), audio(AUDIOS.respiro5)),
+    el('h2', {}, 'Suspiro fisiológico'),
+    el('p', {}, 'Inspire pelo nariz, inspire mais um pouquinho por cima e solte todo o ar pelo nariz, bem devagar. Antes e depois, uma nota para a sua tensão.'),
+    m ? el('p', { class: 'resultado' }, `Hoje: ${reg.respiros.length} ${reg.respiros.length === 1 ? 'vez' : 'vezes'}, tensão média de ${m.antes.toFixed(1).replace('.', ',')} para ${m.depois.toFixed(1).replace('.', ',')}.`) : null,
+    el('button', { type: 'button', onclick: () => fazerRespiro(60) }, '1 minuto'),
+    el('button', { type: 'button', class: 'secundario', onclick: () => fazerRespiro(300) }, '5 minutos'),
+    el('details', {}, el('summary', {}, 'Prefere ouvir o Vladimir?'), el('p', { class: 'suave' }, '1 minuto'), audio(AUDIOS.respiro1, 'Suspiro fisiológico de 1 minuto'), el('p', { class: 'suave' }, '5 minutos'), audio(AUDIOS.respiro5, 'Suspiro fisiológico de 5 minutos')),
   );
 
   const passos = el('div', { class: 'pausas', role: 'group', 'aria-label': 'Minutos de movimento hoje' });
@@ -364,7 +435,7 @@ function telaHoje() {
     el('h2', {}, 'Três minutos de movimento'),
     el('p', {}, 'Três vezes hoje, 1 minuto de passo rápido ou escada, preso a algo que já acontece: ir ao ponto, subir para casa, esperar o café. A respiração acelera, mas dá para falar.'),
     el('p', { class: 'suave' }, 'Dia calmo? Uma caminhada ao ar livre vale pelos três. Andar enquanto faz a ligação do dia também conta.'),
-    audio(AUDIOS.manha),
+    audio(AUDIOS.manha, 'O começo do dia'),
     passos,
   );
   desenharPassos();
@@ -389,7 +460,7 @@ function telaHoje() {
 
   const boas = ler('boas', {});
   const minhas = boas[dia] || ['', '', ''];
-  const dicas = ['1. Algo bom de hoje, e por quê', '2. Algo bom que veio de uma pessoa', '3. Algo bom que eu mesma fiz'];
+  const dicas = ['1. Algo bom de hoje, e por quê', '2. Algo bom que veio de uma pessoa', '3. Algo bom que eu fiz'];
   const campos = minhas.map((t, i) => {
     const c = el('input', { type: 'text', value: t, 'aria-label': `Coisa boa ${i + 1}`, placeholder: dicas[i] });
     c.addEventListener('input', () => {
@@ -408,14 +479,14 @@ function telaHoje() {
   const cNoite = el('section', { class: 'cartao' + (reg.noite ? ' feito' : '') },
     el('p', { class: 'pilar' }, 'Bem ver e Bem querer · noite'),
     el('h2', {}, 'Três coisas boas e desejar o bem'),
-    el('p', {}, 'Lembre três coisas boas do dia e por que aconteceram. Escolha uma e fique um minuto com ela, saboreando. Depois deseje o bem a quem você ama, e a você mesma.'),
+    el('p', {}, 'Lembre três coisas boas do dia e por que aconteceram. Escolha uma e fique um minuto com ela, saboreando. Depois deseje o bem a quem você ama, e a você.'),
     ...campos,
     el('p', { class: 'suave' }, 'O que você escreve aqui fica só no seu celular.'),
     el('p', { class: 'frase' }, 'Que você esteja em paz. Que você tenha saúde. Que você seja feliz.'),
     el('p', { class: 'frase' }, 'Que eu esteja em paz. Que eu tenha saúde. Que eu seja feliz.'),
     el('p', { class: 'frase' }, 'Que todos os seres sejam felizes.'),
     el('label', { for: 'amanha' }, 'Amanhã, a coisa que vai me dar vida'), amanha,
-    audio(AUDIOS.noite),
+    audio(AUDIOS.noite, 'A noite'),
     botaoMarcar('Fiz a prática da noite', reg.noite, (v) => { reg.noite = v; salvarRegistro(dia, reg); marcar(cNoite, v); }),
     el('label', {}, 'Hoje teve um momento de paz?'),
     simNao(reg.paz, (v) => { reg.paz = v; salvarRegistro(dia, reg); }),
@@ -437,7 +508,7 @@ function telaTensao(momento, aoEscolher) {
   abas.hidden = true;
   titulo.textContent = momento === 'antes' ? 'Antes de começar' : 'E agora?';
   mostrar(el('section', { class: 'cartao' },
-    el('h2', {}, momento === 'antes' ? 'Como está a sua tensão agora?' : 'Como está a sua tensão agora, depois do respiro?'),
+    el('h2', {}, momento === 'antes' ? 'Como está a sua tensão agora?' : 'Como está a sua tensão agora, depois do suspiro?'),
     el('p', { class: 'suave' }, 'O primeiro número que vier é o certo.'),
     escala(0, 10, null, aoEscolher),
     el('div', { class: 'escala-rotulos' }, el('span', {}, '0 nenhuma'), el('span', {}, '10 muita')),
@@ -455,7 +526,7 @@ function fazerRespiro(segundos) {
         salvarRegistro(dia, reg);
         const frase = depois < antes
           ? `Você chegou em ${antes} e saiu em ${depois}.`
-          : `Você chegou em ${antes} e saiu em ${depois}. Tudo bem: às vezes o corpo precisa de mais de um respiro.`;
+          : `Você chegou em ${antes} e saiu em ${depois}. Tudo bem: às vezes o corpo precisa de mais de uma rodada.`;
         abas.hidden = true;
         titulo.textContent = 'Pronto';
         mostrar(el('section', { class: 'cartao' },
@@ -467,14 +538,15 @@ function fazerRespiro(segundos) {
   });
 }
 
-// Respiro guiado: inspira pelo nariz, puxadinha, solta pela boca. 1 ou 5 minutos.
+// Suspiro fisiológico guiado: inspira pelo nariz, mais um pouquinho por cima, solta pelo nariz. 1 ou 5 minutos.
+// O ritmo (2,3 s, 1,3 s e 5,3 s) é o mesmo da taça tibetana dos áudios.
 function telaPausa(segundos, aoTerminar) {
   abas.hidden = true;
-  titulo.textContent = segundos >= 300 ? 'Respiro de 5 minutos' : 'Respiro de 1 minuto';
+  titulo.textContent = segundos >= 300 ? 'Suspiro fisiológico, 5 minutos' : 'Suspiro fisiológico, 1 minuto';
   const FASES = [
-    { texto: 'Puxe o ar pelo nariz, devagar', ms: 2500, escala: 0.9 },
-    { texto: 'Mais um pouquinho', ms: 1000, escala: 1 },
-    { texto: 'Solte pela boca, bem devagar', ms: 6000, escala: 0.55 },
+    { texto: 'Inspire pelo nariz, devagar', ms: 2300, escala: 0.9 },
+    { texto: 'Inspire mais um pouquinho, por cima', ms: 1300, escala: 1 },
+    { texto: 'Solte todo o ar pelo nariz, bem devagar', ms: 5300, escala: 0.55 },
   ];
   const TOTAL_MS = segundos * 1000;
   const bolha = el('div', { class: 'bolha', 'aria-hidden': 'true' });
@@ -486,6 +558,7 @@ function telaPausa(segundos, aoTerminar) {
 
   const fim = (completou) => {
     ativo = false; clearTimeout(tempo);
+    manterTelaAcesa('pausa', false);
     if (completou) aoTerminar();
     else irPara('hoje');
   };
@@ -520,6 +593,7 @@ function telaPausa(segundos, aoTerminar) {
     el('p', { class: 'suave' }, 'Se sentir tontura, volte a respirar normal. A respiração é suave, nunca forçada.'),
     parar,
   ));
+  manterTelaAcesa('pausa', true);
 }
 
 // ---------- Domingo ----------
@@ -531,6 +605,7 @@ function telaDomingo() {
     nota: salvos.nota ?? null, dias_paz: salvos.dias_paz ?? null,
     encontro: salvos.encontro ?? null, encontro_com: salvos.encontro_com || '',
     efeito_ruim: salvos.efeito_ruim ?? null, efeito_texto: salvos.efeito_texto || '', duvida: salvos.duvida || '',
+    livre: salvos.livre || '',
   };
   const semana = semanaDoPiloto();
   titulo.textContent = 'Domingo';
@@ -549,6 +624,10 @@ function telaDomingo() {
   const duvida = el('textarea', { id: 'duvida', maxlength: '600', placeholder: 'Opcional' }, s.duvida);
   duvida.addEventListener('input', () => { s.duvida = duvida.value; });
 
+  // Espaço livre e opcional: um desabafo, um agradecimento, o que vier.
+  const livre = el('textarea', { id: 'livre', maxlength: '2000', rows: '5', placeholder: 'Opcional' }, s.livre);
+  livre.addEventListener('input', () => { s.livre = livre.value; });
+
   const msg = el('p', { role: 'status' });
   const botao = el('button', { type: 'button' }, salvos.nota != null ? 'Atualizar respostas' : 'Enviar respostas');
   botao.addEventListener('click', () => {
@@ -559,7 +638,7 @@ function telaDomingo() {
       id: ler('id'), domingo, nota: s.nota, dias_paz: s.dias_paz,
       encontro: s.encontro === true, encontro_com: s.encontro === true ? s.encontro_com : '',
       efeito_ruim: s.efeito_ruim === true, efeito_texto: s.efeito_ruim === true ? s.efeito_texto : '',
-      duvida: s.duvida,
+      duvida: s.duvida, livre: s.livre,
     };
     const todas = ler('semanas', {});
     todas[domingo] = dados;
@@ -613,7 +692,7 @@ function telaDomingo() {
   let evolucao = cartaoEvolucao();
   const intencaoCartao = el('section', { class: 'cartao' },
     el('h2', {}, 'A intenção da semana'),
-    el('p', {}, 'Uma frase em primeira pessoa. Confiança em si mesma se constrói cumprindo pequenas promessas que a gente faz para a gente.'),
+    el('p', {}, 'Uma frase em primeira pessoa. A confiança em si se constrói cumprindo pequenas promessas que a gente faz para a gente.'),
     el('label', { for: 'intencao' }, 'Nesta semana, eu escolho...'), intencao,
     el('p', { class: 'suave' }, 'Fica só no seu celular.'),
     semana < 4 ? el('p', {}, `Na próxima semana: ${proximo.extra.replace(/^Nesta semana, /, '')}`) : null,
@@ -624,10 +703,10 @@ function telaDomingo() {
       el('h2', {}, `Semana que termina em ${dataCurta(domingo)}`),
       calendario,
       el('p', { class: 'suave' }, `Você praticou em ${diasFeitos} de 7 dias. • prática · ☼ momento de paz`),
-      tensao ? el('p', { class: 'resultado' }, `${respirosSemana.length === 1 ? 'No respiro' : `Nos ${respirosSemana.length} respiros`} da semana, sua tensão foi em média de ${virgula(tensao.antes)} para ${virgula(tensao.depois)}.`) : null,
+      tensao ? el('p', { class: 'resultado' }, `${respirosSemana.length === 1 ? 'Na vez em que você fez o suspiro fisiológico' : `Nas ${respirosSemana.length} vezes em que você fez o suspiro fisiológico`} nesta semana, sua tensão foi em média de ${virgula(tensao.antes)} para ${virgula(tensao.depois)}.`) : null,
       diasFeitos < 7 ? el('p', {}, 'Teve dia em branco? Tudo bem. Recomeçar sem culpa faz parte do método.') : null,
-      audio(AUDIOS.domingo),
-      el('label', {}, 'De 0 a 10, quão satisfeita você está com a sua vida?'),
+      audio(AUDIOS.domingo, 'O domingo'),
+      el('label', {}, 'De 0 a 10, qual é a sua satisfação com a sua vida hoje?'),
       escala(0, 10, s.nota, (v) => { s.nota = v; }),
       el('div', { class: 'escala-rotulos' }, el('span', {}, '0 nada'), el('span', {}, '10 totalmente')),
       el('label', {}, 'Em quantos dias desta semana você sentiu paz?'),
@@ -639,6 +718,9 @@ function telaDomingo() {
       simNao(s.efeito_ruim, (v) => { s.efeito_ruim = v; caixaEfeito.hidden = !v; }),
       caixaEfeito,
       el('label', { for: 'duvida' }, 'Tem alguma dúvida para o Vladimir?'), duvida,
+      el('label', { for: 'livre' }, 'Espaço livre'),
+      el('p', { class: 'suave' }, 'Se quiser, escreva o que quiser: um desabafo, um agradecimento, algo que aconteceu na semana. Só o Vladimir lê.'),
+      livre,
       msg, botao,
       comparar,
     ),
@@ -742,10 +824,10 @@ function telaCuidados() {
     el('section', { class: 'cartao' },
       el('h2', {}, 'Antes de começar'),
       el('p', {}, 'O Método Bem Viver é um conjunto de práticas de bem-estar. Ele não substitui tratamento médico nem psicológico. Se você faz algum tratamento, continue com ele e não mude nenhum remédio por conta própria.'),
-      el('p', {}, 'Converse com seu médico antes dos respiros se você tem doença no coração, pressão alta sem controle ou marca-passo; asma, bronquite, enfisema ou outra doença do pulmão; crises de pânico; ou se está grávida.'),
+      el('p', {}, 'Converse com seu médico antes do suspiro fisiológico se você tem doença no coração, pressão alta sem controle ou marca-passo; asma, bronquite, enfisema ou outra doença do pulmão; crises de pânico; ou se está grávida.'),
       el('h3', {}, 'Durante as práticas'),
       el('p', {}, 'A respiração é suave, nunca forçada. Pare e volte a respirar normal se sentir tontura, formigamento, vista escura, falta de ar, aperto no peito ou coração disparado.'),
-      el('p', {}, 'Faça os respiros sentada ou deitada, nunca dirigindo, na água ou em pé num lugar alto.'),
+      el('p', {}, 'Faça o suspiro fisiológico sentado ou deitado, nunca dirigindo, na água ou em pé num lugar alto.'),
       el('h3', {}, 'Movimento'),
       el('p', {}, 'O minuto de passo rápido é na Zona de Presença: a respiração acelera, mas dá para falar e sorrir. Se você tem doença no coração, marca-passo, pressão alta sem controle ou sente dor ou falta de ar ao esforço, converse com seu médico antes de acelerar o passo. Pare se sentir dor no peito, tontura ou falta de ar forte.'),
       el('h3', {}, 'Sentimentos que podem aparecer'),
@@ -775,7 +857,7 @@ abas.addEventListener('click', (ev) => {
 });
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/dia/sw.js', { scope: '/dia/' }).catch(() => {});
+  navigator.serviceWorker.register('/bemviver/sw.js', { scope: '/bemviver/' }).catch(() => {});
 }
 
 if (!ler('id')) telaEntrar();

@@ -1,5 +1,5 @@
-// App do Método (piloto do Dia Bem Vivido): API das participantes e painel do Vladimir.
-// As telas do app são estáticas (public/dia/). Este Worker só atende /dia/api/* e /dia/painel.
+// App do Método Bem Viver (piloto): API das participantes e painel do Vladimir.
+// As telas do app são estáticas (public/bemviver/). Este Worker só atende /bemviver/api/* e /bemviver/painel.
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS dia_participantes (
@@ -34,6 +34,7 @@ const SCHEMA = [
      efeito_ruim INTEGER NOT NULL DEFAULT 0,
      efeito_texto TEXT,
      duvida TEXT,
+     livre TEXT,
      atualizado_em TEXT NOT NULL,
      PRIMARY KEY (participante, domingo)
    )`,
@@ -136,17 +137,17 @@ async function semana(request, env) {
   const nota = c.nota === null || c.nota === undefined ? null : inteiro(c.nota, 0, 10);
   const diasPaz = c.dias_paz === null || c.dias_paz === undefined ? null : inteiro(c.dias_paz, 0, 7);
   await env.DB.prepare(
-    `INSERT INTO dia_semanas (participante, domingo, nota, dias_paz, encontro, encontro_com, efeito_ruim, efeito_texto, duvida, atualizado_em)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO dia_semanas (participante, domingo, nota, dias_paz, encontro, encontro_com, efeito_ruim, efeito_texto, duvida, livre, atualizado_em)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (participante, domingo) DO UPDATE SET
        nota = COALESCE(excluded.nota, dia_semanas.nota),
        dias_paz = COALESCE(excluded.dias_paz, dia_semanas.dias_paz), encontro = excluded.encontro,
        encontro_com = excluded.encontro_com,
        efeito_ruim = excluded.efeito_ruim, efeito_texto = excluded.efeito_texto,
-       duvida = excluded.duvida, atualizado_em = excluded.atualizado_em`
+       duvida = excluded.duvida, livre = excluded.livre, atualizado_em = excluded.atualizado_em`
   ).bind(
     c.id, c.domingo, nota, diasPaz, c.encontro ? 1 : 0, texto(c.encontro_com, 40) || null, c.efeito_ruim ? 1 : 0,
-    texto(c.efeito_texto, 600), texto(c.duvida, 600), new Date().toISOString()
+    texto(c.efeito_texto, 600), texto(c.duvida, 600), texto(c.livre, 2000), new Date().toISOString()
   ).run();
   return json({ ok: true });
 }
@@ -192,7 +193,7 @@ async function dadosPainel(db) {
 function csv(d) {
   const cab = ['nome', 'whatsapp', 'entrou_em', 'nota_inicial', 'dias_paz_inicial', 'dias_praticados', 'respiros', 'tensao_antes_media',
     'tensao_depois_media', 'dias_movimento', 'dias_vida', 'dias_contato', 'noites', 'dias_paz_marcados',
-    ...d.domingos.flatMap((dom) => [`nota_${dom}`, `dias_paz_${dom}`, `encontro_${dom}`, `encontro_com_${dom}`, `efeito_ruim_${dom}`, `efeito_texto_${dom}`, `duvida_${dom}`])];
+    ...d.domingos.flatMap((dom) => [`nota_${dom}`, `dias_paz_${dom}`, `encontro_${dom}`, `encontro_com_${dom}`, `efeito_ruim_${dom}`, `efeito_texto_${dom}`, `duvida_${dom}`, `espaco_livre_${dom}`])];
   const linhas = d.participantes.map((p) => {
     const r = d.registros[p.id] || {};
     const sem = d.semanas[p.id] || {};
@@ -201,7 +202,7 @@ function csv(d) {
       r.dias_contato ?? 0, r.noites ?? 0, r.dias_paz_marcados ?? 0,
       ...d.domingos.flatMap((dom) => {
         const w = sem[dom] || {};
-        return [w.nota ?? '', w.dias_paz ?? '', w.encontro ? 'sim' : '', w.encontro_com ?? '', w.efeito_ruim ? 'sim' : '', w.efeito_texto ?? '', w.duvida ?? ''];
+        return [w.nota ?? '', w.dias_paz ?? '', w.encontro ? 'sim' : '', w.encontro_com ?? '', w.efeito_ruim ? 'sim' : '', w.efeito_texto ?? '', w.duvida ?? '', w.livre ?? ''];
       })];
   });
   return [cab, ...linhas].map((l) => l.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
@@ -222,6 +223,8 @@ function htmlPainel(d, chave) {
   }).join('');
   const duvidas = d.participantes.flatMap((p) => Object.values(d.semanas[p.id] || {})
     .filter((w) => w.duvida).map((w) => `<li><b>${esc(p.nome)}</b> (${esc(w.domingo)}): ${esc(w.duvida)}</li>`)).join('');
+  const livres = d.participantes.flatMap((p) => Object.values(d.semanas[p.id] || {})
+    .filter((w) => w.livre).map((w) => `<li><b>${esc(p.nome)}</b> (${esc(w.domingo)}): ${esc(w.livre).replace(/\n/g, '<br>')}</li>`)).join('');
   const listaAlertas = alertas.map((a) => `<li><b>${esc(a.nome)}</b> · ${esc(a.whatsapp)} (${esc(a.dom)}): ${esc(a.texto || 'sem detalhe')}</li>`).join('');
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
@@ -235,13 +238,14 @@ th{background:#efe9dc}.vazio{color:#aaa}.alerta{color:#b3261e}
 a.botao{display:inline-block;margin-top:8px;padding:10px 14px;background:#5b7f5a;color:#fff;border-radius:8px;text-decoration:none}
 </style></head><body>
 <h1>Painel do piloto · ${d.participantes.length} participantes</h1>
-<p>Cada domingo mostra a nota de satisfação (0 a 10) · os dias de paz na semana (0 a 7). "!" marca quem relatou algo que fez mal ou ficou difícil. A tensão (0 a 10) é a média dada antes e depois dos respiros.</p>
+<p>Cada domingo mostra a nota de satisfação (0 a 10) · os dias de paz na semana (0 a 7). "!" marca quem relatou algo que fez mal ou ficou difícil. A tensão (0 a 10) é a média dada antes e depois do suspiro fisiológico.</p>
 <div class="tab"><table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Início (nota · dias de paz)</th>
-${d.domingos.map((dom) => `<th>${esc(dom.slice(8, 10) + '/' + dom.slice(5, 7))}</th>`).join('')}<th>Dias praticados</th><th>Respiros · tensão antes → depois</th><th>Dias: movimento · vida · contato · noite</th></tr></thead>
+${d.domingos.map((dom) => `<th>${esc(dom.slice(8, 10) + '/' + dom.slice(5, 7))}</th>`).join('')}<th>Dias praticados</th><th>Suspiros · tensão antes → depois</th><th>Dias: movimento · vida · contato · noite</th></tr></thead>
 <tbody>${linhas || '<tr><td colspan="6">Ninguém entrou ainda.</td></tr>'}</tbody></table></div>
 <h2>Relatos de efeito ruim</h2><ul>${listaAlertas || '<li>Nenhum.</li>'}</ul>
 <h2>Dúvidas</h2><ul>${duvidas || '<li>Nenhuma.</li>'}</ul>
-<a class="botao" href="/dia/painel?chave=${encodeURIComponent(chave)}&formato=csv">Baixar planilha (CSV)</a>
+<h2>Espaço livre (desabafos, agradecimentos)</h2><ul>${livres || '<li>Nada ainda.</li>'}</ul>
+<a class="botao" href="/bemviver/painel?chave=${encodeURIComponent(chave)}&formato=csv">Baixar planilha (CSV)</a>
 </body></html>`;
 }
 
@@ -256,7 +260,7 @@ async function painel(request, env) {
     return new Response('﻿' + csv(d), {
       headers: {
         'content-type': 'text/csv; charset=utf-8',
-        'content-disposition': 'attachment; filename="piloto-dia-bem-vivido.csv"',
+        'content-disposition': 'attachment; filename="piloto-metodo-bem-viver.csv"',
         'cache-control': 'no-store',
       },
     });
@@ -271,17 +275,17 @@ export default {
     const url = new URL(request.url);
     const rota = url.pathname;
     try {
-      if (rota.startsWith('/dia/api/') || rota.startsWith('/dia/painel')) await garantirTabelas(env.DB);
-      if (rota.startsWith('/dia/painel')) return await painel(request, env);
-      if (rota.startsWith('/dia/api/')) {
+      if (rota.startsWith('/bemviver/api/') || rota.startsWith('/bemviver/painel')) await garantirTabelas(env.DB);
+      if (rota.startsWith('/bemviver/painel')) return await painel(request, env);
+      if (rota.startsWith('/bemviver/api/')) {
         if (request.method !== 'POST') return json({ erro: 'método não permitido' }, 405);
-        if (rota === '/dia/api/entrar') return await entrar(request, env);
-        if (rota === '/dia/api/registro') return await registro(request, env);
-        if (rota === '/dia/api/semana') return await semana(request, env);
+        if (rota === '/bemviver/api/entrar') return await entrar(request, env);
+        if (rota === '/bemviver/api/registro') return await registro(request, env);
+        if (rota === '/bemviver/api/semana') return await semana(request, env);
         return json({ erro: 'rota desconhecida' }, 404);
       }
     } catch (e) {
-      console.error('dia-bem-vivido', rota, e && e.stack || e);
+      console.error('metodo-bem-viver', rota, e && e.stack || e);
       return json({ erro: 'falha no servidor' }, 500);
     }
     return env.ASSETS.fetch(request);

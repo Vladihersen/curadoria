@@ -1,23 +1,23 @@
-# Worker do app do Método (piloto do Dia Bem Vivido) em vladimirhersen.com.br/dia.
-# Publicado pelo GitHub Actions (dia-deploy.yml) quando algo em dia/ muda na main.
-name = "dia-bem-vivido"
+# Worker do app do Método Bem Viver (piloto) em vladimirhersen.com.br/bemviver.
+# Publicado pelo GitHub Actions (bemviver-deploy.yml) quando algo em bemviver/ muda na main.
+name = "metodo-bem-viver"
 main = "src/worker.js"
 compatibility_date = "2026-10-12"
 workers_dev = false
 
 routes = [
-  { pattern = "vladimirhersen.com.br/dia*", zone_name = "vladimirhersen.com.br" }
+  { pattern = "vladimirhersen.com.br/bemviver*", zone_name = "vladimirhersen.com.br" }
 ]
 
 # Mantém variáveis e secrets do painel (ADMIN_KEY é secret: wrangler secret put ADMIN_KEY).
 keep_vars = true
 
-# As telas do app são arquivos estáticos em public/dia/.
+# As telas do app são arquivos estáticos em public/bemviver/.
 # A API e o painel passam primeiro pelo Worker.
 [assets]
 directory = "public"
 binding = "ASSETS"
-run_worker_first = ["/dia/api/*", "/dia/painel*"]
+run_worker_first = ["/bemviver/api/*", "/bemviver/painel*"]
 
 # Mesmo banco das inscrições do site. O app usa só as tabelas dia_*,
 # criadas pelo próprio Worker na primeira chamada.

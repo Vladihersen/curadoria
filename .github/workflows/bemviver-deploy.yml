@@ -1,21 +1,21 @@
 name: Publicar app do método
 
-# Publica o app do Método Bem Viver (vladimirhersen.com.br/dia) sempre que algo
-# dentro de dia/ muda na main.
+# Publica o app do Método Bem Viver (vladimirhersen.com.br/bemviver) sempre que algo
+# dentro de bemviver/ muda na main.
 on:
   push:
     branches: [main]
-    paths: ['dia/**']
+    paths: ['bemviver/**']
   workflow_dispatch:
 
-concurrency: dia-deploy
+concurrency: bemviver-deploy
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: dia
+        working-directory: bemviver
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
