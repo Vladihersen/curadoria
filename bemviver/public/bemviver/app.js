@@ -212,6 +212,7 @@ function manterTelaAcesa(motivo, ligar) {
   if (ligar) motivosTelaAcesa.add(motivo); else motivosTelaAcesa.delete(motivo);
   if (motivosTelaAcesa.size) pedirTelaAcesa();
   else if (travaTela) { travaTela.release().catch(() => {}); travaTela = null; }
+  if (!motivosTelaAcesa.size && typeof mostrarAvisoAtualizar === 'function') mostrarAvisoAtualizar();
 }
 
 // O navegador solta a trava quando a pessoa sai do app; ao voltar, pede de novo.
@@ -594,56 +595,70 @@ function cartaoInstalar(numerado) {
   return cartao;
 }
 
-const LISTA_AUDIOS = Object.values(AUDIOS);
-const CACHE_AUDIOS = 'bemviver-audios-v1'; // o mesmo nome usado no sw.js
+// Os áudios são guardados pelo service worker logo na primeira abertura.
+// Este cartão só mostra o andamento e, se faltar algum, deixa tentar de novo.
+function perguntarAoSW(msg, tipoFim, aoAvancar) {
+  return new Promise((ok) => {
+    const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+    if (!sw) return ok(null);
+    const ouvir = (ev) => {
+      const d = ev.data || {};
+      if (d.tipo === 'AUDIOS_PROGRESSO' && aoAvancar) aoAvancar(d);
+      if (d.tipo === tipoFim) { navigator.serviceWorker.removeEventListener('message', ouvir); ok(d); }
+    };
+    navigator.serviceWorker.addEventListener('message', ouvir);
+    sw.postMessage(msg);
+  });
+}
 
-async function audiosGuardados() {
-  if (!('caches' in window)) return null;
-  try {
-    const c = await caches.open(CACHE_AUDIOS);
-    const tem = await Promise.all(LISTA_AUDIOS.map((u) => c.match(u)));
-    return tem.filter(Boolean).length;
-  } catch { return null; }
+function audiosGuardados() {
+  return perguntarAoSW({ tipo: 'AUDIOS_ESTADO' }, 'AUDIOS_ESTADO');
 }
 
 function cartaoAudios(numerado) {
-  const estado = el('p', { role: 'status' });
-  const botao = el('button', { type: 'button' }, 'Guardar os áudios no celular');
+  const estado = el('p', { role: 'status', class: 'suave' }, 'Conferindo…');
+  const botao = el('button', { type: 'button', hidden: true }, 'Baixar os áudios que faltam');
   const cartao = el('section', { class: 'cartao' },
     numerado ? el('p', { class: 'pilar' }, 'Passo 3') : null,
-    el('h2', {}, 'Guarde os áudios no celular'),
-    el('p', {}, 'Assim eles tocam mesmo sem internet. São 6 áudios, cerca de 19 MB: de preferência, faça isso no wi-fi.'),
+    el('h2', {}, 'Os áudios no seu celular'),
+    el('p', {}, 'Na primeira vez que você abre o app, os 6 áudios (cerca de 19 MB) ficam guardados no celular. Depois disso eles tocam mesmo sem internet. De preferência, abra o app pela primeira vez no wi-fi.'),
     botao, estado,
   );
-  const pronto = () => {
-    cartao.classList.add('feito');
-    botao.remove();
-    estado.className = 'ok';
-    estado.textContent = 'Pronto: os 6 áudios estão no seu celular e tocam sem internet.';
+  const mostrarEstado = (d) => {
+    if (!d) { estado.textContent = 'Os áudios tocam quando houver internet.'; return; }
+    if (d.ok === d.total) {
+      cartao.classList.add('feito');
+      botao.hidden = true;
+      estado.className = 'ok';
+      estado.textContent = 'Pronto: os 6 áudios estão no seu celular e tocam sem internet.';
+    } else {
+      botao.hidden = false;
+      botao.disabled = false;
+      estado.className = 'suave';
+      estado.textContent = `${d.ok} de ${d.total} áudios guardados.`;
+    }
   };
-  audiosGuardados().then((q) => {
-    if (q === null) { cartao.hidden = true; return; } // navegador sem esse recurso
-    if (q === LISTA_AUDIOS.length) pronto();
+  // Logo depois da primeira abertura o service worker ainda está baixando: confere de novo.
+  const conferir = () => audiosGuardados().then((d) => {
+    mostrarEstado(d);
+    if (d && d.ok < d.total && !conferir.vezes++) setTimeout(conferir, 8000);
   });
+  conferir.vezes = 0;
+  if (navigator.serviceWorker && !navigator.serviceWorker.controller) {
+    navigator.serviceWorker.ready.then(() => setTimeout(conferir, 1500));
+  }
+  conferir();
   botao.addEventListener('click', async () => {
     botao.disabled = true;
     estado.className = 'suave';
-    try {
-      const c = await caches.open(CACHE_AUDIOS);
-      for (let i = 0; i < LISTA_AUDIOS.length; i++) {
-        estado.textContent = `Guardando ${i + 1} de ${LISTA_AUDIOS.length}…`;
-        const u = LISTA_AUDIOS[i];
-        if (await c.match(u)) continue;
-        const r = await fetch(u, { cache: 'no-store' });
-        if (!r.ok) throw new Error('falhou');
-        await c.put(u, r);
-      }
-      pronto();
-    } catch {
-      botao.disabled = false;
+    estado.textContent = 'Baixando…';
+    const d = await perguntarAoSW({ tipo: 'GUARDAR_AUDIOS' }, 'AUDIOS_FIM',
+      (p) => { estado.textContent = `Baixando ${p.feitos} de ${p.total}…`; });
+    mostrarEstado(d);
+    if (d && d.ok < d.total) {
       estado.className = 'erro';
       estado.textContent = navigator.onLine
-        ? 'Não deu para guardar todos agora. Tente de novo; os que já foram guardados ficam.'
+        ? `${d.ok} de ${d.total} guardados. Tente de novo em instantes; os que já foram ficam.`
         : 'Você está sem internet. Conecte-se, de preferência no wi-fi, e tente de novo.';
     }
   });
@@ -655,7 +670,8 @@ function cartoesPreparo(naPreparacao) {
   const lista = [];
   if (!instalado()) lista.push(cartaoInstalar(false));
   const audios = cartaoAudios(false);
-  audiosGuardados().then((q) => { if (q === LISTA_AUDIOS.length) audios.remove(); });
+  audios.hidden = true; // depois do início, só aparece se faltar algum áudio
+  audiosGuardados().then((d) => { if (d && d.ok < d.total) audios.hidden = false; });
   lista.push(audios);
   return lista;
 }
@@ -1023,8 +1039,53 @@ abas.addEventListener('click', (ev) => {
   if (b) irPara(b.dataset.aba);
 });
 
+// ---------- Instalado no celular e atualizações (o mesmo modelo do Leveza de Viver) ----------
+// A versão nova chega em segundo plano e só entra quando a pessoa toca em "Atualizar".
+// Nunca no meio de um áudio ou de um suspiro guiado, porque atualizar recarrega a tela.
+
+var registroSW = null; // var: pode ser lido antes desta linha rodar
+
+function mostrarAvisoAtualizar() {
+  if (!registroSW || !registroSW.waiting || !navigator.serviceWorker.controller) return;
+  if (motivosTelaAcesa.size) return; // praticando: o aviso espera terminar
+  const aviso = document.getElementById('aviso-atualizar');
+  if (!aviso.hidden) return;
+  const botao = aviso.querySelector('button');
+  botao.disabled = false;
+  botao.textContent = 'Atualizar';
+  botao.onclick = () => {
+    botao.disabled = true;
+    botao.textContent = 'Atualizando…';
+    if (registroSW.waiting) registroSW.waiting.postMessage({ tipo: 'SKIP_WAITING' });
+  };
+  aviso.hidden = false;
+}
+
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/bemviver/sw.js', { scope: '/bemviver/' }).catch(() => {});
+  navigator.serviceWorker.register('/bemviver/sw.js', { scope: '/bemviver/' }).then((reg) => {
+    registroSW = reg;
+    reg.update().catch(() => {}); // procura versão nova a cada abertura
+    mostrarAvisoAtualizar();
+    reg.addEventListener('updatefound', () => {
+      const novo = reg.installing;
+      if (!novo) return;
+      novo.addEventListener('statechange', () => {
+        if (novo.state === 'installed') mostrarAvisoAtualizar();
+      });
+    });
+    // O app instalado pode ficar dias aberto em segundo plano: ao voltar, procura de novo.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') reg.update().catch(() => {});
+    });
+  }).catch(() => {}); // sem service worker o app segue normal, só que precisa de internet
+
+  let recarregando = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // Na primeira instalação não há o que recarregar; na atualização, recarrega uma vez.
+    if (recarregando || !document.getElementById('aviso-atualizar').querySelector('button').disabled) return;
+    recarregando = true;
+    location.reload();
+  });
 }
 
 if (!ler('id')) telaEntrar();

@@ -23,14 +23,22 @@ Os seis áudios aprovados ficam em `public/bemviver/audio/`, em MP3:
 - `4-noite.mp3`
 - `5-domingo.mp3`
 
-Com o botão "Guardar os áudios no celular", os seis ficam no aparelho e tocam sem
-internet (o `sw.js` responde aos pedidos do player a partir do que foi guardado). Se um arquivo faltar, o app mostra "O áudio guiado chega em breve". Enquanto um áudio
-toca, ou enquanto o suspiro guiado está na tela, a tela do celular fica acesa, e a tela
-bloqueada mostra o nome do áudio com os botões de tocar e pausar.
+Funciona como o Leveza de Viver: na primeira abertura, o app inteiro fica guardado no
+celular, com os seis áudios, e passa a abrir e tocar sem internet (o `sw.js` responde aos
+pedidos do player, inclusive os pedaços que o iPhone pede). Se um arquivo faltar, o app
+mostra "O áudio guiado chega em breve". Enquanto um áudio toca, ou enquanto o suspiro
+guiado está na tela, a tela do celular fica acesa, e a tela bloqueada mostra o nome do
+áudio com os botões de tocar e pausar.
 
-**Se um áudio for trocado depois de publicado:** mude o nome `bemviver-audios-v1` para
-`bemviver-audios-v2` nos dois lugares (`sw.js` e `app.js`). O celular apaga a cópia antiga
-e o cartão "Guarde os áudios no celular" volta a aparecer na aba Hoje.
+## Atualizações
+
+A cada publicação, o GitHub Actions carimba uma versão nova no `sw.js` (`__VERSAO__`).
+O celular de quem tem o app baixa a versão nova em segundo plano e mostra o aviso
+"Há uma versão nova do app. Atualizar". Ela só entra quando a pessoa toca no aviso, e o
+aviso espera terminar o áudio ou o suspiro em andamento. As marcações da pessoa ficam.
+
+**Trocou um áudio?** Mantenha o mesmo nome de arquivo e suba `VERSAO_AUDIOS` no `sw.js`
+(`a1` para `a2`). Na atualização, o celular baixa os seis áudios de novo e apaga os antigos.
 
 ## Publicar
 
