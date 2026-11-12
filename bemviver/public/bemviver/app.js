@@ -354,7 +354,7 @@ function telaBoasVindas() {
       el('h3', {}, 'Os quatro pilares'),
       el('p', {}, el('b', {}, 'Bem respirar'), ': o suspiro fisiológico, 1 minuto na hora do aperto, ou 5 minutos quando houver tempo.'),
       el('p', {}, el('b', {}, 'Bem fazer'), ': três minutos de movimento ao longo do dia e uma coisa pequena que te dá vida.'),
-      el('p', {}, el('b', {}, 'Bem querer'), ': uma mensagem ou ligação para alguém por dia e, uma vez por semana, um Encontro de Verdade.'),
+      el('p', {}, el('b', {}, 'Bem querer'), ': um gesto de carinho para alguém por dia (uma mensagem, uma ligação ou uma palavra ao vivo) e, uma vez por semana, um Encontro de Verdade.'),
       el('p', {}, el('b', {}, 'Bem ver'), ': à noite, três coisas boas do dia e desejar o bem a quem você ama.'),
       el('p', {}, 'Em dia corrido, faça a versão mínima: um minuto de cada já conta. Nunca zero, nunca forçado.'),
       el('p', { class: 'suave' }, TESTE_ZONA),
@@ -448,7 +448,7 @@ function telaHoje() {
     el('p', { class: 'pilar' }, 'Bem fazer · o corpo'),
     el('h2', {}, 'Três minutos de movimento'),
     el('p', {}, 'Três vezes hoje, 1 minuto de passo rápido ou escada, preso a algo que já acontece: ir ao ponto, subir para casa, esperar o café. A respiração acelera, mas dá para falar.'),
-    el('p', { class: 'suave' }, 'Dia calmo? Uma caminhada ao ar livre vale pelos três. Andar enquanto faz a ligação do dia também conta.'),
+    el('p', { class: 'suave' }, 'Dia calmo? Uma caminhada ao ar livre vale pelos três. Andar enquanto conversa ao telefone também conta.'),
     audio(AUDIOS.manha, 'O começo do dia'),
     passos,
   );
@@ -466,10 +466,10 @@ function telaHoje() {
 
   const cContato = el('section', { class: 'cartao' + (reg.contato ? ' feito' : '') },
     el('p', { class: 'pilar' }, 'Bem querer · durante o dia'),
-    el('h2', {}, 'Uma mensagem ou ligação'),
-    el('p', {}, 'Uma mensagem de apreço específica ("lembrei de você porque..."), uma ligação de 5 minutos ou uma conversa com alguém do caminho. Quem recebe costuma ficar mais feliz do que a gente imagina.'),
+    el('h2', {}, 'Um gesto de carinho'),
+    el('p', {}, 'Um gesto de carinho para alguém: uma mensagem, uma ligação ou uma palavra ao vivo. Se puder, diga algo específico ("lembrei de você porque..."). Quem recebe costuma ficar mais feliz do que a gente imagina.'),
     el('p', { class: 'suave' }, 'Se hoje for difícil falar com alguém, escreva a mensagem sem enviar. Também conta.'),
-    botaoMarcar('Fiz meu contato de hoje', reg.contato, (v) => { reg.contato = v; salvarRegistro(dia, reg); marcar(cContato, v); }),
+    botaoMarcar('Fiz meu gesto de carinho hoje', reg.contato, (v) => { reg.contato = v; salvarRegistro(dia, reg); marcar(cContato, v); }),
   );
 
   const boas = ler('boas', {});
@@ -1015,7 +1015,7 @@ function telaCuidados() {
       el('p', {}, 'O minuto de passo rápido é na Zona de Presença: a respiração acelera, mas dá para falar e sorrir. Se você tem doença no coração, marca-passo, pressão alta sem controle ou sente dor ou falta de ar ao esforço, converse com seu médico antes de acelerar o passo. Pare se sentir dor no peito, tontura ou falta de ar forte.'),
       el('h3', {}, 'Sentimentos que podem aparecer'),
       el('p', {}, 'Às vezes, ficar em silêncio ou pensar em pessoas queridas traz tristeza, saudade ou lembranças difíceis. Isso é comum e costuma passar. Se pesar, diminua, pule uma prática ou pare, e conte no domingo.'),
-      el('p', {}, 'Se você está de luto, ou sem alguém por perto, o contato do dia pode doer. Vale escrever a mensagem sem enviar, ou conversar com um vizinho ou atendente. E se você dorme mal há semanas, procure tratamento: existe terapia específica para insônia.'),
+      el('p', {}, 'Se você está de luto, ou sem alguém por perto, o gesto de carinho do dia pode doer. Vale escrever a mensagem sem enviar, ou conversar com um vizinho ou atendente. E se você dorme mal há semanas, procure tratamento: existe terapia específica para insônia.'),
     ),
   );
 }
