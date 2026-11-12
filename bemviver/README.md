@@ -28,6 +28,10 @@ internet (o `sw.js` responde aos pedidos do player a partir do que foi guardado)
 toca, ou enquanto o suspiro guiado está na tela, a tela do celular fica acesa, e a tela
 bloqueada mostra o nome do áudio com os botões de tocar e pausar.
 
+**Se um áudio for trocado depois de publicado:** mude o nome `bemviver-audios-v1` para
+`bemviver-audios-v2` nos dois lugares (`sw.js` e `app.js`). O celular apaga a cópia antiga
+e o cartão "Guarde os áudios no celular" volta a aparecer na aba Hoje.
+
 ## Publicar
 
 Vai ao ar sozinho pelo GitHub Actions (`.github/workflows/bemviver-deploy.yml`) quando
