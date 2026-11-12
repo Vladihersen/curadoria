@@ -23,6 +23,13 @@ O que acontece no corpo é simples. A segunda inspiração curta reinfla os alv�
 4. Sem prender o ar, solte-o pelo nariz de forma contínua, morna e silenciosa, levando o dobro do tempo da entrada (6 a 8 segundos);
 5. Faça uma pausa natural de 1 segundo e recomece.
 
+:::respiracao Um ciclo do suspiro fisiológico: duas entradas de ar pelo nariz e uma saída longa (de 6 a 8 segundos; no desenho, 7)
+inspira 3
+inspira 1
+expira 7
+pausa 1
+:::
+
 Cada ciclo leva de 10 a 12 segundos. Para desarmar um pico de estresse, faça de 3 a 5 ciclos, ou 1 a 2 minutos: antes de uma reunião difícil, no trânsito, depois de uma conversa tensa. Como é nasal e silencioso, ninguém ao redor percebe, e o ritmo do corpo costuma se acalmar em menos de 90 segundos.
 
 Respire com delicadeza. Puxar o ar com força ou encher os pulmões até o limite é interpretado pelo corpo como esforço e gera mais tensão, não menos. Se sentir tontura, reduza o volume de ar pela metade e torne o fôlego quase imperceptível. Se o nariz estiver obstruído, solte o ar pelos lábios entreabertos, sem som de sopro.
