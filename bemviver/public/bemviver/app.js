@@ -649,7 +649,7 @@ function cartaoInstalar(numerado) {
   }
   // O do próprio celular aparece primeiro; o outro fica logo abaixo, para quem ajuda alguém.
   cartao.append(...(so === 'android' ? [android, iphone] : [iphone, android]));
-  cartao.append(el('p', { class: 'suave' }, 'Depois, procure na tela do celular o ícone da borboleta, escrito "Bem Viver".'));
+  cartao.append(el('p', { class: 'suave' }, 'Depois, procure na tela do celular o ícone da borboleta, escrito "App Bem Viver".'));
   return cartao;
 }
 
