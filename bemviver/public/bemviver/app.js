@@ -63,7 +63,15 @@ const FOCOS = [
   { nome: 'Corpo', extra: 'Nesta semana, faça o suspiro fisiológico de 5 minutos todo dia e os três minutos de movimento.' },
   { nome: 'Pessoas', extra: 'Nesta semana, escreva uma carta de gratidão a alguém vivo, e leia para a pessoa ou envie.' },
   { nome: 'Encantamento', extra: 'Nesta semana, faça uma caminhada mais longa num lugar bonito, sem celular, por uns 30 minutos.' },
-  { nome: 'Sentido', extra: 'Nesta semana, procure a sua Zona de Entusiasmo: para quem a minha vida faz diferença, e o que eu faço com jeito e entusiasmo que quero continuar fazendo?' },
+  { nome: 'Sentido', extra: 'Nesta semana, procure a sua Zona de Entusiasmo: para quem a minha vida faz diferença, e o que eu faço com facilidade e entusiasmo e quero continuar fazendo?' },
+];
+
+// Abertura de cada semana: aparece no topo da aba Hoje até a pessoa tocar em "Começar a semana".
+const ABERTURAS = [
+  'Começamos pelo corpo, porque é nele que a paz chega primeiro. Esta semana, o suspiro fisiológico de 5 minutos todo dia e três minutos de passo rápido. Pouco, mas todo dia.',
+  'Uma semana já foi. Agora, as pessoas. Esta semana, escreva uma carta de gratidão a alguém vivo, e leia para a pessoa ou envie. Quem recebe costuma ficar mais feliz do que a gente imagina.',
+  'Metade do caminho. Esta semana, abra os olhos para o que é bonito: uma caminhada mais longa num lugar de que você gosta, sem celular, por uns 30 minutos.',
+  'Última semana. Agora a pergunta é para onde a sua vida quer ir: para quem ela faz diferença, e o que você faz com facilidade e entusiasmo e quer continuar fazendo?',
 ];
 
 const AUDIOS = {
@@ -466,6 +474,16 @@ function telaHoje() {
     el('p', {}, foco.extra),
     el('p', { class: 'suave' }, TESTE_ZONA),
   );
+  // Na primeira vez que abre o app em cada semana, a abertura da semana vem antes de tudo.
+  if (ler('aberturaVista', 0) < semana) {
+    cFoco.replaceChildren(
+      el('p', { class: 'pilar' }, `Semana ${semana} de 4 · ${foco.nome}`),
+      el('h2', {}, semana === 1 ? 'Boas-vindas à primeira semana' : `Começa a semana ${semana}`),
+      el('p', {}, ABERTURAS[semana - 1]),
+      el('p', { class: 'suave' }, 'Vladimir Hersen'),
+      el('button', { type: 'button', onclick: () => { gravar('aberturaVista', semana); telaHoje(); } }, 'Começar a semana'),
+    );
+  }
 
   const m = mediaTensao(reg.respiros);
   const cRespiro = el('section', { class: 'cartao' + (reg.respiros.length ? ' feito' : '') },
