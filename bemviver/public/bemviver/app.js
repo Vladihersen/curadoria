@@ -620,12 +620,24 @@ function cartaoInstalar(numerado) {
   }
   cartao.append(el('p', {}, 'Assim ele abre com um toque, como os outros aplicativos, sem precisar procurar o link.'));
   const so = sistema();
-  if (so === 'ios') {
-    cartao.append(
-      el('p', {}, el('b', {}, 'No iPhone:'), ' abra este link no Safari. Toque no botão de compartilhar (o quadrado com a seta para cima), depois em "Adicionar à Tela de Início" e em "Adicionar".'),
-    );
-  } else {
-    const botao = el('button', { type: 'button' }, 'Instalar o app');
+  const iphone = el('div', { class: 'passo-a-passo' },
+    el('h3', {}, 'No iPhone'),
+    el('ol', {},
+      el('li', {}, 'Abra este link no Safari (o navegador da bússola azul).'),
+      el('li', {}, 'Toque no botão de compartilhar: o quadrado com uma seta para cima, na barra de baixo.'),
+      el('li', {}, 'Role a lista e toque em "Adicionar à Tela de Início".'),
+      el('li', {}, 'Toque em "Adicionar", no canto de cima.'),
+    ));
+  const android = el('div', { class: 'passo-a-passo' },
+    el('h3', {}, 'No Android'),
+    el('ol', {},
+      el('li', {}, 'Abra este link no Chrome (o navegador de bolinha colorida).'),
+      el('li', {}, 'Toque nos três pontinhos, no canto de cima, à direita.'),
+      el('li', {}, 'Toque em "Instalar app" ou em "Adicionar à tela inicial".'),
+      el('li', {}, 'Confirme em "Instalar" ou "Adicionar".'),
+    ));
+  if (pedidoInstalar) {
+    const botao = el('button', { type: 'button' }, 'Instalar o app agora');
     botao.addEventListener('click', async () => {
       if (!pedidoInstalar) return;
       pedidoInstalar.prompt();
@@ -633,11 +645,11 @@ function cartaoInstalar(numerado) {
       pedidoInstalar = null;
       if (r && r.outcome === 'accepted') botao.replaceWith(el('p', { class: 'ok' }, 'Instalado. Procure o ícone da borboleta na tela do celular.'));
     });
-    if (pedidoInstalar) cartao.append(botao);
-    cartao.append(el('p', { class: pedidoInstalar ? 'suave' : '' },
-      el('b', {}, 'No Android:'), ' ', pedidoInstalar ? 'se o botão não funcionar, ' : '',
-      'no Chrome, toque nos três pontinhos no canto de cima e depois em "Instalar app" ou "Adicionar à tela inicial".'));
+    cartao.append(botao);
   }
+  // O do próprio celular aparece primeiro; o outro fica logo abaixo, para quem ajuda alguém.
+  cartao.append(...(so === 'android' ? [android, iphone] : [iphone, android]));
+  cartao.append(el('p', { class: 'suave' }, 'Depois, procure na tela do celular o ícone da borboleta, escrito "Bem Viver".'));
   return cartao;
 }
 
@@ -667,7 +679,7 @@ function cartaoAudios(numerado) {
   const cartao = el('section', { class: 'cartao' },
     numerado ? el('p', { class: 'pilar' }, 'Passo 3') : null,
     el('h2', {}, 'Os áudios no seu celular'),
-    el('p', {}, 'Na primeira vez que você abre o app, os 6 áudios (cerca de 19 MB) ficam guardados no celular. Depois disso eles tocam mesmo sem internet. De preferência, abra o app pela primeira vez no wi-fi.'),
+    el('p', {}, 'Na primeira vez que você abre o app, os áudios (cerca de 25 MB) ficam guardados no celular. Depois disso eles tocam mesmo sem internet. De preferência, abra o app pela primeira vez no wi-fi.'),
     botao, estado,
   );
   const mostrarEstado = (d) => {
@@ -676,7 +688,7 @@ function cartaoAudios(numerado) {
       cartao.classList.add('feito');
       botao.hidden = true;
       estado.className = 'ok';
-      estado.textContent = 'Pronto: os 6 áudios estão no seu celular e tocam sem internet.';
+      estado.textContent = 'Pronto: os áudios estão no seu celular e tocam sem internet.';
     } else {
       botao.hidden = false;
       botao.disabled = false;
@@ -759,62 +771,116 @@ function fazerRespiro(segundos) {
   });
 }
 
-// Suspiro fisiológico guiado: inspira pelo nariz, mais um pouquinho por cima, solta pelo nariz. 1 ou 5 minutos.
-// O ritmo (2,3 s, 1,3 s e 5,3 s) é o mesmo da taça tibetana dos áudios.
+// Suspiro fisiológico guiado, com a taça tibetana marcando cada fase e uma paisagem
+// sonora de brisa ao fundo (trilhas geradas por ferramentas/gerar-guia.py, com os
+// MESMOS tempos de CONDUCAO). A tela segue o relógio da trilha; sem som, segue o relógio
+// do celular. No fim, um tempo para a pessoa se observar e reconhecer a mudança.
+const CONDUCAO = {
+  entrada: 4,
+  fases: [
+    { texto: 'Inspire pelo nariz, devagar', s: 2.4, escala: 0.9 },
+    { texto: 'Inspire mais um pouquinho, por cima', s: 1.5, escala: 1 },
+    { texto: 'Solte todo o ar pelo nariz, bem devagar', s: 5.5, escala: 0.55 },
+  ],
+  observar: 30,
+  frasesObservar: [
+    [0, 'Pronto. Deixe a respiração voltar ao natural.'],
+    [5, 'Fique um momento em silêncio, só observando.'],
+    [11, 'Perceba o corpo agora: o rosto, os ombros, as mãos.'],
+    [18, 'Repare na respiração. Como ela está agora?'],
+    [24, 'Compare com o começo. O que mudou em você?'],
+  ],
+};
+const TRILHAS = { 60: { src: '/bemviver/audio/guia-1-minuto.mp3', ciclos: 6 }, 300: { src: '/bemviver/audio/guia-5-minutos.mp3', ciclos: 32 } };
+
 function telaPausa(segundos, aoTerminar) {
   abas.hidden = true;
+  const trilha = TRILHAS[segundos >= 300 ? 300 : 60];
   titulo.textContent = segundos >= 300 ? 'Suspiro fisiológico, 5 minutos' : 'Suspiro fisiológico, 1 minuto';
-  const FASES = [
-    { texto: 'Inspire pelo nariz, devagar', ms: 2300, escala: 0.9 },
-    { texto: 'Inspire mais um pouquinho, por cima', ms: 1300, escala: 1 },
-    { texto: 'Solte todo o ar pelo nariz, bem devagar', ms: 5300, escala: 0.55 },
-  ];
-  const TOTAL_MS = segundos * 1000;
+  const ciclo = CONDUCAO.fases.reduce((t, f) => t + f.s, 0);
+  const fimRespiracao = CONDUCAO.entrada + trilha.ciclos * ciclo;
+  const fimTotal = fimRespiracao + CONDUCAO.observar;
+
   const bolha = el('div', { class: 'bolha', 'aria-hidden': 'true' });
   const fase = el('p', { class: 'fase', 'aria-live': 'polite' }, 'Sente-se ou deite-se. Deixe o corpo pesar.');
-  const resta = el('p', { class: 'suave' }, segundos >= 120 ? `${Math.round(segundos / 60)} minutos` : '1 minuto');
-  const parar = el('button', { type: 'button', class: 'secundario' }, 'Parar');
-  let ativo = true;
-  let tempo;
+  const resta = el('p', { class: 'suave' }, segundos >= 300 ? '5 minutos' : '1 minuto');
+  const aviso = el('p', { class: 'suave' }, 'Se sentir tontura, volte a respirar normal. A respiração é suave, nunca forçada.');
+  const botao = el('button', { type: 'button', class: 'secundario' }, 'Parar');
+  let comSom = ler('somGuia', true);
+  const som = el('button', { type: 'button', class: 'som', 'aria-pressed': String(comSom) }, comSom ? 'Som da taça: ligado' : 'Som da taça: desligado');
 
+  const guia = new Audio(trilha.src);
+  guia.preload = 'auto';
+  guia.muted = !comSom;
+  let tocando = false;
+  const inicioRelogio = Date.now();
+  let desvio = 0; // se a trilha falhar no meio, o relógio do celular continua de onde ela parou
+  const agora = () => (tocando && !guia.paused ? guia.currentTime : (Date.now() - inicioRelogio) / 1000 + desvio);
+
+  let ativo = true, etapa = 'respirar', ultimo = '', intervalo;
   const fim = (completou) => {
-    ativo = false; clearTimeout(tempo);
-    manterTelaAcesa('pausa', false);
-    if (completou) aoTerminar();
-    else irPara('hoje');
-  };
-  parar.addEventListener('click', () => fim(false));
-
-  const inicio = Date.now() + 3000;
-  let i = 0;
-  const passo = () => {
     if (!ativo) return;
-    const decorrido = Date.now() - inicio;
-    if (decorrido >= TOTAL_MS && i % FASES.length === 0) {
-      fase.textContent = 'Pronto. Deixe a respiração voltar ao normal.';
-      bolha.style.transitionDuration = '2000ms';
-      bolha.style.transform = 'scale(.55)';
-      resta.textContent = '';
-      parar.replaceWith(el('button', { type: 'button', onclick: () => fim(true) }, 'Concluir'));
+    ativo = false; clearInterval(intervalo);
+    guia.pause();
+    manterTelaAcesa('pausa', false);
+    if (completou) aoTerminar(); else irPara('hoje');
+  };
+  botao.addEventListener('click', () => fim(etapa !== 'respirar'));
+  som.addEventListener('click', () => {
+    comSom = !comSom; gravar('somGuia', comSom); guia.muted = !comSom;
+    som.setAttribute('aria-pressed', String(comSom));
+    som.textContent = comSom ? 'Som da taça: ligado' : 'Som da taça: desligado';
+  });
+
+  const atualizar = () => {
+    if (!ativo) return;
+    const t = agora();
+    if (t < CONDUCAO.entrada) return;
+    if (t < fimRespiracao) {
+      const dentro = (t - CONDUCAO.entrada) % ciclo;
+      let acc = 0, k = 0;
+      while (k < CONDUCAO.fases.length - 1 && dentro >= acc + CONDUCAO.fases[k].s) { acc += CONDUCAO.fases[k].s; k++; }
+      const f = CONDUCAO.fases[k];
+      const chave = Math.floor((t - CONDUCAO.entrada) / ciclo) + ':' + k;
+      if (chave !== ultimo) {
+        ultimo = chave;
+        fase.textContent = f.texto;
+        bolha.style.transitionDuration = Math.max(200, (acc + f.s - dentro) * 1000) + 'ms';
+        bolha.style.transform = `scale(${f.escala})`;
+      }
+      const seg = Math.max(0, Math.ceil(fimRespiracao - t));
+      resta.textContent = seg > 60 ? `${Math.ceil(seg / 60)} minutos` : `${seg} segundos`;
       return;
     }
-    const f = FASES[i % FASES.length];
-    fase.textContent = f.texto;
-    bolha.style.transitionDuration = f.ms + 'ms';
-    bolha.style.transform = `scale(${f.escala})`;
-    const seg = Math.max(0, Math.ceil((TOTAL_MS - decorrido) / 1000));
-    resta.textContent = seg > 60 ? `${Math.ceil(seg / 60)} minutos` : `${seg} segundos`;
-    i++;
-    tempo = setTimeout(passo, f.ms);
+    if (etapa === 'respirar') {
+      etapa = 'observar';
+      bolha.style.transitionDuration = '4000ms';
+      bolha.style.transform = 'scale(.7)';
+      resta.textContent = '';
+      aviso.textContent = 'Sem pressa. Só observe.';
+      botao.textContent = 'Já observei';
+    }
+    const dentro = t - fimRespiracao;
+    let frase = CONDUCAO.frasesObservar[0][1];
+    for (const [quando, txt] of CONDUCAO.frasesObservar) if (dentro >= quando) frase = txt;
+    if (frase !== fase.textContent) fase.textContent = frase;
+    if (t >= fimTotal && etapa === 'observar') {
+      etapa = 'fim';
+      clearInterval(intervalo);
+      fase.textContent = 'Agora dê a sua nota de novo e veja o que mudou.';
+      aviso.textContent = '';
+      botao.className = '';
+      botao.textContent = 'Dar a nota de agora';
+    }
   };
-  tempo = setTimeout(passo, 3000);
 
-  mostrar(el('section', { class: 'cartao guia' },
-    bolha, fase, resta,
-    el('p', { class: 'suave' }, 'Se sentir tontura, volte a respirar normal. A respiração é suave, nunca forçada.'),
-    parar,
-  ));
+  mostrar(el('section', { class: 'cartao guia' }, bolha, fase, resta, aviso, botao, som));
   manterTelaAcesa('pausa', true);
+  playerAtivo = guia; // se a pessoa sair da tela, a trilha para junto
+  guia.addEventListener('pause', () => { if (tocando && ativo) { desvio = guia.currentTime - (Date.now() - inicioRelogio) / 1000; tocando = false; } });
+  controlesTelaBloqueada(guia, titulo.textContent);
+  guia.play().then(() => { tocando = true; }).catch(() => { tocando = false; }); // sem som, a tela segue sozinha
+  intervalo = setInterval(atualizar, 100);
 }
 
 // ---------- Domingo ----------

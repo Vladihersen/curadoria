@@ -187,3 +187,12 @@ summary { cursor: pointer; color: var(--verde-escuro); font-weight: 600; min-hei
 /* Só na cópia de teste: faixa para simular a data */
 .faixa-teste { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #fdf1d8; color: #6b4e00; font-size: .9rem; font-weight: 600; }
 .faixa-teste select { margin: 0; width: auto; flex: 1; min-height: 36px; padding: 4px 8px; font-size: .9rem; }
+
+/* Passo a passo de instalação (iPhone e Android) */
+.passo-a-passo { margin-top: 12px; }
+.passo-a-passo h3 { margin: 8px 0 4px; }
+.passo-a-passo ol { margin: 0; padding-left: 22px; }
+.passo-a-passo li { margin: 4px 0; }
+
+/* Liga e desliga o som da taça no suspiro guiado */
+button.som { background: transparent; border-color: transparent; color: var(--suave); min-height: 44px; font-size: .95rem; }

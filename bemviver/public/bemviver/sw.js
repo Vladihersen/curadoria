@@ -10,7 +10,7 @@
 //   VERSAO_AUDIOS muda. Trocou um áudio? Suba VERSAO_AUDIOS (a1 → a2) e publique.
 
 const VERSAO = '__VERSAO__';
-const VERSAO_AUDIOS = 'a2'; // a2 (13/11): novas boas-vindas, manhã e noite
+const VERSAO_AUDIOS = 'a3'; // a3 (13/11): novas boas-vindas, manhã e noite + trilhas da taça do suspiro guiado
 const CACHE = 'bemviver-app-' + VERSAO;
 const CACHE_AUDIOS = 'bemviver-audios-' + VERSAO_AUDIOS;
 
@@ -25,6 +25,8 @@ const AUDIOS = [
   '/bemviver/audio/3b-respiro-5-minutos.mp3',
   '/bemviver/audio/4-noite.mp3',
   '/bemviver/audio/5-domingo.mp3',
+  '/bemviver/audio/guia-1-minuto.mp3',
+  '/bemviver/audio/guia-5-minutos.mp3',
 ];
 
 // Baixa os áudios que faltam na gaveta atual. Um áudio que falhar não derruba os outros.
