@@ -1112,8 +1112,8 @@ function telaCuidados() {
   mostrar(
     el('section', { class: 'cartao socorro' },
       el('h2', {}, 'Se precisar de ajuda agora'),
-      el('p', {}, el('a', { href: 'tel:188' }, 'CVV, ligue 188'), ': conversa com um voluntário, de graça, 24 horas, em todo o Brasil. Também há chat em ', el('a', { href: 'https://cvv.org.br/chat/', rel: 'noopener' }, 'cvv.org.br'), '.'),
-      el('p', {}, el('a', { href: 'tel:192' }, 'SAMU, ligue 192'), ': em emergência médica, como dor no peito ou falta de ar forte.'),
+      el('p', {}, el('a', { href: 'tel:188' }, 'CVV, ligue 188'), ': o Centro de Valorização da Vida oferece apoio emocional a quem está passando por um momento difícil. Um voluntário escuta você, sem julgamento e em sigilo, de graça, 24 horas, em todo o Brasil. Também há chat em ', el('a', { href: 'https://cvv.org.br/chat/', rel: 'noopener' }, 'cvv.org.br'), '.'),
+      el('p', {}, el('a', { href: 'tel:192' }, 'SAMU, ligue 192'), ': a ambulância do serviço público, para emergência médica, como dor no peito ou falta de ar forte.'),
       el('p', {}, 'Em risco imediato, vá ao pronto-socorro mais próximo.'),
     ),
     el('section', { class: 'cartao' },
