@@ -1,0 +1,29 @@
+name: Cópia de teste do app do método
+
+# Publica uma cópia de teste do app em metodo-bem-viver-teste.<conta>.workers.dev/bemviver/,
+# com banco de dados próprio, sempre que o app muda no ramo de trabalho. Não toca o site.
+on:
+  push:
+    branches: ['claude/project-thread-snmpu5']
+    paths: ['bemviver/**', '.github/workflows/bemviver-teste.yml']
+  workflow_dispatch:
+
+concurrency: bemviver-teste
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bemviver
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: sed -i "s/__VERSAO__/teste-$(date -u +%Y%m%d%H%M)-${GITHUB_SHA::7}/" public/bemviver/sw.js
+      - run: npx wrangler deploy --env teste
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

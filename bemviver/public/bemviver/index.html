@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5b7f5a">
+<title>Método Bem Viver</title>
+<link rel="manifest" href="/bemviver/manifest.webmanifest">
+<link rel="icon" href="/bemviver/icone-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/bemviver/icone-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="App Bem Viver">
+<link rel="stylesheet" href="/bemviver/app.css">
+</head>
+<body>
+<header class="topo">
+  <p class="marca">Método Bem Viver</p>
+  <h1 id="titulo">Método Bem Viver</h1>
+</header>
+
+<main id="app" aria-live="polite"></main>
+
+<nav class="abas" id="abas" hidden>
+  <button type="button" data-aba="hoje" aria-current="page">Hoje</button>
+  <button type="button" data-aba="domingo">Domingo</button>
+  <button type="button" data-aba="cuidados">Cuidados</button>
+</nav>
+
+<div class="aviso-atualizar" id="aviso-atualizar" hidden role="status">
+  <span>Há uma versão nova do app.</span>
+  <button type="button">Atualizar</button>
+</div>
+
+<p class="aviso-rede" id="aviso-rede" hidden>Sem internet. Suas marcações ficam guardadas e são enviadas quando a conexão voltar.</p>
+
+<script src="/bemviver/app.js"></script>
+</body>
+</html>
