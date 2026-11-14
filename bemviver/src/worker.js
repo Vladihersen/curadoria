@@ -249,11 +249,36 @@ ${d.domingos.map((dom) => `<th>${esc(dom.slice(8, 10) + '/' + dom.slice(5, 7))}<
 </body></html>`;
 }
 
+// Tela de entrada do painel: campo de senha. Envia ?chave=, o mesmo do link direto.
+function htmlEntrar(errou) {
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Painel do piloto</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:0;padding:16px;background:#faf8f3;color:#2b2a26;display:flex;min-height:90vh;align-items:center;justify-content:center}
+form{background:#fff;border:1px solid #e3ded2;border-radius:12px;padding:24px;max-width:340px;width:100%;box-sizing:border-box}
+h1{font-size:1.3rem;margin:0 0 16px}label{display:block;font-size:1.05rem;margin-bottom:6px}
+input{width:100%;box-sizing:border-box;font-size:1.1rem;padding:12px;border:1px solid #c9c2b2;border-radius:8px}
+button{margin-top:14px;width:100%;font-size:1.1rem;padding:12px;background:#5b7f5a;color:#fff;border:0;border-radius:8px}
+.erro{color:#b3261e;margin:12px 0 0}
+</style></head><body>
+<form method="get" action="/bemviver/painel">
+<h1>Painel do piloto</h1>
+<label for="chave">Senha</label>
+<input id="chave" name="chave" type="password" autocomplete="current-password" required autofocus>
+${errou ? '<p class="erro">Senha incorreta. Tente de novo.</p>' : ''}
+<button type="submit">Entrar</button>
+</form></body></html>`;
+}
+
 async function painel(request, env) {
   const url = new URL(request.url);
   const chave = url.searchParams.get('chave') || '';
   if (!chaveConfere(chave, env.ADMIN_KEY)) {
-    return new Response('Acesso restrito.', { status: 401, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+    return new Response(htmlEntrar(chave !== ''), {
+      status: chave ? 401 : 200,
+      headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' },
+    });
   }
   const d = await dadosPainel(env.DB);
   if (url.searchParams.get('formato') === 'csv') {
