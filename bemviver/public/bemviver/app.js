@@ -804,9 +804,26 @@ function cartaoAudios(numerado) {
   return cartao;
 }
 
+// Lembrete diário às 20h no calendário do próprio celular (de 23/11 a 20/12), sem servidor:
+// o arquivo lembrete.ics abre a tela "Adicionar ao calendário" do iPhone ou do Android.
+function cartaoLembrete() {
+  const feito = ler('lembrete', false);
+  const cartao = el('section', { class: 'cartao' + (feito ? ' feito' : '') },
+    el('h2', {}, 'Um lembrete por dia'),
+    el('p', {}, 'Coloque no calendário do seu celular um aviso diário às 20h, de 23 de novembro a 20 de dezembro, para abrir o app e marcar o seu dia.'),
+    el('a', { class: 'botao', href: '/bemviver/lembrete.ics', target: '_blank', rel: 'noopener', onclick: () => { gravar('lembrete', true); cartao.classList.add('feito'); } },
+      'Pôr lembrete no meu calendário'),
+    el('p', { class: 'suave' }, sistema() === 'ios'
+      ? 'No iPhone, toque em "Adicionar" na tela que abrir e confirme.'
+      : 'No Android, escolha o app de agenda e toque em salvar. Se o arquivo só baixar, abra-o pela notificação de download.'),
+  );
+  return cartao;
+}
+
 function cartoesPreparo(naPreparacao) {
-  if (naPreparacao) return [cartaoInstalar(true), cartaoAudios(true)];
+  if (naPreparacao) return [cartaoInstalar(true), cartaoAudios(true), cartaoLembrete()];
   const lista = [];
+  if (!ler('lembrete', false)) lista.push(cartaoLembrete());
   if (!instalado()) lista.push(cartaoInstalar(false));
   const audios = cartaoAudios(false);
   audios.hidden = true; // depois do início, só aparece se faltar algum áudio
