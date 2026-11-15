@@ -903,9 +903,9 @@ function telaPausa(segundos, aoTerminar) {
   const fimTotal = fimRespiracao + CONDUCAO.observar;
 
   const bolha = el('div', { class: 'bolha', 'aria-hidden': 'true' });
-  const fase = el('p', { class: 'fase', 'aria-live': 'polite' }, 'Sente-se com conforto. Chegue aqui, por inteiro.');
+  const fase = el('p', { class: 'fase', 'aria-live': 'polite' }, 'Chegue aqui, por inteiro. Com a intenção de acalmar.');
   const resta = el('p', { class: 'suave' }, segundos >= 300 ? '5 minutos' : '1 minuto');
-  const aviso = el('p', { class: 'suave' }, 'Se sentir tontura, volte a respirar normal. A respiração é suave, nunca forçada.');
+  const aviso = el('p', { class: 'suave' }, 'A respiração é suave, nunca forçada. Se sentir tontura, pare, volte a respirar normal e, se estiver de pé, sente-se. Nunca pratique dirigindo.');
   const botao = el('button', { type: 'button', class: 'secundario' }, 'Parar');
   let comSom = ler('somGuia', true);
   const som = el('button', { type: 'button', class: 'som', 'aria-pressed': String(comSom) }, comSom ? 'Som da taça: ligado' : 'Som da taça: desligado');
@@ -1223,7 +1223,7 @@ function telaCuidados() {
       el('p', {}, 'Converse com seu médico antes do suspiro fisiológico se você tem doença no coração, pressão alta sem controle ou marca-passo; asma, bronquite, enfisema ou outra doença do pulmão; crises de pânico; ou se está grávida.'),
       el('h3', {}, 'Durante as práticas'),
       el('p', {}, 'A respiração é suave, nunca forçada. Pare e volte a respirar normal se sentir tontura, formigamento, vista escura, falta de ar, aperto no peito ou coração disparado.'),
-      el('p', {}, 'Faça o suspiro fisiológico sentado ou deitado, nunca dirigindo, na água ou em pé num lugar alto.'),
+      el('p', {}, 'O suspiro fisiológico pode ser feito sentado, em pé ou caminhando, num lugar seguro. Nunca dirigindo, na água ou num lugar alto. Se sentir tontura de pé, sente-se.'),
       el('h3', {}, 'Movimento'),
       el('p', {}, 'O minuto de passo rápido é na Zona de Presença: a respiração acelera, mas dá para falar e sorrir. Se você tem doença no coração, marca-passo, pressão alta sem controle ou sente dor ou falta de ar ao esforço, converse com seu médico antes de acelerar o passo. Pare se sentir dor no peito, tontura ou falta de ar forte.'),
       el('h3', {}, 'Sentimentos que podem aparecer'),
