@@ -98,11 +98,36 @@ async function entrar(request, env) {
   if (!nome || whatsapp.replace(/\D/g, '').length < 10 || nota === null || diasPaz === null || c.consentimento !== true) {
     return json({ erro: 'preencha nome, WhatsApp com DDD, a nota, os dias de paz e o consentimento' }, 400);
   }
+  // Quem se cadastra de novo com o mesmo WhatsApp (outro navegador, celular trocado,
+  // dados apagados) volta para o mesmo cadastro, sem duplicar a participante.
+  const existente = await buscarPorWhatsapp(env.DB, whatsapp);
+  if (existente) return json({ id: existente.id, voltou: true });
   const id = novoId();
   await env.DB.prepare(
     'INSERT INTO dia_participantes (id, nome, whatsapp, nota_inicial, dias_paz_inicial, criado_em) VALUES (?, ?, ?, ?, ?, ?)'
   ).bind(id, nome, whatsapp, nota, diasPaz, new Date().toISOString()).run();
   return json({ id });
+}
+
+function soDigitos(w) {
+  // Só os dígitos; a comparação usa os 10 últimos (ignora +55, espaços, parênteses e traços).
+  return String(w || '').replace(/\D/g, '');
+}
+
+async function buscarPorWhatsapp(db, whatsapp) {
+  const alvo = soDigitos(whatsapp);
+  if (alvo.length < 10) return null;
+  const { results } = await db.prepare('SELECT id, nome, whatsapp FROM dia_participantes ORDER BY criado_em').all();
+  return (results || []).find((p) => soDigitos(p.whatsapp).slice(-10) === alvo.slice(-10)) || null;
+}
+
+// "Já me cadastrei": a participante digita só o WhatsApp e o app volta a reconhecê-la.
+async function voltar(request, env) {
+  const c = await lerCorpo(request);
+  if (!c) return json({ erro: 'corpo inválido' }, 400);
+  const p = await buscarPorWhatsapp(env.DB, texto(c.whatsapp, 30));
+  if (!p) return json({ erro: 'nao_encontrado' }, 404);
+  return json({ id: p.id, nome: String(p.nome || '').trim().split(/\s+/)[0] });
 }
 
 async function registro(request, env) {
@@ -305,6 +330,7 @@ export default {
       if (rota.startsWith('/bemviver/api/')) {
         if (request.method !== 'POST') return json({ erro: 'método não permitido' }, 405);
         if (rota === '/bemviver/api/entrar') return await entrar(request, env);
+        if (rota === '/bemviver/api/voltar') return await voltar(request, env);
         if (rota === '/bemviver/api/registro') return await registro(request, env);
         if (rota === '/bemviver/api/semana') return await semana(request, env);
         return json({ erro: 'rota desconhecida' }, 404);

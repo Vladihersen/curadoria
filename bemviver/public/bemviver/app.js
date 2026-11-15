@@ -336,7 +336,7 @@ function mostrar(...filhos) {
   // Ao trocar de tela, o áudio que estava tocando para (o elemento sai da página).
   if (playerAtivo) { playerAtivo.pause(); playerAtivo = null; manterTelaAcesa('audio', false); }
   manterTelaAcesa('pausa', false);
-  app.replaceChildren(...filhos);
+  app.replaceChildren(...filhos.filter(Boolean));
   window.scrollTo(0, 0);
 }
 
@@ -371,6 +371,19 @@ function telaEntrar() {
     msg, botao,
   );
 
+  const avisoNavegador = navegadorEmbutido()
+    ? el('section', { class: 'cartao destaque' },
+      el('h2', {}, 'Abra no navegador do celular'),
+      el('p', {}, sistema() === 'ios'
+        ? 'Você abriu o link dentro do WhatsApp (ou de outro app), e ali o seu cadastro não fica guardado. Toque nos três pontinhos ou no ícone da bússola e escolha "Abrir no Safari". Depois coloque o app na tela do celular.'
+        : 'Você abriu o link dentro do WhatsApp (ou de outro app), e ali o seu cadastro não fica guardado. Toque nos três pontinhos e escolha "Abrir no Chrome". Depois coloque o app na tela do celular.'))
+    : null;
+  const jaFiz = el('section', { class: 'cartao' },
+    el('h2', {}, 'Já se cadastrou antes?'),
+    el('p', {}, 'Se você já preencheu esta tela em outro momento, não precisa fazer de novo.'),
+    el('button', { type: 'button', class: 'secundario', onclick: telaVoltar }, 'Já me cadastrei'),
+  );
+
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     msg.className = 'erro';
@@ -387,11 +400,59 @@ function telaEntrar() {
       gravar('id', r.id);
       gravar('inicio', { nota: dados.nota, dias_paz: dados.dias_paz });
       gravar('nome', nome.value.trim().split(/\s+/)[0]);
+      guardarDeVez();
       telaBoasVindas();
     } catch (e) {
       botao.disabled = false;
       msg.className = 'erro';
       msg.textContent = navigator.onLine ? 'Não deu certo agora. Tente de novo em instantes.' : 'Você está sem internet. Conecte-se para entrar no piloto.';
+    }
+  });
+  mostrar(avisoNavegador, form, jaFiz);
+}
+
+// Links abertos dentro do WhatsApp, Instagram ou Facebook usam um navegador embutido,
+// que apaga o que o app guarda. Nesses casos o cadastro "some" a cada abertura.
+function navegadorEmbutido() {
+  return /WhatsApp|Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger/i.test(navigator.userAgent);
+}
+
+// Pede ao navegador que não apague o que o app guardou quando o celular precisar de espaço.
+function guardarDeVez() {
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch { /* */ }
+}
+
+function telaVoltar() {
+  abas.hidden = true;
+  titulo.textContent = 'Método Bem Viver';
+  const whats = el('input', { type: 'tel', id: 'whats-voltar', autocomplete: 'tel', inputmode: 'tel', placeholder: '(21) 99999-9999', maxlength: '30' });
+  const msg = el('p', { role: 'status' });
+  const botao = el('button', { type: 'submit' }, 'Entrar');
+  const form = el('form', { class: 'cartao', novalidate: true },
+    el('h2', {}, 'Que bom te ver de novo'),
+    el('p', {}, 'Escreva o WhatsApp que você usou no cadastro.'),
+    el('label', { for: 'whats-voltar' }, 'WhatsApp com DDD'), whats,
+    msg, botao,
+    el('button', { type: 'button', class: 'secundario', onclick: telaEntrar }, 'Voltar para o cadastro'),
+  );
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    msg.className = 'erro';
+    if (whats.value.replace(/\D/g, '').length < 10) return void (msg.textContent = 'Escreva o WhatsApp com DDD.');
+    botao.disabled = true;
+    msg.className = 'suave';
+    msg.textContent = 'Procurando…';
+    try {
+      const r = await enviar('voltar', { whatsapp: whats.value });
+      gravar('id', r.id);
+      if (r.nome) gravar('nome', r.nome);
+      guardarDeVez();
+      irPara(new Date().getDay() === 0 && !antesDoInicio() ? 'domingo' : 'hoje');
+    } catch (e) {
+      botao.disabled = false;
+      msg.className = 'erro';
+      msg.textContent = !navigator.onLine ? 'Você está sem internet. Conecte-se e tente de novo.'
+        : e.definitivo ? 'Não achei esse número. Confira os dígitos ou faça o cadastro.' : 'Não deu certo agora. Tente de novo em instantes.';
     }
   });
   mostrar(form);
@@ -602,8 +663,10 @@ function telaPreparacao() {
     el('section', { class: 'cartao' },
       el('p', { class: 'pilar' }, 'Passo 4'),
       el('h2', {}, 'Experimente o suspiro fisiológico'),
-      el('p', {}, 'Dê uma nota para a sua tensão, faça 1 minuto de suspiro fisiológico e dê a nota de novo. Pode repetir quantas vezes quiser até o dia 23: é só para conhecer.'),
-      el('button', { type: 'button', onclick: () => fazerRespiro(60) }, 'Experimentar agora'),
+      el('p', {}, 'Dê uma nota para a sua tensão, faça o suspiro fisiológico e dê a nota de novo. Há duas versões: 1 minuto, para a hora do aperto, e 5 minutos, para quando houver tempo. Pode repetir quantas vezes quiser até o dia 23: é só para conhecer.'),
+      el('button', { type: 'button', onclick: () => fazerRespiro(60) }, '1 minuto'),
+      el('button', { type: 'button', class: 'secundario', onclick: () => fazerRespiro(300) }, '5 minutos'),
+      el('details', {}, el('summary', {}, 'Prefere ouvir o Vladimir?'), el('p', { class: 'suave' }, '1 minuto'), audio(AUDIOS.respiro1, 'Suspiro fisiológico de 1 minuto'), el('p', { class: 'suave' }, '5 minutos'), audio(AUDIOS.respiro5, 'Suspiro fisiológico de 5 minutos')),
     ),
     el('section', { class: 'cartao' },
       el('h2', {}, 'Ficou alguma dúvida?'),
@@ -1220,6 +1283,7 @@ if ('serviceWorker' in navigator) {
 
 if (!ler('id')) telaEntrar();
 else {
+  guardarDeVez();
   irPara(new Date().getDay() === 0 && !antesDoInicio() ? 'domingo' : 'hoje');
   esvaziarFila();
 }
