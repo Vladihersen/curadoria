@@ -903,7 +903,7 @@ function telaPausa(segundos, aoTerminar) {
   const fimTotal = fimRespiracao + CONDUCAO.observar;
 
   const bolha = el('div', { class: 'bolha', 'aria-hidden': 'true' });
-  const fase = el('p', { class: 'fase', 'aria-live': 'polite' }, 'Sente-se ou deite-se. Deixe o corpo pesar.');
+  const fase = el('p', { class: 'fase', 'aria-live': 'polite' }, 'Sente-se com conforto. Chegue aqui, por inteiro.');
   const resta = el('p', { class: 'suave' }, segundos >= 300 ? '5 minutos' : '1 minuto');
   const aviso = el('p', { class: 'suave' }, 'Se sentir tontura, volte a respirar normal. A respiração é suave, nunca forçada.');
   const botao = el('button', { type: 'button', class: 'secundario' }, 'Parar');
