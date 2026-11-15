@@ -532,9 +532,8 @@ function telaHoje() {
   const marcar = (cartao, feito) => cartao.classList.toggle('feito', feito);
 
   const cFoco = el('section', { class: 'cartao destaque' },
-    el('p', { class: 'pilar' }, `Semana ${semana} de 4`),
+    el('p', { class: 'pilar' }, `Semana ${semana} de 4 · ${foco.nome}`),
     el('p', {}, foco.extra),
-    el('p', { class: 'suave' }, TESTE_ZONA),
   );
   // Na primeira vez que abre o app em cada semana, a abertura da semana vem antes de tudo.
   if (ler('aberturaVista', 0) < semana) {
@@ -575,7 +574,7 @@ function telaHoje() {
     el('h2', {}, 'Três minutos de movimento'),
     el('p', {}, 'Três vezes hoje, 1 minuto de passo rápido ou escada, preso a algo que já acontece: ir ao ponto, subir para casa, esperar o café. A respiração acelera, mas dá para falar.'),
     el('p', { class: 'suave' }, 'Dia calmo? Uma caminhada ao ar livre vale pelos três. Andar enquanto conversa ao telefone também conta.'),
-    audio(AUDIOS.manha, 'O começo do dia'),
+    el('p', { class: 'suave' }, TESTE_ZONA),
     el('p', { class: 'suave' }, 'Para caminhar 1 minuto sem olhar o relógio: toque o áudio abaixo e ande até ouvir o segundo sininho.'),
     audio(AUDIOS.caminhada, 'Um minuto de caminhada'),
     passos,
@@ -642,7 +641,57 @@ function telaHoje() {
     el('p', { class: 'suave' }, enc.gesto),
   );
 
-  mostrar(cFoco, cRespiro, cCorpo, cVida, cContato, cNoite, cEncontro, ...cartoesPreparo(false));
+  const cManha = el('section', { class: 'cartao' },
+    el('p', { class: 'pilar' }, 'Manhã'),
+    el('h2', {}, 'O começo do dia'),
+    el('p', {}, 'Alguns minutos com o Vladimir para começar o dia com presença. Quando souber de cor, o áudio é opcional.'),
+    audio(AUDIOS.manha, 'O começo do dia'),
+  );
+
+  // A aba Hoje é uma lista curta: cada prática abre numa tela só dela.
+  const abrir = (cartao, nome) => () => subtela(nome, cartao);
+  const vezesMov = reg.movimento ? `${reg.movimento} de 3` : '';
+  const itens = [
+    itemMenu('☀️', 'O começo do dia', '', false, abrir(cManha, 'O começo do dia')),
+    itemMenu('🌬️', 'Suspiro fisiológico', reg.respiros.length ? `${reg.respiros.length} ${reg.respiros.length === 1 ? 'vez' : 'vezes'} hoje` : '', reg.respiros.length > 0, abrir(cRespiro, 'Suspiro fisiológico')),
+    itemMenu('🚶', 'Três minutos de movimento', vezesMov, reg.movimento > 0, abrir(cCorpo, 'Movimento')),
+    itemMenu('✨', 'A coisa que me dá vida', '', !!reg.vida, abrir(cVida, 'A coisa que me dá vida')),
+    itemMenu('💛', 'Um gesto de carinho', '', !!reg.contato, abrir(cContato, 'Um gesto de carinho')),
+    itemMenu('🌙', 'Noite: três coisas boas', '', !!reg.noite, abrir(cNoite, 'Noite')),
+    itemMenu('🤝', 'Encontro de Verdade da semana', '', false, abrir(cEncontro, 'Encontro de Verdade')),
+  ];
+  if (ler('aberturaVista', 0) < semana) return mostrar(cFoco);
+  mostrar(cFoco, el('nav', { class: 'menu', 'aria-label': 'Práticas de hoje' }, ...itens), ...itensPreparo());
+}
+
+// ---------- Navegação: lista de botões e uma coisa por tela ----------
+
+function itemMenu(icone, rotulo, detalhe, feito, aoTocar) {
+  return el('button', { type: 'button', class: 'item-menu' + (feito ? ' feito' : ''), onclick: aoTocar },
+    el('span', { class: 'icone', 'aria-hidden': 'true' }, icone),
+    el('span', { class: 'rotulo' }, rotulo, detalhe ? el('small', {}, detalhe) : null),
+    el('span', { class: 'estado', 'aria-label': feito ? 'feito' : '' }, feito ? '✓' : '›'),
+  );
+}
+
+// Abre uma tela com um só assunto e o botão Voltar no topo. "voltar" refaz a tela de origem.
+function subtela(nome, conteudo, voltar = () => TELAS[ler('aba', 'hoje')]()) {
+  titulo.textContent = nome;
+  mostrar(el('button', { type: 'button', class: 'voltar', onclick: voltar }, '← Voltar'), ...[].concat(conteudo));
+}
+
+// Depois do início: instalar e lembrete viram itens da lista enquanto faltarem.
+function itensPreparo() {
+  const lista = [];
+  const extras = [];
+  if (!instalado()) extras.push(itemMenu('📲', 'Pôr o app na tela do celular', '', false, () => telaInstalar()));
+  if (!ler('lembrete', false)) extras.push(itemMenu('⏰', 'Lembrete diário às 20h', '', false, () => subtela('Lembrete diário', cartaoLembrete())));
+  if (extras.length) lista.push(el('nav', { class: 'menu', 'aria-label': 'Ajustes do app' }, ...extras));
+  const audios = cartaoAudios(false);
+  audios.hidden = true; // só aparece se faltar algum áudio
+  audiosGuardados().then((d) => { if (d && d.ok < d.total) audios.hidden = false; });
+  lista.push(audios);
+  return lista;
 }
 
 // ---------- Antes do início: preparação ----------
@@ -650,36 +699,42 @@ function telaHoje() {
 function telaPreparacao() {
   const n = diasParaComecar();
   titulo.textContent = `${saudacao()}${ler('nome') ? ', ' + ler('nome') : ''}`;
+  const boasVindas = el('section', { class: 'cartao' },
+    el('h2', {}, 'Ouça as boas-vindas'),
+    el('p', {}, 'Cinco minutos com o Vladimir explicando como funciona cada dia.'),
+    audio(AUDIOS.boasVindas, 'Boas-vindas'),
+  );
+  const suspiro = el('section', { class: 'cartao' },
+    el('h2', {}, 'Experimente o suspiro fisiológico'),
+    el('p', {}, 'Dê uma nota para a sua tensão, faça o suspiro e dê a nota de novo. Há duas versões: 1 minuto, para a hora do aperto, e 5 minutos, para quando houver tempo.'),
+    el('button', { type: 'button', onclick: () => { gravar('experimentou', true); fazerRespiro(60); } }, '1 minuto'),
+    el('button', { type: 'button', class: 'secundario', onclick: () => { gravar('experimentou', true); fazerRespiro(300); } }, '5 minutos'),
+    el('details', {}, el('summary', {}, 'Prefere ouvir o Vladimir?'), el('p', { class: 'suave' }, '1 minuto'), audio(AUDIOS.respiro1, 'Suspiro fisiológico de 1 minuto'), el('p', { class: 'suave' }, '5 minutos'), audio(AUDIOS.respiro5, 'Suspiro fisiológico de 5 minutos')),
+  );
+  const caminhada = el('section', { class: 'cartao' },
+    el('h2', {}, 'Experimente a caminhada de 1 minuto'),
+    el('p', {}, 'Toque o áudio e ande no seu ritmo até ouvir o segundo sininho. Assim você caminha um minuto sem olhar o relógio.'),
+    audio(AUDIOS.caminhada, 'Um minuto de caminhada'),
+  );
+  const marcarE = (chave, fn) => () => { gravar(chave, true); fn(); };
+  const audios = cartaoAudios(false);
+  audios.hidden = true;
+  audiosGuardados().then((d) => { if (d && d.ok < d.total) audios.hidden = false; });
   mostrar(
     el('section', { class: 'cartao destaque' },
       el('p', { class: 'pilar' }, n === 1 ? 'Começa amanhã' : `Faltam ${n} dias`),
-      el('h2', {}, 'O piloto começa na segunda-feira, 23 de novembro'),
-      el('p', {}, 'Sua inscrição no app está feita. Até lá, deixe tudo pronto com calma: são quatro passos de poucos minutos. No dia 23, esta tela passa a mostrar as práticas do dia.'),
+      el('h2', {}, 'O piloto começa na segunda, 23 de novembro'),
+      el('p', {}, 'Até lá, deixe tudo pronto. Toque em cada passo:'),
     ),
-    el('section', { class: 'cartao' },
-      el('p', { class: 'pilar' }, 'Passo 1'),
-      el('h2', {}, 'Ouça as boas-vindas'),
-      el('p', {}, 'Cinco minutos com o Vladimir explicando como funciona cada dia.'),
-      audio(AUDIOS.boasVindas, 'Boas-vindas'),
+    el('nav', { class: 'menu', 'aria-label': 'Preparação' },
+      itemMenu('1', 'Ouvir as boas-vindas', '', ler('ouviuBoasVindas', false), marcarE('ouviuBoasVindas', () => subtela('Boas-vindas', boasVindas))),
+      itemMenu('2', 'Pôr o app na tela do celular', '', instalado(), () => telaInstalar()),
+      itemMenu('3', 'Lembrete diário às 20h', '', ler('lembrete', false), () => subtela('Lembrete diário', cartaoLembrete())),
+      itemMenu('4', 'Experimentar o suspiro', '', ler('experimentou', false), () => subtela('Suspiro fisiológico', suspiro)),
+      itemMenu('5', 'Experimentar a caminhada', '', ler('caminhou', false), marcarE('caminhou', () => subtela('Caminhada de 1 minuto', caminhada))),
     ),
-    ...cartoesPreparo(true),
-    el('section', { class: 'cartao' },
-      el('p', { class: 'pilar' }, 'Passo 4'),
-      el('h2', {}, 'Experimente o suspiro fisiológico'),
-      el('p', {}, 'Dê uma nota para a sua tensão, faça o suspiro fisiológico e dê a nota de novo. Há duas versões: 1 minuto, para a hora do aperto, e 5 minutos, para quando houver tempo. Pode repetir quantas vezes quiser até o dia 23: é só para conhecer.'),
-      el('button', { type: 'button', onclick: () => fazerRespiro(60) }, '1 minuto'),
-      el('button', { type: 'button', class: 'secundario', onclick: () => fazerRespiro(300) }, '5 minutos'),
-      el('details', {}, el('summary', {}, 'Prefere ouvir o Vladimir?'), el('p', { class: 'suave' }, '1 minuto'), audio(AUDIOS.respiro1, 'Suspiro fisiológico de 1 minuto'), el('p', { class: 'suave' }, '5 minutos'), audio(AUDIOS.respiro5, 'Suspiro fisiológico de 5 minutos')),
-    ),
-    el('section', { class: 'cartao' },
-      el('h2', {}, 'Experimente a caminhada de 1 minuto'),
-      el('p', {}, 'Toque o áudio e ande no seu ritmo até ouvir o segundo sininho. Assim você caminha um minuto sem olhar o relógio.'),
-      audio(AUDIOS.caminhada, 'Um minuto de caminhada'),
-    ),
-    el('section', { class: 'cartao' },
-      el('h2', {}, 'Ficou alguma dúvida?'),
-      el('p', {}, 'Responda ao email do Vladimir: vale qualquer pergunta sobre o app ou sobre as práticas. Se você tem alguma condição de saúde, leia antes a aba Cuidados e, se for o caso, converse com o seu médico.'),
-    ),
+    audios,
+    el('p', { class: 'suave rodape' }, 'Dúvidas? Responda ao email do Vladimir. Tem alguma condição de saúde? Leia a aba Cuidados.'),
   );
 }
 
@@ -699,33 +754,39 @@ function sistema() {
   return 'outro';
 }
 
-function cartaoInstalar(numerado) {
-  const titulo = el('h2', {}, 'Coloque o app na tela do celular');
-  const cartao = el('section', { class: 'cartao' }, numerado ? el('p', { class: 'pilar' }, 'Passo 2') : null, titulo);
-  if (instalado()) {
-    cartao.classList.add('feito');
-    cartao.append(el('p', {}, 'Pronto: o app já está na tela do seu celular, com o ícone da borboleta.'));
-    return cartao;
-  }
-  cartao.append(el('p', {}, 'Assim ele abre com um toque, como os outros aplicativos, sem precisar procurar o link.'));
-  const so = sistema();
-  const iphone = el('div', { class: 'passo-a-passo' },
-    el('h3', {}, 'No iPhone'),
-    el('ol', {},
-      el('li', {}, 'Abra este link no Safari (o navegador da bússola azul).'),
-      el('li', {}, 'Toque no botão de compartilhar: o quadrado com uma seta para cima, na barra de baixo.'),
-      el('li', {}, 'Role a lista e toque em "Adicionar à Tela de Início".'),
-      el('li', {}, 'Toque em "Adicionar", no canto de cima.'),
-    ));
-  const android = el('div', { class: 'passo-a-passo' },
-    el('h3', {}, 'No Android'),
-    el('ol', {},
-      el('li', {}, 'Abra este link no Chrome (o navegador de bolinha colorida).'),
-      el('li', {}, 'Toque nos três pontinhos, no canto de cima, à direita.'),
+function passosInstalar(so) {
+  if (so === 'android') {
+    return el('ol', { class: 'passos-grandes' },
+      el('li', {}, 'Abra o link do app no Chrome, o navegador da bolinha colorida.'),
+      el('li', {}, 'Toque nos três pontinhos ⋮, no canto de cima, à direita.'),
       el('li', {}, 'Toque em "Instalar app" ou em "Adicionar à tela inicial".'),
-      el('li', {}, 'Confirme em "Instalar" ou "Adicionar".'),
-    ));
-  if (pedidoInstalar) {
+      el('li', {}, 'Confirme em "Instalar".'),
+      el('li', {}, 'Pronto: procure na tela do celular a borboleta "App Bem Viver" e abra sempre por ela.'),
+    );
+  }
+  return el('ol', { class: 'passos-grandes' },
+    el('li', {}, 'Abra o link do app no Safari, o navegador da bússola azul.'),
+    el('li', {}, 'Toque no botão de compartilhar: o quadrado com uma seta para cima, na barra de baixo.'),
+    el('li', {}, 'Role a lista e toque em "Adicionar à Tela de Início".'),
+    el('li', {}, 'Toque em "Adicionar", no canto de cima.'),
+    el('li', {}, 'Pronto: procure na tela do celular a borboleta "App Bem Viver" e abra sempre por ela.'),
+  );
+}
+
+function telaInstalar(escolhido) {
+  const so = escolhido || (sistema() === 'android' ? 'android' : 'ios');
+  const conteudo = [];
+  if (instalado() && !escolhido) {
+    conteudo.push(el('p', { class: 'ok' }, 'Pronto: o app já está na tela do seu celular, com o ícone da borboleta. Abra sempre por ele.'));
+    conteudo.push(el('p', { class: 'suave' }, 'Quer ajudar outra pessoa a instalar? Escolha o celular dela:'));
+  } else {
+    conteudo.push(el('p', {}, 'Assim o app abre com um toque, como os outros, e funciona sem internet. Qual é o seu celular?'));
+  }
+  conteudo.push(el('div', { class: 'escolha-so', role: 'group' },
+    el('button', { type: 'button', 'aria-pressed': String(so === 'ios'), onclick: () => telaInstalar('ios') }, 'Tenho iPhone'),
+    el('button', { type: 'button', 'aria-pressed': String(so === 'android'), onclick: () => telaInstalar('android') }, 'Tenho Android'),
+  ));
+  if (pedidoInstalar && so === 'android') {
     const botao = el('button', { type: 'button' }, 'Instalar o app agora');
     botao.addEventListener('click', async () => {
       if (!pedidoInstalar) return;
@@ -734,12 +795,10 @@ function cartaoInstalar(numerado) {
       pedidoInstalar = null;
       if (r && r.outcome === 'accepted') botao.replaceWith(el('p', { class: 'ok' }, 'Instalado. Procure o ícone da borboleta na tela do celular.'));
     });
-    cartao.append(botao);
+    conteudo.push(botao, el('p', { class: 'suave' }, 'Se o botão não funcionar, siga os passos:'));
   }
-  // O do próprio celular aparece primeiro; o outro fica logo abaixo, para quem ajuda alguém.
-  cartao.append(...(so === 'android' ? [android, iphone] : [iphone, android]));
-  cartao.append(el('p', { class: 'suave' }, 'Depois, procure na tela do celular o ícone da borboleta, escrito "App Bem Viver".'));
-  return cartao;
+  conteudo.push(passosInstalar(so));
+  subtela('Pôr na tela do celular', el('section', { class: 'cartao' }, ...conteudo));
 }
 
 // Os áudios são guardados pelo service worker logo na primeira abertura.
@@ -828,17 +887,6 @@ function cartaoLembrete() {
   return cartao;
 }
 
-function cartoesPreparo(naPreparacao) {
-  if (naPreparacao) return [cartaoInstalar(true), cartaoAudios(true), cartaoLembrete()];
-  const lista = [];
-  if (!ler('lembrete', false)) lista.push(cartaoLembrete());
-  if (!instalado()) lista.push(cartaoInstalar(false));
-  const audios = cartaoAudios(false);
-  audios.hidden = true; // depois do início, só aparece se faltar algum áudio
-  audiosGuardados().then((d) => { if (d && d.ok < d.total) audios.hidden = false; });
-  lista.push(audios);
-  return lista;
-}
 
 // Nota de tensão de 0 a 10, pedida antes e depois de cada respiro.
 function telaTensao(momento, aoEscolher) {
@@ -1216,6 +1264,9 @@ function cartaoEvolucao() {
 function telaCuidados() {
   titulo.textContent = 'Cuidados';
   mostrar(
+    el('nav', { class: 'menu', 'aria-label': 'Ajuda com o app' },
+      itemMenu('📲', 'Como pôr o app na tela do celular', '', false, () => telaInstalar()),
+    ),
     el('section', { class: 'cartao socorro' },
       el('h2', {}, 'Se precisar de ajuda agora'),
       el('p', {}, el('a', { href: 'tel:188' }, 'CVV, ligue 188'), ': o Centro de Valorização da Vida oferece apoio emocional a quem está passando por um momento difícil. Um voluntário escuta você, sem julgamento e em sigilo, de graça, 24 horas, em todo o Brasil. Também há chat em ', el('a', { href: 'https://cvv.org.br/chat/', rel: 'noopener' }, 'cvv.org.br'), '.'),
