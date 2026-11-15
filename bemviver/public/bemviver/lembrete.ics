@@ -1,0 +1,33 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Metodo Bem Viver//Lembrete//PT-BR
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VTIMEZONE
+TZID:America/Sao_Paulo
+BEGIN:STANDARD
+DTSTART:19700101T000000
+TZOFFSETFROM:-0300
+TZOFFSETTO:-0300
+TZNAME:-03
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:lembrete-diario-piloto-2026@metodo-bem-viver
+DTSTAMP:20261115T120000Z
+DTSTART;TZID=America/Sao_Paulo:20261123T200000
+DTEND;TZID=America/Sao_Paulo:20261123T201000
+RRULE:FREQ=DAILY;UNTIL=20261220T235900Z
+SUMMARY:Meu dia bem vivido (App Bem Viver)
+DESCRIPTION:Abra o App Bem Viver pelo ícone da borboleta e marque as prát
+ icas de hoje. Se ainda não fez\, a noite é a hora das três coisas boas.
+ \n\nhttps://vladimirhersen.com.br/bemviver/
+URL:https://vladimirhersen.com.br/bemviver/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Meu dia bem vivido (App Bem Viver)
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+END:VCALENDAR
