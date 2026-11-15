@@ -81,6 +81,7 @@ const AUDIOS = {
   respiro5: '/bemviver/audio/3b-respiro-5-minutos.mp3',
   noite: '/bemviver/audio/4-noite.mp3',
   domingo: '/bemviver/audio/5-domingo.mp3',
+  caminhada: '/bemviver/audio/6-caminhada-1-minuto.mp3',
 };
 
 const TESTE_ZONA = 'Zona de Presença: firme e confortável. Teste: consigo respirar pelo nariz com calma e sorrir? Se não, recue um pouco.';
@@ -575,6 +576,8 @@ function telaHoje() {
     el('p', {}, 'Três vezes hoje, 1 minuto de passo rápido ou escada, preso a algo que já acontece: ir ao ponto, subir para casa, esperar o café. A respiração acelera, mas dá para falar.'),
     el('p', { class: 'suave' }, 'Dia calmo? Uma caminhada ao ar livre vale pelos três. Andar enquanto conversa ao telefone também conta.'),
     audio(AUDIOS.manha, 'O começo do dia'),
+    el('p', { class: 'suave' }, 'Para caminhar 1 minuto sem olhar o relógio: toque o áudio abaixo e ande até ouvir o segundo sininho.'),
+    audio(AUDIOS.caminhada, 'Um minuto de caminhada'),
     passos,
   );
   desenharPassos();
