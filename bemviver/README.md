@@ -22,6 +22,7 @@ Os seis áudios aprovados ficam em `public/bemviver/audio/`, em MP3:
 - `3b-respiro-5-minutos.mp3` (suspiro fisiológico de 5 minutos)
 - `4-noite.mp3`
 - `5-domingo.mp3`
+- `6-caminhada-1-minuto.mp3` (voz, sininho no início e no fim, paisagem do Leveza ao longe)
 
 Funciona como o Leveza de Viver: na primeira abertura, o app inteiro fica guardado no
 celular, com os seis áudios, e passa a abrir e tocar sem internet (o `sw.js` responde aos
