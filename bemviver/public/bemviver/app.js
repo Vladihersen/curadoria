@@ -85,7 +85,7 @@ const AUDIOS = {
   cancao: '/bemviver/audio/7-cancao-o-amor-precisa-viver.mp3',
 };
 
-const TESTE_ZONA = 'Zona de Presença: firme e confortável. Teste: consigo respirar pelo nariz com calma e sorrir? Se não, recue um pouco.';
+const TESTE_ZONA = 'Ritmo certo: consigo respirar pelo nariz com calma e sorrir? Se não, diminua um pouco.';
 
 const VINCULOS = ['Filha ou filho', 'Marido, esposa ou companheiro(a)', 'Amiga ou amigo', 'Irmã ou irmão', 'Mãe ou pai', 'Neta ou neto', 'Outra pessoa'];
 
@@ -1296,7 +1296,7 @@ function telaCuidados() {
       el('p', {}, 'A respiração é suave, nunca forçada. Pare e volte a respirar normal se sentir tontura, formigamento, vista escura, falta de ar, aperto no peito ou coração disparado.'),
       el('p', {}, 'O suspiro fisiológico pode ser feito sentado, em pé ou caminhando, num lugar seguro. Nunca dirigindo, na água ou num lugar alto. Se sentir tontura de pé, sente-se.'),
       el('h3', {}, 'Movimento'),
-      el('p', {}, 'O minuto de passo rápido é na Zona de Presença: a respiração acelera, mas dá para falar e sorrir. Se você tem doença no coração, marca-passo, pressão alta sem controle ou sente dor ou falta de ar ao esforço, converse com seu médico antes de acelerar o passo. Pare se sentir dor no peito, tontura ou falta de ar forte.'),
+      el('p', {}, 'O minuto de passo rápido é num ritmo firme e confortável: a respiração acelera, mas dá para falar e sorrir. Se você tem doença no coração, marca-passo, pressão alta sem controle ou sente dor ou falta de ar ao esforço, converse com seu médico antes de acelerar o passo. Pare se sentir dor no peito, tontura ou falta de ar forte.'),
       el('h3', {}, 'Sentimentos que podem aparecer'),
       el('p', {}, 'Às vezes, ficar em silêncio ou pensar em pessoas queridas traz tristeza, saudade ou lembranças difíceis. Isso é comum e costuma passar. Se pesar, diminua, pule uma prática ou pare, e conte no domingo.'),
       el('p', {}, 'Se você está de luto, ou sem alguém por perto, o gesto de carinho do dia pode doer. Vale escrever a mensagem sem enviar, ou conversar com um vizinho ou atendente. E se você dorme mal há semanas, procure tratamento: existe terapia específica para insônia.'),
