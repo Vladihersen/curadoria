@@ -324,9 +324,14 @@ function audio(src, titulo = 'Método Bem Viver') {
     player.addEventListener('pause', parou);
     player.addEventListener('ended', parou);
     caixa.replaceChildren(player);
+    return player;
   };
+  // Primeiro um botão grande que diz o que é; o player só aparece (e já toca) depois do toque.
+  const botao = el('button', { type: 'button', class: 'ouvir' }, '▶  Ouvir: ' + titulo);
+  botao.addEventListener('click', () => { const pl = tocar(); pl.play().catch(() => {}); });
+  caixa.replaceChildren(botao);
   audioExiste[src] ??= fetch(src, { method: 'HEAD' }).then((r) => r.ok).catch(() => null);
-  audioExiste[src].then((ok) => (ok === false ? emBreve() : tocar()));
+  audioExiste[src].then((ok) => { if (ok === false) emBreve(); });
   return caixa;
 }
 
@@ -467,7 +472,7 @@ function telaBoasVindas() {
     el('section', { class: 'cartao' },
       el('h2', {}, 'Ouça primeiro'),
       el('p', {}, 'Cinco minutos com o Vladimir explicando como funciona.'),
-      audio(AUDIOS.boasVindas, 'Boas-vindas'),
+      audio(AUDIOS.boasVindas, 'as boas-vindas'),
       el('h3', {}, 'Os quatro pilares'),
       el('p', {}, el('b', {}, 'Bem respirar'), ': o suspiro fisiológico, 1 minuto na hora do aperto, ou 5 minutos quando houver tempo.'),
       el('p', {}, el('b', {}, 'Bem fazer'), ': três minutos de movimento ao longo do dia e uma coisa pequena que te dá vida.'),
@@ -553,9 +558,9 @@ function telaHoje() {
     el('h2', {}, 'Suspiro fisiológico'),
     el('p', {}, 'Inspire pelo nariz, inspire mais um pouquinho por cima e solte todo o ar pelo nariz, bem devagar. Antes e depois, uma nota para a sua tensão.'),
     m ? el('p', { class: 'resultado' }, `Hoje: ${reg.respiros.length} ${reg.respiros.length === 1 ? 'vez' : 'vezes'}, tensão média de ${m.antes.toFixed(1).replace('.', ',')} para ${m.depois.toFixed(1).replace('.', ',')}.`) : null,
-    el('button', { type: 'button', onclick: () => fazerRespiro(60) }, '1 minuto'),
-    el('button', { type: 'button', class: 'secundario', onclick: () => fazerRespiro(300) }, '5 minutos'),
-    el('details', {}, el('summary', {}, 'Prefere ouvir o Vladimir?'), el('p', { class: 'suave' }, '1 minuto'), audio(AUDIOS.respiro1, 'Suspiro fisiológico de 1 minuto'), el('p', { class: 'suave' }, '5 minutos'), audio(AUDIOS.respiro5, 'Suspiro fisiológico de 5 minutos')),
+    el('button', { type: 'button', onclick: () => fazerRespiro(60) }, 'Começar: 1 minuto'),
+    el('button', { type: 'button', class: 'secundario', onclick: () => fazerRespiro(300) }, 'Começar: 5 minutos'),
+    el('details', {}, el('summary', {}, 'Prefere ser guiado pela voz do Vladimir?'), audio(AUDIOS.respiro1, '1 minuto com o Vladimir'), audio(AUDIOS.respiro5, '5 minutos com o Vladimir')),
   );
 
   const passos = el('div', { class: 'pausas', role: 'group', 'aria-label': 'Minutos de movimento hoje' });
@@ -576,8 +581,9 @@ function telaHoje() {
     el('p', {}, 'Três vezes hoje, 1 minuto de passo rápido ou escada, preso a algo que já acontece: ir ao ponto, subir para casa, esperar o café. A respiração acelera, mas dá para falar.'),
     el('p', { class: 'suave' }, 'Dia calmo? Uma caminhada ao ar livre vale pelos três. Andar enquanto conversa ao telefone também conta.'),
     el('p', { class: 'suave' }, TESTE_ZONA),
-    el('p', { class: 'suave' }, 'Para caminhar 1 minuto sem olhar o relógio: toque o áudio abaixo e ande até ouvir o segundo sininho.'),
-    audio(AUDIOS.caminhada, 'Um minuto de caminhada'),
+    el('p', {}, 'Para caminhar 1 minuto sem olhar o relógio, toque no botão e ande até ouvir o segundo sininho.'),
+    audio(AUDIOS.caminhada, 'a caminhada de 1 minuto'),
+    el('p', { class: 'instrucao' }, 'Marque cada minuto que fizer hoje:'),
     passos,
   );
   desenharPassos();
@@ -627,15 +633,12 @@ function telaHoje() {
     el('p', { class: 'frase' }, 'Que você esteja em paz. Que você tenha saúde. Que você seja feliz.'),
     el('p', { class: 'frase' }, 'Que eu esteja em paz. Que eu tenha saúde. Que eu seja feliz.'),
     el('p', { class: 'frase' }, 'Que todos os seres sejam felizes.'),
-    el('details', { class: 'cancao' },
-      el('summary', {}, '▶  Ouvir a canção'),
-      el('p', {}, '"O amor precisa viver dentro de mim", para fechar o dia.'),
-      audio(AUDIOS.cancao, 'O amor precisa viver dentro de mim'),
-      el('p', { class: 'suave' }, 'Canção devocional de autoria desconhecida, na voz de Pedro e Christiane.'),
-    ),
+    el('p', {}, 'Para fechar o dia, uma canção:'),
+    audio(AUDIOS.cancao, 'a canção "O amor precisa viver"'),
+    el('p', { class: 'suave' }, 'Canção devocional de autoria desconhecida, na voz de Pedro e Christiane.'),
     el('label', { for: 'amanha' }, 'Amanhã, a coisa que vai me dar vida'), amanha,
-    el('p', { class: 'suave' }, 'Prefere ser guiado? Ouça a prática da noite com o Vladimir:'),
-    audio(AUDIOS.noite, 'A noite'),
+    el('p', { class: 'suave' }, 'Prefere ser guiado pelo Vladimir?'),
+    audio(AUDIOS.noite, 'a prática da noite'),
     botaoMarcar('Fiz a prática da noite', reg.noite, (v) => { reg.noite = v; salvarRegistro(dia, reg); marcar(cNoite, v); }),
     el('label', {}, 'Hoje teve um momento de paz?'),
     simNao(reg.paz, (v) => { reg.paz = v; salvarRegistro(dia, reg); }),
@@ -653,7 +656,7 @@ function telaHoje() {
     el('p', { class: 'pilar' }, 'Manhã'),
     el('h2', {}, 'O começo do dia'),
     el('p', {}, 'Alguns minutos com o Vladimir para começar o dia com presença. Quando souber de cor, o áudio é opcional.'),
-    audio(AUDIOS.manha, 'O começo do dia'),
+    audio(AUDIOS.manha, 'o começo do dia'),
   );
 
   // A aba Hoje é uma lista curta: cada prática abre numa tela só dela.
@@ -710,19 +713,19 @@ function telaPreparacao() {
   const boasVindas = el('section', { class: 'cartao' },
     el('h2', {}, 'Ouça as boas-vindas'),
     el('p', {}, 'Cinco minutos com o Vladimir explicando como funciona cada dia.'),
-    audio(AUDIOS.boasVindas, 'Boas-vindas'),
+    audio(AUDIOS.boasVindas, 'as boas-vindas'),
   );
   const suspiro = el('section', { class: 'cartao' },
     el('h2', {}, 'Experimente o suspiro fisiológico'),
     el('p', {}, 'Dê uma nota para a sua tensão, faça o suspiro e dê a nota de novo. Há duas versões: 1 minuto, para a hora do aperto, e 5 minutos, para quando houver tempo.'),
-    el('button', { type: 'button', onclick: () => { gravar('experimentou', true); fazerRespiro(60); } }, '1 minuto'),
-    el('button', { type: 'button', class: 'secundario', onclick: () => { gravar('experimentou', true); fazerRespiro(300); } }, '5 minutos'),
-    el('details', {}, el('summary', {}, 'Prefere ouvir o Vladimir?'), el('p', { class: 'suave' }, '1 minuto'), audio(AUDIOS.respiro1, 'Suspiro fisiológico de 1 minuto'), el('p', { class: 'suave' }, '5 minutos'), audio(AUDIOS.respiro5, 'Suspiro fisiológico de 5 minutos')),
+    el('button', { type: 'button', onclick: () => { gravar('experimentou', true); fazerRespiro(60); } }, 'Começar: 1 minuto'),
+    el('button', { type: 'button', class: 'secundario', onclick: () => { gravar('experimentou', true); fazerRespiro(300); } }, 'Começar: 5 minutos'),
+    el('details', {}, el('summary', {}, 'Prefere ser guiado pela voz do Vladimir?'), audio(AUDIOS.respiro1, '1 minuto com o Vladimir'), audio(AUDIOS.respiro5, '5 minutos com o Vladimir')),
   );
   const caminhada = el('section', { class: 'cartao' },
     el('h2', {}, 'Experimente a caminhada de 1 minuto'),
     el('p', {}, 'Toque o áudio e ande no seu ritmo até ouvir o segundo sininho. Assim você caminha um minuto sem olhar o relógio.'),
-    audio(AUDIOS.caminhada, 'Um minuto de caminhada'),
+    audio(AUDIOS.caminhada, 'a caminhada de 1 minuto'),
   );
   const marcarE = (chave, fn) => () => { gravar(chave, true); fn(); };
   const audios = cartaoAudios(false);
@@ -1159,10 +1162,7 @@ function telaDomingo() {
     el('section', { class: 'cartao' },
       el('h2', {}, 'Comece pela orientação do domingo'),
       el('p', {}, 'O Vladimir conduz a revisão da semana em 2 minutos e meio. Ouça e depois responda às perguntas abaixo.'),
-      el('details', { class: 'cancao' },
-        el('summary', {}, '▶  Ouvir a orientação'),
-        audio(AUDIOS.domingo, 'Orientação do domingo'),
-      ),
+      audio(AUDIOS.domingo, 'a orientação do domingo'),
     ),
     el('section', { class: 'cartao' },
       el('h2', {}, `Semana que termina em ${dataCurta(domingo)}`),

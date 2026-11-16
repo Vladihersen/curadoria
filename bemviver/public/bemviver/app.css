@@ -231,3 +231,16 @@ details.cancao > summary {
 }
 details.cancao > summary::-webkit-details-marker { display: none; }
 details.cancao[open] > summary { background: transparent; color: var(--verde-escuro); }
+
+/* Revisão de clareza (16/11): todo áudio começa por um botão que diz o que toca;
+   todo "abrir mais" tem cara de botão. */
+button.ouvir { background: var(--verde); color: #fff; font-size: 1.1rem; }
+details > summary {
+  list-style: none; justify-content: center; text-align: center;
+  min-height: 52px; margin-top: 8px; padding: 10px 16px; border-radius: 12px;
+  border: 2px solid var(--verde); color: var(--verde-escuro); background: transparent;
+}
+details > summary::-webkit-details-marker { display: none; }
+details > summary::after { content: ' ▾'; }
+details[open] > summary::after { content: ' ▴'; }
+.instrucao { font-weight: 600; margin: 14px 0 4px; }
