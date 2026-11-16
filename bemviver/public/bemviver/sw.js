@@ -10,7 +10,7 @@
 //   VERSAO_AUDIOS muda. Trocou um áudio? Suba VERSAO_AUDIOS (a1 → a2) e publique.
 
 const VERSAO = '__VERSAO__';
-const VERSAO_AUDIOS = 'a5'; // a5 (16/11): canção da noite
+const VERSAO_AUDIOS = 'a6'; // a6 (16/11): canções tratadas (ruído, voz, volume, fades)
 const CACHE = 'bemviver-app-' + VERSAO;
 const CACHE_AUDIOS = 'bemviver-audios-' + VERSAO_AUDIOS;
 
