@@ -23,6 +23,7 @@ Os seis áudios aprovados ficam em `public/bemviver/audio/`, em MP3:
 - `4-noite.mp3`
 - `5-domingo.mp3`
 - `6-caminhada-1-minuto.mp3` (voz, sininho no início e no fim, paisagem do Leveza ao longe)
+- `7-cancao-o-amor-precisa-viver.mp3` (canção opcional da noite, na voz de Pedro e Christiane; gravação ao vivo)
 
 Funciona como o Leveza de Viver: na primeira abertura, o app inteiro fica guardado no
 celular, com os seis áudios, e passa a abrir e tocar sem internet (o `sw.js` responde aos

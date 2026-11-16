@@ -10,7 +10,7 @@
 //   VERSAO_AUDIOS muda. Trocou um áudio? Suba VERSAO_AUDIOS (a1 → a2) e publique.
 
 const VERSAO = '__VERSAO__';
-const VERSAO_AUDIOS = 'a4'; // a4 (15/11): minuto de caminhada com a voz do Vladimir
+const VERSAO_AUDIOS = 'a5'; // a5 (16/11): canção da noite
 const CACHE = 'bemviver-app-' + VERSAO;
 const CACHE_AUDIOS = 'bemviver-audios-' + VERSAO_AUDIOS;
 
@@ -26,6 +26,7 @@ const AUDIOS = [
   '/bemviver/audio/4-noite.mp3',
   '/bemviver/audio/5-domingo.mp3',
   '/bemviver/audio/6-caminhada-1-minuto.mp3',
+  '/bemviver/audio/7-cancao-o-amor-precisa-viver.mp3',
   '/bemviver/audio/guia-1-minuto.mp3',
   '/bemviver/audio/guia-5-minutos.mp3',
 ];
