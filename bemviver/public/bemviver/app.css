@@ -244,3 +244,9 @@ details > summary::-webkit-details-marker { display: none; }
 details > summary::after { content: ' ▾'; }
 details[open] > summary::after { content: ' ▴'; }
 .instrucao { font-weight: 600; margin: 14px 0 4px; }
+
+.letra { margin: 0.8rem 0 1rem; padding: 0.9rem 1rem; background: var(--fundo); border: 1px solid var(--linha); border-radius: 12px; }
+.letra p { font-size: 1.25rem; line-height: 1.55; margin: 0 0 0.9rem; }
+.letra p:last-child { margin-bottom: 0; }
+.letra .letra-titulo { font-size: 1rem; font-weight: 600; margin-bottom: 0.6rem; }
+.aviso-cancao { font-size: 1rem; padding: .7rem .9rem; border-left: 4px solid var(--linha); background: var(--fundo); border-radius: 8px; }
