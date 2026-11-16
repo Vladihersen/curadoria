@@ -222,3 +222,12 @@ button.voltar {
 ol.passos-grandes { padding-left: 1.6rem; margin: 12px 0 0; font-size: 1.12rem; line-height: 1.5; }
 ol.passos-grandes li { margin-bottom: 14px; padding-left: 4px; }
 .rodape { text-align: center; margin-top: 8px; }
+
+/* Canção da noite: o "abrir" parece um botão de verdade */
+details.cancao > summary {
+  list-style: none; justify-content: center; gap: 8px;
+  min-height: 56px; margin-top: 8px; padding: 12px 18px; border-radius: 12px;
+  background: var(--verde); color: #fff; font-size: 1.12rem; border: 2px solid var(--verde);
+}
+details.cancao > summary::-webkit-details-marker { display: none; }
+details.cancao[open] > summary { background: transparent; color: var(--verde-escuro); }

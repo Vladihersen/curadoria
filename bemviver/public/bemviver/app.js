@@ -628,7 +628,7 @@ function telaHoje() {
     el('p', { class: 'frase' }, 'Que eu esteja em paz. Que eu tenha saúde. Que eu seja feliz.'),
     el('p', { class: 'frase' }, 'Que todos os seres sejam felizes.'),
     el('details', { class: 'cancao' },
-      el('summary', {}, '🎵 Ouvir a canção'),
+      el('summary', {}, '▶  Ouvir a canção'),
       el('p', {}, '"O amor precisa viver dentro de mim", para fechar o dia.'),
       audio(AUDIOS.cancao, 'O amor precisa viver dentro de mim'),
       el('p', { class: 'suave' }, 'Canção devocional de autoria desconhecida, na voz de Pedro e Christiane.'),
