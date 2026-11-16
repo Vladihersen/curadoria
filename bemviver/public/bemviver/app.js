@@ -729,7 +729,6 @@ const CANCOES = [
     aviso: 'Canção devocional. Vem de uma tradição espiritual específica, a prece a São Miguel Arcanjo. Ouça só se tocar o seu coração. Não faz parte da prática do dia.',
     credito: 'Canção devocional de autoria desconhecida.',
     letra: [
-      ['Meu São Miguel, chefe dos anjos das falanges lá do céu,', 'dai-me tua força, dai-me fé pra prosseguir', 'neste caminho que escolhi.'],
       ['Meu São Miguel, em teu jardim peço licença', 'para entrar, das tuas flores com carinho vou cuidar,', 'sementes boas vou plantar.'],
       ['Meu São Miguel, aqui agora eu peço a vossa proteção,', 'dai-me coragem, segurai a minha mão', 'para cumprir minha missão.'],
     ],
