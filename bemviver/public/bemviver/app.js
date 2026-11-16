@@ -82,6 +82,7 @@ const AUDIOS = {
   noite: '/bemviver/audio/4-noite.mp3',
   domingo: '/bemviver/audio/5-domingo.mp3',
   caminhada: '/bemviver/audio/6-caminhada-1-minuto.mp3',
+  cancao: '/bemviver/audio/7-cancao-o-amor-precisa-viver.mp3',
 };
 
 const TESTE_ZONA = 'Zona de Presença: firme e confortável. Teste: consigo respirar pelo nariz com calma e sorrir? Se não, recue um pouco.';
@@ -626,7 +627,14 @@ function telaHoje() {
     el('p', { class: 'frase' }, 'Que você esteja em paz. Que você tenha saúde. Que você seja feliz.'),
     el('p', { class: 'frase' }, 'Que eu esteja em paz. Que eu tenha saúde. Que eu seja feliz.'),
     el('p', { class: 'frase' }, 'Que todos os seres sejam felizes.'),
+    el('details', { class: 'cancao' },
+      el('summary', {}, '🎵 Ouvir a canção'),
+      el('p', {}, '"O amor precisa viver dentro de mim", para fechar o dia.'),
+      audio(AUDIOS.cancao, 'O amor precisa viver dentro de mim'),
+      el('p', { class: 'suave' }, 'Canção devocional de autoria desconhecida, na voz de Pedro e Christiane.'),
+    ),
     el('label', { for: 'amanha' }, 'Amanhã, a coisa que vai me dar vida'), amanha,
+    el('p', { class: 'suave' }, 'Prefere ser guiado? Ouça a prática da noite com o Vladimir:'),
     audio(AUDIOS.noite, 'A noite'),
     botaoMarcar('Fiz a prática da noite', reg.noite, (v) => { reg.noite = v; salvarRegistro(dia, reg); marcar(cNoite, v); }),
     el('label', {}, 'Hoje teve um momento de paz?'),
@@ -827,7 +835,7 @@ function cartaoAudios(numerado) {
   const cartao = el('section', { class: 'cartao' },
     numerado ? el('p', { class: 'pilar' }, 'Passo 3') : null,
     el('h2', {}, 'Os áudios no seu celular'),
-    el('p', {}, 'Na primeira vez que você abre o app, os áudios (cerca de 25 MB) ficam guardados no celular. Depois disso eles tocam mesmo sem internet. De preferência, abra o app pela primeira vez no wi-fi.'),
+    el('p', {}, 'Na primeira vez que você abre o app, os áudios (cerca de 30 MB) ficam guardados no celular. Depois disso eles tocam mesmo sem internet. De preferência, abra o app pela primeira vez no wi-fi.'),
     botao, estado,
   );
   const mostrarEstado = (d) => {
