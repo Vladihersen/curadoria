@@ -727,6 +727,12 @@ function telaPreparacao() {
     el('p', {}, 'Toque o áudio e ande no seu ritmo até ouvir o segundo sininho. Assim você caminha um minuto sem olhar o relógio.'),
     audio(AUDIOS.caminhada, 'a caminhada de 1 minuto'),
   );
+  const cancao = el('section', { class: 'cartao' },
+    el('h2', {}, 'Conheça a canção da noite'),
+    el('p', {}, 'Durante o piloto, ela vai fechar a prática de cada noite. Ouça quando quiser.'),
+    audio(AUDIOS.cancao, 'a canção "O amor precisa viver"'),
+    el('p', { class: 'suave' }, 'Canção devocional de autoria desconhecida, na voz de Pedro e Christiane.'),
+  );
   const marcarE = (chave, fn) => () => { gravar(chave, true); fn(); };
   const audios = cartaoAudios(false);
   audios.hidden = true;
@@ -743,6 +749,7 @@ function telaPreparacao() {
       itemMenu('3', 'Lembrete diário às 20h', '', ler('lembrete', false), () => subtela('Lembrete diário', cartaoLembrete())),
       itemMenu('4', 'Experimentar o suspiro', '', ler('experimentou', false), () => subtela('Suspiro fisiológico', suspiro)),
       itemMenu('5', 'Experimentar a caminhada', '', ler('caminhou', false), marcarE('caminhou', () => subtela('Caminhada de 1 minuto', caminhada))),
+      itemMenu('6', 'Ouvir a canção da noite', '', ler('ouviuCancao', false), marcarE('ouviuCancao', () => subtela('Canção da noite', cancao))),
     ),
     audios,
     el('p', { class: 'suave rodape' }, 'Dúvidas? Responda ao email do Vladimir. Tem alguma condição de saúde? Leia a aba Cuidados.'),
