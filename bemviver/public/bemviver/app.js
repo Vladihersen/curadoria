@@ -723,18 +723,6 @@ const CANCOES = [
     ],
   },
   {
-    nome: 'Querido, amado mestre',
-    audio: '/bemviver/audio/8-cancao-querido-amado-mestre.mp3',
-    devocional: true,
-    aviso: 'Canção devocional. Vem de uma tradição espiritual específica, a de Sathya Sai Baba. Ouça só se tocar o seu coração. Não faz parte da prática do dia.',
-    credito: 'Canção devocional de autoria desconhecida, na voz de Pedro.',
-    letra: [
-      ['Querido, amado mestre', 'Sathya Sai, mãe-pai,', 'abençoa minha vida!'],
-      ['Esteja comigo neste dia,', 'me conduz e concede alegria.'],
-      ['E que eu contigo esteja', 'de coração,', 'em pensamento, palavra e ação.'],
-    ],
-  },
-  {
     nome: 'Meu São Miguel',
     audio: '/bemviver/audio/9-cancao-meu-sao-miguel.mp3',
     devocional: true,
