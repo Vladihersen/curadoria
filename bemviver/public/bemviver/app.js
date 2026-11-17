@@ -671,7 +671,6 @@ function telaHoje() {
     itemMenu('💛', 'Um gesto de carinho', '', !!reg.contato, abrir(cContato, 'Um gesto de carinho')),
     itemMenu('🌙', 'Noite: três coisas boas', '', !!reg.noite, abrir(cNoite, 'Noite')),
     itemMenu('🤝', 'Encontro de Verdade da semana', '', false, abrir(cEncontro, 'Encontro de Verdade')),
-    itemMenu('🎵', 'Canções (se quiser)', '', false, () => telaCancoes()),
   ];
   if (ler('aberturaVista', 0) < semana) return mostrar(cFoco);
   mostrar(cFoco, el('nav', { class: 'menu', 'aria-label': 'Práticas de hoje' }, ...itens), ...itensPreparo());
@@ -722,17 +721,6 @@ const CANCOES = [
       ['Que todos os seres', 'em todos os mundos sejam felizes.'],
     ],
   },
-  {
-    nome: 'Meu São Miguel',
-    audio: '/bemviver/audio/9-cancao-meu-sao-miguel.mp3',
-    devocional: true,
-    aviso: 'Canção devocional. Vem de uma tradição espiritual específica, a prece a São Miguel Arcanjo. Ouça só se tocar o seu coração. Não faz parte da prática do dia.',
-    credito: 'Canção devocional de autoria desconhecida.',
-    letra: [
-      ['Meu São Miguel, em teu jardim peço licença', 'para entrar, das tuas flores com carinho vou cuidar,', 'sementes boas vou plantar.'],
-      ['Meu São Miguel, aqui agora eu peço a vossa proteção,', 'dai-me coragem, segurai a minha mão', 'para cumprir minha missão.'],
-    ],
-  },
 ];
 
 function letraCancao(letra = CANCOES[0].letra) {
@@ -752,15 +740,6 @@ function cartaoCancao(c) {
   );
 }
 
-function telaCancoes(voltar) {
-  const abrir = () => telaCancoes(voltar);
-  subtela('Canções', [
-    el('p', {}, 'Canções para ouvir quando quiser. Nenhuma delas é obrigatória. Toque em uma:'),
-    el('nav', { class: 'menu', 'aria-label': 'Canções' },
-      ...CANCOES.map((c) => itemMenu('🎵', c.nome, c.devocional ? 'canção devocional' : '', false, () => subtela(c.nome, cartaoCancao(c), abrir))),
-    ),
-  ], voltar);
-}
 
 // ---------- Antes do início: preparação ----------
 
@@ -800,7 +779,7 @@ function telaPreparacao() {
       itemMenu('3', 'Lembrete diário às 20h', '', ler('lembrete', false), () => subtela('Lembrete diário', cartaoLembrete())),
       itemMenu('4', 'Experimentar o suspiro', '', ler('experimentou', false), () => subtela('Suspiro fisiológico', suspiro)),
       itemMenu('5', 'Experimentar a caminhada', '', ler('caminhou', false), marcarE('caminhou', () => subtela('Caminhada de 1 minuto', caminhada))),
-      itemMenu('6', 'Ouvir as canções (se quiser)', '', ler('ouviuCancao', false), marcarE('ouviuCancao', () => telaCancoes())),
+      itemMenu('6', 'Ouvir a canção da noite', '', ler('ouviuCancao', false), marcarE('ouviuCancao', () => subtela('Canção da noite', cartaoCancao(CANCOES[0])))),
     ),
     audios,
     el('p', { class: 'suave rodape' }, 'Dúvidas? Responda ao email do Vladimir. Tem alguma condição de saúde? Leia a aba Cuidados.'),
