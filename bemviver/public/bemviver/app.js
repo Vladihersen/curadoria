@@ -306,7 +306,7 @@ const audioExiste = {};
 let playerAtivo = null;
 function audio(src, titulo = 'Método Bem Viver') {
   const caixa = el('div');
-  const emBreve = () => caixa.replaceChildren(el('p', { class: 'suave' }, 'O áudio guiado chega em breve.'));
+  const emBreve = () => caixa.replaceChildren(el('p', { class: 'suave' }, 'Este áudio chega em breve.'));
   const tocar = () => {
     const player = el('audio', { controls: true, preload: 'none', src });
     player.addEventListener('play', () => {
@@ -636,6 +636,7 @@ function telaHoje() {
     el('p', {}, 'Para fechar o dia, uma canção:'),
     audio(AUDIOS.cancao, 'a canção "O amor precisa viver"'),
     el('p', { class: 'suave' }, 'Canção devocional de autoria desconhecida, na voz de Pedro e Christiane.'),
+    letraCancao(),
     el('label', { for: 'amanha' }, 'Amanhã, a coisa que vai me dar vida'), amanha,
     el('p', { class: 'suave' }, 'Prefere ser guiado pelo Vladimir?'),
     audio(AUDIOS.noite, 'a prática da noite'),
@@ -705,6 +706,41 @@ function itensPreparo() {
   return lista;
 }
 
+// Canções opcionais. Toda canção aparece com a letra (pedido do Vladimir, 16/11).
+const CANCOES = [
+  {
+    nome: 'O amor precisa viver',
+    audio: AUDIOS.cancao,
+    aviso: 'Uma canção para fechar o dia, se você quiser.',
+    credito: 'Canção devocional de autoria desconhecida, na voz de Pedro e Christiane.',
+    letra: [
+      ['O amor precisa viver dentro de mim,', 'dentro em você,'],
+      ['tomando conta de nós, lindo de ser,', 'lindo de ver.'],
+      ['Vestindo cores do bem,', 'cheio de luz e alegria,'],
+      ['fazendo a gente cantar de coração', 'a paz em cada canção.'],
+      ['Que todos os seres', 'em todos os mundos sejam felizes.'],
+    ],
+  },
+];
+
+function letraCancao(letra = CANCOES[0].letra) {
+  return el('div', { class: 'letra' },
+    el('p', { class: 'letra-titulo' }, 'Letra para cantar junto:'),
+    ...letra.map((estrofe) => el('p', {}, ...estrofe.flatMap((v, i) => (i ? [el('br'), v] : [v])))),
+  );
+}
+
+function cartaoCancao(c) {
+  return el('section', { class: 'cartao' },
+    el('h2', {}, c.nome),
+    el('p', { class: c.devocional ? 'aviso-cancao' : '' }, c.aviso),
+    audio(c.audio, `a canção "${c.nome}"`),
+    el('p', { class: 'suave' }, c.credito),
+    letraCancao(c.letra),
+  );
+}
+
+
 // ---------- Antes do início: preparação ----------
 
 function telaPreparacao() {
@@ -727,12 +763,6 @@ function telaPreparacao() {
     el('p', {}, 'Toque o áudio e ande no seu ritmo até ouvir o segundo sininho. Assim você caminha um minuto sem olhar o relógio.'),
     audio(AUDIOS.caminhada, 'a caminhada de 1 minuto'),
   );
-  const cancao = el('section', { class: 'cartao' },
-    el('h2', {}, 'Conheça a canção da noite'),
-    el('p', {}, 'Durante o piloto, ela vai fechar a prática de cada noite. Ouça quando quiser.'),
-    audio(AUDIOS.cancao, 'a canção "O amor precisa viver"'),
-    el('p', { class: 'suave' }, 'Canção devocional de autoria desconhecida, na voz de Pedro e Christiane.'),
-  );
   const marcarE = (chave, fn) => () => { gravar(chave, true); fn(); };
   const audios = cartaoAudios(false);
   audios.hidden = true;
@@ -749,7 +779,7 @@ function telaPreparacao() {
       itemMenu('3', 'Lembrete diário às 20h', '', ler('lembrete', false), () => subtela('Lembrete diário', cartaoLembrete())),
       itemMenu('4', 'Experimentar o suspiro', '', ler('experimentou', false), () => subtela('Suspiro fisiológico', suspiro)),
       itemMenu('5', 'Experimentar a caminhada', '', ler('caminhou', false), marcarE('caminhou', () => subtela('Caminhada de 1 minuto', caminhada))),
-      itemMenu('6', 'Ouvir a canção da noite', '', ler('ouviuCancao', false), marcarE('ouviuCancao', () => subtela('Canção da noite', cancao))),
+      itemMenu('6', 'Ouvir a canção da noite', '', ler('ouviuCancao', false), marcarE('ouviuCancao', () => subtela('Canção da noite', cartaoCancao(CANCOES[0])))),
     ),
     audios,
     el('p', { class: 'suave rodape' }, 'Dúvidas? Responda ao email do Vladimir. Tem alguma condição de saúde? Leia a aba Cuidados.'),
