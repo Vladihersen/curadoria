@@ -1,0 +1,190 @@
+# Leveza de Viver — notas técnicas (aprendizados que não podem se perder)
+
+## Bug "Iniciar/Reiniciar não funciona no iPhone, só o Retomar" — resolvido em 26/out/2026
+
+**Sintoma:** no iPhone 12 (app instalado na tela de início), ao tocar em Iniciar ou
+Reiniciar a prática ficava travada, sem som e sem o círculo andar. Só começava
+depois de tocar em Pausar e depois em Retomar.
+
+**Causa:** o `startBreath()` ainda chamava a voz sintética do sistema
+(`speechSynthesis.speak`), sobra de uma versão antiga. No iOS isso toma a sessão
+de áudio e deixa o AudioContext no estado `"interrupted"` (que só existe no
+Safari). O código só religava o áudio quando o estado era `"suspended"`, então
+nada acontecia. O Retomar funcionava porque não chama a voz sintética e religa o
+áudio dentro de um toque real.
+
+**Correção:**
+1. Removido o "aquecimento" da voz sintética no `startBreath()`.
+2. `stopSay()` só cancela a voz sintética se ela estiver falando.
+3. `getACtx()` religa o áudio também no estado `"interrupted"`.
+4. Rede de segurança `destravaAudio()`: se a prática está rodando com o áudio
+   parado, qualquer toque na tela religa o som.
+5. Se depois de 1,5 s o áudio ainda não andou, o círculo mostra
+   "Toque na tela para começar".
+
+**Regra que fica:** NÃO usar `speechSynthesis` (voz sintética) em nenhum lugar do
+app. Todas as falas são gravadas. As funções `say()` e `sayMantra()` estão no
+código mas ninguém as chama — não reativar.
+
+**Tentativas que NÃO resolveram (para não repetir):**
+- Conferir `bgAudio.paused` 600 ms depois do `play()` em `ensureAudioRunning()`.
+- Chamar `bgAudio.play()` de novo no `comContexto()`, depois que a voz decodifica.
+  (Os dois ficaram no código como proteção extra, mas não eram a causa.)
+
+## Android picotando (Moto G23, Samsung A53)
+
+**25/out/2026:** o `tickVisual()` passou a guardar os elementos da tela e a rodar
+a cada 100 ms (antes 50 ms). Não bastou: o picote seguia até "carregar tudo" e a
+jornada trepidava.
+
+**26/out/2026 — causa principal:** a prática inteira era agendada de uma vez (no
+Entretenimento de 23 min, ~400 sons + filtros criados no início, esperando no
+grafo de áudio). Android mais fraco não dá conta.
+
+**Correção (só no Android, `IS_ANDROID`):**
+- `lazyDefer()`/`lazyPump()`: `scheduleSound`, `scheduleVoiceClip` e
+  `scheduleCrest` só criam o som se ele começa nos próximos 25 s
+  (`LAZY_AHEAD`); o resto vai pra fila `lazyQ`, esvaziada pelo `tickVisual`.
+  Guarda o `bMode` do momento (as jornadas trocam o `bMode` ao montar).
+- Ao apagar a tela (`visibilitychange` hidden), agenda tudo o que falta de uma vez.
+- `AudioContext` com `latencyHint:"playback"` (buffer maior).
+- iPhone continua agendando tudo de uma vez — lá o JS para com a tela apagada.
+
+Teste no Chromium simulando Android: ~30 sons vivos por vez em vez de ~400.
+
+**Voz aguda/estridente no Android (26/out/2026):** só no Android, a presença da
+voz (`ensureVoiceBus`, 2,8 kHz) caiu de +6 dB para +1,5 dB, ganhou um corte suave
+de -4 dB acima de 6 kHz, e o realce de agudo dos clipes "brilhantes" caiu de +11 dB
+para +4 dB (oração: +2 dB). iPhone sem mudança.
+
+## Volumes e oração — 26/out/2026
+
+- Anúncio das práticas (`isNameAnn` em `announceVolumeFor`): 0.9125 → 0.45625 →
+  0.228125 (duas reduções de 50% no mesmo dia).
+- Condução do Suspiro (`fisioVol`): `GUIDE_VOL*2.25` → `GUIDE_VOL*1.6875` (-25%).
+- Ruído no fim da prática (resto da paisagem depois do "Desfrute"): o
+  `finishBreath()` chamava `stopSoundscape()` gradual, que cancelava o fade final
+  e relia o volume — podia voltar ao volume cheio por um instante. Agora
+  `stopSoundscape(true)` (corte direto; a paisagem já está em silêncio ali).
+- "Desfrute em silêncio…" (`ann4`): 0.585 → 0.2925 → 0.365625 (+25%).
+- Oração "Que todos os seres…" (`mantra_todos`) estava metálica: a
+  `MANTRA_LEVEL_CURVE` foi medida no WAV de 25,75 s, mas o arquivo atual tem
+  31,02 s — a curva esticada dava até +15 dB em trechos já fortes e o limitador
+  esmagava. Curva desligada. Agudo (high-shelf) da oração de +11 dB → +4 dB.
+  **Se o arquivo da oração for reeditado, nunca reaproveitar curva antiga.**
+  Depois, a pedido do usuário, `MANTRA_VOL` 0.605 → 0.847 (+40%).
+
+## Entretenimento Meditativo de 15 minutos — 02/nov/2026
+
+- Nova jornada `jornada3`: 3 min Coerente → 2 min Suspiro → 7 min SoHam (ordem e
+  Meditação de 7 min pedidas pelo usuário). Diferente das outras, aqui o rótulo é a
+  duração REAL: 15min00s exatos com anúncios, pausas, sinos e encerramento.
+  Histórico: 5/3/7 dava 18 min; 4,5/2,5/5 dava 15 mas a Meditação ficava curta.
+  `totalMin:15` no BMODES faz a tela mostrar "~15 min".
+- SoHam da jornada3 (divisão padrão de 7 min): 7 ciclos (58s) → voz → silêncio 51s →
+  7 ciclos → voz → silêncio 1min10 → 4 ciclos (33s) → voz → silêncio final 1min50 →
+  3 sinos. `fixedSoham` aceita `s1`/`s2` opcionais (hoje ninguém usa).
+- `JOURNEY_SEQ.jornada3`, `buildJornada3Timeline()` (cópia da estrutura da
+  jornada2, pausas de 15 s), `journeyKeyOf()` substitui os ternários que só
+  conheciam jornada/jornada2. Botões na tela inicial (entre 10 e 23) e na tela
+  Respirar; nome na tela de bloqueio (`setMediaSession`).
+- Anúncios: as três só pelo nome (não há gravações de "três"/"dois"/"sete minutos"
+  para essas práticas).
+- Testado: jornadas de 10 e 23 min e SoHam avulso (5/10/15/20) idênticos aos de antes.
+- Manual (Parte 10) ainda não menciona a jornada de 15 min.
+- Backup da versão anterior: `backups/leveza/index-BACKUP-funcionando-26out.html`.
+
+## Publicação
+
+- `PUBLICAR_TUDO.bat` publica os dois apps a partir do mesmo `index.html`/`sw.js`:
+  `levezadeviver-oficial` (grátis) e `levezadeviver-acesso` (pago, Kiwify).
+  Sempre publicar por ele, para os dois ficarem iguais.
+- No passo 4/9, "Resposta: 404" é normal: só testa se a internet chega na Cloudflare.
+- Se o Wrangler perguntar sobre atualizar "Cloudflare skills": responder N; e em
+  "parar de perguntar": Y. Não afeta o app.
+
+## Manual — 02/nov/2026
+
+- As jornadas ficam descritas na **Parte 6** (`#s06`, áudio `audio/06-entretenimento.mp3`).
+  A Parte 10 (`10-jornada.mp3`) é só o sentido da jornada, sem tempos.
+- Parte 6 e sumário corrigidos para 10, 15 e 23 minutos (antes diziam "12 e 25" e
+  "10 e 25"). Backup do manual anterior em `backups/leveza/`.
+- Falta regravar `06-entretenimento.mp3` e o `manual-completo.mp3`.
+
+### Revisão completa do manual — 02/nov/2026
+- Índice: era `<ol>` numerando 1–15 sozinho, mas as seções vão 1–5, ✦, 6–14 → tudo a
+  partir do 6 ficava com número errado. Item ✦ agora sem número (`li.extra`) e
+  `<li value="6">` no seguinte.
+- Modo escuro do celular deixava o topo ilegível (branco sobre cinza) e títulos
+  apagados. Bloco `prefers-color-scheme: dark` removido: o manual fica sempre claro,
+  igual ao app.
+- Textos corrigidos: Parte 3 (faltava o Entretenimento na tela Início), Parte 4
+  (menu se chama "Respirar"; 4:7:8 escolhe repetições), Parte 5 (Coerente é 5s/5,5s
+  com toque de cristal, não "mesmo tempo"), Parte 11 (Shanti é IA: texto vai pela
+  internet; conversas ficam no aparelho em `lv_shanti_log`), Parte 12 (acompanhamento
+  automático envia práticas e TEXTO DO DIÁRIO ao painel — `syncDiarios`), Parte 13
+  (Shanti e Manual precisam de internet — /manual/ fica fora do cache do sw.js),
+  Parte 14 (dica "toque na tela" do `destravaAudio`).
+- localStorage do tamanho de letra protegido com try/catch.
+- Áudios que não batem mais com o texto: 03, 04, 05, 11 (e 12, 13, 14 só nas notas novas).
+
+## Revisão completa do app — 02/nov/2026
+
+Método: ESLint (no-undef etc.) no JS sem os base64; checagem de onclick/ids;
+testes Playwright servindo o app em http://localhost (com paisagem de teste) nos
+modos iPhone, Android e desktop: 13 variações de prática × iniciar/pausar/retomar/
+fim (relógio adiantado)/limpeza 5 s depois, sair no meio, reiniciar 3×, diário,
+Shanti (fetch simulado), service worker, aba Manual, layout a 360 px. Scripts em
+`backups/leveza/testes/` (rodar com NODE_PATH do playwright global).
+
+Bugs achados e corrigidos:
+1. Dial da paisagem em 0 desligava a paisagem (stopSoundscape) e não dava pra subir
+   de novo. Agora só fica muda (ganho 0.0001) e continua tocando.
+2. Retomar forçava a paisagem ao volume cheio, mesmo em silêncio do SoHam / pausa
+   entre práticas (medido: 0.032 → 0.18). `resumeSoundscape()` agora não mexe.
+3. Shanti sem resposta do servidor ficava "carregando" pra sempre: AbortController
+   de 60 s → mostra "Sem conexão".
+4. Controle de volume fixo cobria o fim da tela da prática: padding-bottom 90px no
+   #scr-respirar enquanto o controle aparece.
+5. Botões 10/15/23 da tela inicial quebravam o texto desigual a 360 px: flex 1 1 0,
+   título 13px nowrap.
+6. Ramo morto da MANTRA_LEVEL_CURVE removido.
+Resultado final: 39/39 rodadas OK, zero erros de console, lint limpo.
+Versão final: `backups/leveza/index-revisado-02nov.html`.
+
+## App lento pra abrir (iPhone 12) — 19/nov/2026
+
+**Causa:** na abertura, o `selMode("coer")` inicial chamava `loadBuffers(null)`, que
+sintetiza as 6 taças (`makeBellBuffer` ×5 de 15 s + `makeCrystalBuf`) com
+Math.sin/Math.exp por amostra (~80 milhões de chamadas). Isso travava a tela inteira
+(medido no Chromium com CPU 4× mais lenta: tarefa única de 5,7–6,4 s; ~1,3 s em CPU normal).
+De quebra, criava o AudioContext já na abertura.
+
+**Correção:**
+- `makeBellBuffer` e `makeCrystalBuf`: mesmo som, calculado por rotação de fasor +
+  envelope multiplicativo, ressincronizados com o valor exato a cada 2048 amostras.
+  Diferença máxima para o cálculo antigo: −154 dB (abaixo da resolução do float32).
+  Tempo: 1309 ms → 180 ms.
+- `selMode` chama `agendaTacas()`: a síntese só acontece 3,5 s depois de abrir
+  (depois da tela de abertura). O `startBreath` continua chamando `loadBuffers(cb)`,
+  então tocar Iniciar antes disso funciona (testado).
+- Resultado (CPU 4× mais lenta): DOM pronto 6,5 s → 0,7 s.
+- Ainda pesa: o index.html tem ~6 MB porque as vozes ficam embutidas em base64
+  (parse ~0,1–0,2 s). Só valeria mexer se a abertura ainda incomodar.
+Versão: `backups/leveza/index-abertura-rapida-19nov.html`.
+
+## PUBLICAR_TUDO.bat fechando na hora — 19/nov/2026
+
+- A pasta do app foi copiada para `C:\Users\vladi\Desktop\Aplicativos\APP Leveza de Viver`
+  (o Google Drive G: estava desconectado).
+- O `PUBLICAR_TUDO.bat` estava com quebras de linha LF (sem CR). O cmd do Windows não
+  acha os rótulos (`goto FIM`) e a janela fecha sem mostrar nada. Versão corrigida
+  (CRLF, mesmo conteúdo) em `backups/leveza/PUBLICAR_TUDO.bat`.
+- Além disso, o Node.js não estava instalado/no PATH nesse computador ("Node.js nao
+  encontrado") — publicação de 19/nov (abertura rápida) ainda NÃO subiu até o usuário
+  instalar o Node LTS.
+- Auxiliar `PUBLICAR_COM_JANELA_ABERTA.bat` (`cmd /k "PUBLICAR_TUDO.bat"`) mantém a janela aberta.
+- **Resolvido (19/nov, 16:34):** Node.js v26.13.1 instalado, `npm i -g wrangler`
+  (4.165.0) pelo próprio .bat, `wrangler login` feito à parte (o login dentro do
+  deploy expirou na 1ª tentativa). Publicação OK nos dois workers, versão
+  `LV-2026-11-19-1325`; o wrangler acusou só `/index.html` e `/sw.js` como alterados.

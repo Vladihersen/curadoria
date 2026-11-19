@@ -1,0 +1,19 @@
+{
+  "name": "mentoria-leveza",
+  "version": "1.1.0",
+  "description": "API do app Leveza de Viver — integração com IBM watsonx.ai (IBM Code Engine)",
+  "main": "index.js",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
