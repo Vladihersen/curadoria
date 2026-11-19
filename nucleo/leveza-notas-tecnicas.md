@@ -172,3 +172,15 @@ De quebra, criava o AudioContext já na abertura.
 - Ainda pesa: o index.html tem ~6 MB porque as vozes ficam embutidas em base64
   (parse ~0,1–0,2 s). Só valeria mexer se a abertura ainda incomodar.
 Versão: `backups/leveza/index-abertura-rapida-19nov.html`.
+
+## PUBLICAR_TUDO.bat fechando na hora — 19/nov/2026
+
+- A pasta do app foi copiada para `C:\Users\vladi\Desktop\Aplicativos\APP Leveza de Viver`
+  (o Google Drive G: estava desconectado).
+- O `PUBLICAR_TUDO.bat` estava com quebras de linha LF (sem CR). O cmd do Windows não
+  acha os rótulos (`goto FIM`) e a janela fecha sem mostrar nada. Versão corrigida
+  (CRLF, mesmo conteúdo) em `backups/leveza/PUBLICAR_TUDO.bat`.
+- Além disso, o Node.js não estava instalado/no PATH nesse computador ("Node.js nao
+  encontrado") — publicação de 19/nov (abertura rápida) ainda NÃO subiu até o usuário
+  instalar o Node LTS.
+- Auxiliar `PUBLICAR_COM_JANELA_ABERTA.bat` (`cmd /k "PUBLICAR_TUDO.bat"`) mantém a janela aberta.
