@@ -151,3 +151,24 @@ Bugs achados e corrigidos:
 6. Ramo morto da MANTRA_LEVEL_CURVE removido.
 Resultado final: 39/39 rodadas OK, zero erros de console, lint limpo.
 Versão final: `backups/leveza/index-revisado-02nov.html`.
+
+## App lento pra abrir (iPhone 12) — 19/nov/2026
+
+**Causa:** na abertura, o `selMode("coer")` inicial chamava `loadBuffers(null)`, que
+sintetiza as 6 taças (`makeBellBuffer` ×5 de 15 s + `makeCrystalBuf`) com
+Math.sin/Math.exp por amostra (~80 milhões de chamadas). Isso travava a tela inteira
+(medido no Chromium com CPU 4× mais lenta: tarefa única de 5,7–6,4 s; ~1,3 s em CPU normal).
+De quebra, criava o AudioContext já na abertura.
+
+**Correção:**
+- `makeBellBuffer` e `makeCrystalBuf`: mesmo som, calculado por rotação de fasor +
+  envelope multiplicativo, ressincronizados com o valor exato a cada 2048 amostras.
+  Diferença máxima para o cálculo antigo: −154 dB (abaixo da resolução do float32).
+  Tempo: 1309 ms → 180 ms.
+- `selMode` chama `agendaTacas()`: a síntese só acontece 3,5 s depois de abrir
+  (depois da tela de abertura). O `startBreath` continua chamando `loadBuffers(cb)`,
+  então tocar Iniciar antes disso funciona (testado).
+- Resultado (CPU 4× mais lenta): DOM pronto 6,5 s → 0,7 s.
+- Ainda pesa: o index.html tem ~6 MB porque as vozes ficam embutidas em base64
+  (parse ~0,1–0,2 s). Só valeria mexer se a abertura ainda incomodar.
+Versão: `backups/leveza/index-abertura-rapida-19nov.html`.
