@@ -184,3 +184,7 @@ Versão: `backups/leveza/index-abertura-rapida-19nov.html`.
   encontrado") — publicação de 19/nov (abertura rápida) ainda NÃO subiu até o usuário
   instalar o Node LTS.
 - Auxiliar `PUBLICAR_COM_JANELA_ABERTA.bat` (`cmd /k "PUBLICAR_TUDO.bat"`) mantém a janela aberta.
+- **Resolvido (19/nov, 16:34):** Node.js v26.13.1 instalado, `npm i -g wrangler`
+  (4.165.0) pelo próprio .bat, `wrangler login` feito à parte (o login dentro do
+  deploy expirou na 1ª tentativa). Publicação OK nos dois workers, versão
+  `LV-2026-11-19-1325`; o wrangler acusou só `/index.html` e `/sw.js` como alterados.
