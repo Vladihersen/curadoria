@@ -26,6 +26,8 @@ if (COPIA_DE_TESTE) {
       ['2026-11-18', '18/11: antes do início'],
       ['2026-11-24', '24/11: semana 1, dia comum'],
       ['2026-11-29', '29/11: 1º domingo'],
+      ['2026-12-03', '3/12: aviso da 1ª conversa ao vivo'],
+      ['2026-12-06', '6/12: dia da 1ª conversa ao vivo'],
       ['2026-12-16', '16/12: semana 4'],
       ['2026-12-20', '20/12: último domingo'],
     ];
@@ -50,6 +52,14 @@ if (COPIA_DE_TESTE) {
 }
 
 const INICIO_PILOTO = '2026-11-23'; // segunda-feira da semana 1 (piloto de 23/11 a 20/12/2026)
+
+// Conversas ao vivo pelo Google Meet, com o mesmo link para todas (decisão de 22/11).
+// O cartão aparece na aba Hoje de quinta-feira até o próprio domingo de cada conversa.
+const MEET = 'https://meet.google.com/sam-krhu-cdo';
+const CONVERSAS = [
+  { data: '2026-12-06', hora: '20h', nome: 'Primeira conversa ao vivo' },
+  { data: '2026-12-20', hora: '18h', nome: 'Conversa de fechamento' },
+];
 
 const PERGUNTAS = [
   { tema: 'Escutar sem consertar', pergunta: 'O que está pesando para você agora?', gesto: 'Ouça até o fim, sem dar conselho.' },
@@ -673,7 +683,26 @@ function telaHoje() {
     itemMenu('🤝', 'Encontro de Verdade da semana', '', false, abrir(cEncontro, 'Encontro de Verdade')),
   ];
   if (ler('aberturaVista', 0) < semana) return mostrar(cFoco);
-  mostrar(cFoco, el('nav', { class: 'menu', 'aria-label': 'Práticas de hoje' }, ...itens), ...itensPreparo());
+  mostrar(cFoco, cartaoConversa(), el('nav', { class: 'menu', 'aria-label': 'Práticas de hoje' }, ...itens), ...itensPreparo());
+}
+
+// Cartão da conversa ao vivo: de quinta a domingo na semana de cada conversa; null nos outros dias.
+function cartaoConversa() {
+  const dia = hoje();
+  const c = CONVERSAS.find((x) => {
+    const [a, m, d] = x.data.split('-').map(Number);
+    return dia >= isoLocal(new Date(a, m - 1, d - 3)) && dia <= x.data;
+  });
+  if (!c) return null;
+  const quando = dia === c.data ? `Hoje, domingo, às ${c.hora}` : `Domingo, ${dataCurta(c.data)}, às ${c.hora}`;
+  return el('section', { class: 'cartao destaque' },
+    el('p', { class: 'pilar' }, 'Conversa ao vivo com o Vladimir'),
+    el('h2', {}, `${quando} (horário de Brasília)`),
+    el('p', {}, `${c.nome}, pelo Google Meet, com uma hora de duração. Participar é opcional. A conversa será gravada só para as participantes do piloto; quem preferir pode deixar a câmera e o microfone desligados.`),
+    el('a', { class: 'botao', href: MEET, target: '_blank', rel: 'noopener' }, 'Entrar na conversa'),
+    el('p', { class: 'suave' }, 'O link é o mesmo para as duas conversas. Na hora, toque em "Entrar na conversa". Se pedir, escolha abrir no app Google Meet.'),
+    el('a', { class: 'botao secundario', href: '/bemviver/conversas-ao-vivo.ics', target: '_blank', rel: 'noopener' }, 'Pôr as conversas no meu calendário'),
+  );
 }
 
 // ---------- Navegação: lista de botões e uma coisa por tela ----------
@@ -1204,6 +1233,7 @@ function telaDomingo() {
   );
 
   mostrar(
+    cartaoConversa(), // só aparece em 6/12 e 20/12: a conversa ao vivo do dia vem primeiro
     el('section', { class: 'cartao' },
       el('h2', {}, 'Comece pela orientação do domingo'),
       el('p', {}, 'O Vladimir conduz a revisão da semana em 2 minutos e meio. Ouça e depois responda às perguntas abaixo.'),

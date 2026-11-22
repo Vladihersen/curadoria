@@ -67,7 +67,7 @@ button, .botao {
   margin-top: 8px;
   text-align: center;
 }
-button.secundario { background: transparent; color: var(--verde-escuro); }
+button.secundario, a.botao.secundario { background: transparent; color: var(--verde-escuro); }
 button:disabled { opacity: .5; cursor: default; }
 button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--verde-escuro); outline-offset: 2px; }
 
