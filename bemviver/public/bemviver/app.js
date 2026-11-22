@@ -648,7 +648,7 @@ function telaHoje() {
   const cEncontro = el('section', { class: 'cartao' },
     el('p', { class: 'pilar' }, `Bem querer · semana ${semana} de 4`),
     el('h2', {}, `Encontro de Verdade: ${enc.tema}`),
-    el('p', {}, 'Uma vez nesta semana, 20 a 30 minutos com alguém importante, com o celular guardado longe. Comece pela pergunta e escute.'),
+    el('p', {}, 'Uma vez nesta semana, 20 a 30 minutos com alguém importante, com atenção inteira na pessoa. Comece pela pergunta e escute.'),
     el('p', { class: 'pergunta' }, `"${enc.pergunta}"`),
     el('p', { class: 'suave' }, enc.gesto),
   );
