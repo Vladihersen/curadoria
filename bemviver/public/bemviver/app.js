@@ -686,10 +686,17 @@ function itemMenu(icone, rotulo, detalhe, feito, aoTocar) {
   );
 }
 
-// Abre uma tela com um só assunto e o botão Voltar no topo. "voltar" refaz a tela de origem.
-function subtela(nome, conteudo, voltar = () => TELAS[ler('aba', 'hoje')]()) {
+// Botão "Voltar ao início", sempre no topo das telas que não são a tela inicial.
+// Público com pouca intimidade com apps, e o app instalado no iPhone não tem o voltar
+// do navegador: toda tela precisa ter um caminho de volta visível (pedido de 19/11).
+function botaoInicio(aoTocar = () => irPara(ler('aba', 'hoje'))) {
+  return el('button', { type: 'button', class: 'voltar', onclick: aoTocar }, '← Voltar ao início');
+}
+
+// Abre uma tela com um só assunto e o botão "Voltar ao início" no topo. "voltar" refaz a tela de origem.
+function subtela(nome, conteudo, voltar = () => irPara(ler('aba', 'hoje'))) {
   titulo.textContent = nome;
-  mostrar(el('button', { type: 'button', class: 'voltar', onclick: voltar }, '← Voltar'), ...[].concat(conteudo));
+  mostrar(botaoInicio(voltar), ...[].concat(conteudo));
 }
 
 // Depois do início: instalar e lembrete viram itens da lista enquanto faltarem.
@@ -940,12 +947,12 @@ function cartaoLembrete() {
 function telaTensao(momento, aoEscolher) {
   abas.hidden = true;
   titulo.textContent = momento === 'antes' ? 'Antes de começar' : 'E agora?';
-  mostrar(el('section', { class: 'cartao' },
+  mostrar(botaoInicio(() => irPara('hoje')), el('section', { class: 'cartao' },
     el('h2', {}, momento === 'antes' ? 'Como está a sua tensão agora?' : 'Como está a sua tensão agora, depois do suspiro?'),
     el('p', { class: 'suave' }, 'O primeiro número que vier é o certo.'),
     escala(0, 10, null, aoEscolher),
     el('div', { class: 'escala-rotulos' }, el('span', {}, '0 nenhuma'), el('span', {}, '10 muita')),
-    el('button', { type: 'button', class: 'secundario', onclick: () => irPara('hoje') }, 'Voltar'),
+    el('button', { type: 'button', class: 'secundario', onclick: () => irPara('hoje') }, 'Voltar ao início'),
   ));
 }
 
@@ -966,7 +973,7 @@ function fazerRespiro(segundos) {
         titulo.textContent = 'Pronto';
         mostrar(el('section', { class: 'cartao' },
           el('p', { class: 'resultado grande' }, frase),
-          el('button', { type: 'button', onclick: () => irPara('hoje') }, 'Voltar para o meu dia'),
+          el('button', { type: 'button', onclick: () => irPara('hoje') }, 'Voltar ao início'),
         ));
       });
     });
@@ -1007,7 +1014,7 @@ function telaPausa(segundos, aoTerminar) {
   const fase = el('p', { class: 'fase', 'aria-live': 'polite' }, 'Pare um instante. Respire com atenção.');
   const resta = el('p', { class: 'suave' }, segundos >= 300 ? '5 minutos' : '1 minuto');
   const aviso = el('p', { class: 'suave' }, 'A respiração é suave, nunca forçada. Se sentir tontura, pare, volte a respirar normal e, se estiver de pé, sente-se. Nunca pratique dirigindo.');
-  const botao = el('button', { type: 'button', class: 'secundario' }, 'Parar');
+  const botao = el('button', { type: 'button', class: 'secundario' }, 'Parar e voltar ao início');
   let comSom = ler('somGuia', true);
   const som = el('button', { type: 'button', class: 'som', 'aria-pressed': String(comSom) }, comSom ? 'Som da taça: ligado' : 'Som da taça: desligado');
 
@@ -1076,7 +1083,8 @@ function telaPausa(segundos, aoTerminar) {
     }
   };
 
-  mostrar(el('section', { class: 'cartao guia' }, bolha, fase, resta, aviso, botao, som));
+  // No topo, sempre: para a trilha e volta à tela inicial, em qualquer etapa.
+  mostrar(botaoInicio(() => fim(false)), el('section', { class: 'cartao guia' }, bolha, fase, resta, aviso, botao, som));
   manterTelaAcesa('pausa', true);
   playerAtivo = guia; // se a pessoa sair da tela, a trilha para junto
   guia.addEventListener('pause', () => { if (tocando && ativo) { desvio = guia.currentTime - (Date.now() - inicioRelogio) / 1000; tocando = false; } });
