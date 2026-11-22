@@ -1,0 +1,47 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Metodo Bem Viver//Conversas ao vivo//PT-BR
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VTIMEZONE
+TZID:America/Sao_Paulo
+BEGIN:STANDARD
+DTSTART:19700101T000000
+TZOFFSETFROM:-0300
+TZOFFSETTO:-0300
+TZNAME:-03
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:conversa-ao-vivo-1-piloto-2026@metodo-bem-viver
+DTSTAMP:20261122T200000Z
+DTSTART;TZID=America/Sao_Paulo:20261206T200000
+DTEND;TZID=America/Sao_Paulo:20261206T210000
+SUMMARY:Conversa ao vivo do Método Bem Viver
+DESCRIPTION:Primeira conversa ao vivo com o Vladimir Hersen\, pelo Google 
+ Meet. Entre por este link: https://meet.google.com/sam-krhu-cdo
+LOCATION:https://meet.google.com/sam-krhu-cdo
+URL:https://meet.google.com/sam-krhu-cdo
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Conversa ao vivo do Método Bem Viver em 30 minutos
+TRIGGER:-PT30M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:conversa-ao-vivo-2-piloto-2026@metodo-bem-viver
+DTSTAMP:20261122T200000Z
+DTSTART;TZID=America/Sao_Paulo:20261220T180000
+DTEND;TZID=America/Sao_Paulo:20261220T190000
+SUMMARY:Conversa ao vivo do Método Bem Viver (fechamento)
+DESCRIPTION:Conversa de fechamento com o Vladimir Hersen\, pelo Google Mee
+ t. O link é o mesmo da primeira: https://meet.google.com/sam-krhu-cdo
+LOCATION:https://meet.google.com/sam-krhu-cdo
+URL:https://meet.google.com/sam-krhu-cdo
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Conversa ao vivo do Método Bem Viver em 30 minutos
+TRIGGER:-PT30M
+END:VALARM
+END:VEVENT
+END:VCALENDAR
