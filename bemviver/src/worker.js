@@ -38,6 +38,12 @@ const SCHEMA = [
      atualizado_em TEXT NOT NULL,
      PRIMARY KEY (participante, domingo)
    )`,
+  // Lista das inscritas no formulário (colada pelo Vladimir no painel), para saber quem
+  // ainda não entrou no app. Só nome e WhatsApp.
+  `CREATE TABLE IF NOT EXISTS dia_inscritas (
+     whatsapp TEXT PRIMARY KEY,
+     nome TEXT NOT NULL
+   )`,
 ];
 
 let schemaPronto = false;
@@ -249,7 +255,7 @@ function chaveConfere(fornecida, esperada) {
 }
 
 async function dadosPainel(db) {
-  const [p, r, s, pd] = await db.batch([
+  const [p, r, s, pd, ins] = await db.batch([
     db.prepare('SELECT * FROM dia_participantes ORDER BY criado_em'),
     db.prepare(
       `SELECT participante, COUNT(*) AS dias,
@@ -267,6 +273,7 @@ async function dadosPainel(db) {
       `SELECT participante, dia FROM dia_registros
        WHERE dia >= ? AND dia <= ? AND respiros + movimento + vida + contato + noite > 0`
     ).bind(INICIO_PILOTO, FIM_PILOTO),
+    db.prepare('SELECT nome, whatsapp FROM dia_inscritas ORDER BY nome'),
   ]);
   const registros = Object.fromEntries(r.results.map((x) => [x.participante, x]));
   const domingos = [...new Set(s.results.map((x) => x.domingo))].sort();
@@ -274,10 +281,26 @@ async function dadosPainel(db) {
   for (const x of s.results) (semanas[x.participante] ||= {})[x.domingo] = x;
   const praticas = {};
   for (const x of pd.results) (praticas[x.participante] ||= new Set()).add(x.dia);
-  return { participantes: p.results, registros, domingos, semanas, praticas, dias: diasDoPiloto(), hoje: hojeBrasilia() };
+  const noApp = new Set(p.results.map((x) => soDigitos(x.whatsapp).slice(-10)));
+  const inscritas = ins.results;
+  const foraDoApp = inscritas.filter((x) => !noApp.has(soDigitos(x.whatsapp).slice(-10)));
+  return { participantes: p.results, registros, domingos, semanas, praticas, dias: diasDoPiloto(), hoje: hojeBrasilia(), inscritas, foraDoApp };
 }
 
 // ---------- Dia a dia ----------
+
+// Link do WhatsApp para abrir a conversa (sem mensagem pronta: o Vladimir escreve).
+function linkZap(whatsapp) {
+  let n = soDigitos(whatsapp);
+  if (n.length === 10 || n.length === 11) n = '55' + n;
+  return n.length >= 12 ? `<a href="https://wa.me/${n}" target="_blank" rel="noopener">${esc(whatsapp)}</a>` : esc(whatsapp);
+}
+
+function linkFicha(p, chave) {
+  return `<a href="/bemviver/painel?chave=${encodeURIComponent(chave)}&amp;p=${encodeURIComponent(p.id)}">${esc(p.nome)}</a>`;
+}
+
+const dm = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 
 // Data de hoje no horário de Brasília (o painel é lido no Brasil; o servidor roda em UTC).
 function hojeBrasilia() {
@@ -310,11 +333,11 @@ function semMarcarHa3Dias(d) {
     .filter((p) => !tres.some((dia) => d.praticas[p.id]?.has(dia)))
     .map((p) => {
       const feitos = [...(d.praticas[p.id] || [])].sort();
-      return { nome: p.nome, whatsapp: p.whatsapp, ultimo: feitos.length ? feitos[feitos.length - 1] : null };
+      return { p, nome: p.nome, whatsapp: p.whatsapp, ultimo: feitos.length ? feitos[feitos.length - 1] : null };
     });
 }
 
-function htmlDiaADia(d) {
+function htmlDiaADia(d, chave) {
   const total = d.participantes.length;
   const hojeNoPiloto = d.hoje >= INICIO_PILOTO && d.hoje <= FIM_PILOTO;
   const praticaramHoje = d.participantes.filter((p) => d.praticas[p.id]?.has(d.hoje)).length;
@@ -327,20 +350,24 @@ function htmlDiaADia(d) {
     const celulas = recentes.map((dia) => (feitos.has(dia)
       ? `<td class="dia sim${dia === d.hoje ? ' hoje' : ''}">✓</td>`
       : `<td class="dia nao${dia === d.hoje ? ' hoje' : ''}">·</td>`)).join('');
-    return `<tr><th class="nome">${esc(p.nome)}</th>${celulas}<td>${feitos.size} de ${d.dias.length}</td></tr>`;
+    return `<tr><th class="nome">${linkFicha(p, chave)}</th>${celulas}<td>${feitos.size} de ${d.dias.length}</td></tr>`;
   }).join('');
   const resumo = hojeNoPiloto
     ? `<p class="destaque">Hoje, ${esc(diaDaSemana(d.hoje))} ${esc(d.hoje.slice(8, 10) + '/' + d.hoje.slice(5, 7))}: <b>${praticaramHoje} de ${total}</b> já marcaram alguma prática.</p>`
     : d.hoje < INICIO_PILOTO ? '<p class="destaque">O piloto começa em 23/11.</p>' : '<p class="destaque">O piloto terminou em 20/12.</p>';
-  const listaSumidas = sumidas.map((x) => `<li><b>${esc(x.nome)}</b> · ${esc(x.whatsapp)} · ${x.ultimo ? `última prática marcada em ${esc(x.ultimo.slice(8, 10) + '/' + x.ultimo.slice(5, 7))}` : 'ainda não marcou nenhuma prática'}</li>`).join('');
+  const listaSumidas = sumidas.map((x) => `<li><b>${linkFicha(x.p, chave)}</b> · ${linkZap(x.whatsapp)} · ${x.ultimo ? `última prática marcada em ${esc(x.ultimo.slice(8, 10) + '/' + x.ultimo.slice(5, 7))}` : 'ainda não marcou nenhuma prática'}</li>`).join('');
   return `<h2>Dia a dia</h2>
 ${resumo}
-<p>✓ = marcou ao menos uma prática no app naquele dia (suspiro, movimento, a coisa que dá vida, gesto de carinho ou noite). Sem ✓ não quer dizer que não praticou: a pessoa pode ter praticado sem tocar no botão.</p>
+<p>✓ = marcou ao menos uma prática no app naquele dia (suspiro, movimento, a coisa que dá vida, gesto de carinho ou noite). Sem ✓ não quer dizer que não praticou: a pessoa pode ter praticado sem tocar no botão. Toque no nome para ver a ficha da pessoa.</p>
 ${d.dias.length ? `<div class="tab"><table class="grade"><thead><tr><th class="nome">Nome</th>${cab}<th>Total</th></tr></thead>
 <tbody>${linhas || `<tr><td colspan="${d.dias.length + 2}">Ninguém entrou ainda.</td></tr>`}</tbody></table></div>` : ''}
 ${sumidas.length || (d.dias.length >= 4 && hojeNoPiloto) ? `<h3>Sem marcar nada nos últimos 3 dias</h3>
 <p class="suave">Para uma mensagem de cuidado no individual, nunca no grupo.</p>
-<ul>${listaSumidas || '<li>Ninguém.</li>'}</ul>` : ''}`;
+<ul>${listaSumidas || '<li>Ninguém.</li>'}</ul>` : ''}
+<h3>Inscritas que ainda não entraram no app</h3>
+${d.inscritas.length
+    ? `<ul>${d.foraDoApp.map((x) => `<li><b>${esc(x.nome)}</b> · ${linkZap(x.whatsapp)}</li>`).join('') || '<li>Todas as inscritas já entraram.</li>'}</ul>`
+    : '<p class="suave">A lista de inscritas ainda não foi colada (veja "Lista de inscritas", no fim da página).</p>'}`;
 }
 
 function csv(d) {
@@ -374,7 +401,7 @@ function htmlPainel(d, chave) {
       if (w.efeito_ruim) alertas.push({ nome: p.nome, whatsapp: p.whatsapp, dom, texto: w.efeito_texto });
       return `<td>${w.nota ?? '–'} · ${w.dias_paz ?? '–'}d${w.efeito_ruim ? ' <b class="alerta">!</b>' : ''}</td>`;
     }).join('');
-    return `<tr><td>${esc(p.nome)}</td><td>${esc(p.whatsapp)}</td><td>${p.nota_inicial ?? '–'} · ${p.dias_paz_inicial ?? '–'}d</td>${celulas}<td>${r.dias_praticados ?? 0}</td><td>${r.respiros ? `${r.respiros} · ${r.tensao_antes ?? '–'} → ${r.tensao_depois ?? '–'}` : '–'}</td><td>${r.dias_movimento ?? 0} · ${r.dias_vida ?? 0} · ${r.dias_contato ?? 0} · ${r.noites ?? 0}</td></tr>`;
+    return `<tr><td>${linkFicha(p, chave)}</td><td>${linkZap(p.whatsapp)}</td><td>${p.nota_inicial ?? '–'} · ${p.dias_paz_inicial ?? '–'}d</td>${celulas}<td>${r.dias_praticados ?? 0}</td><td>${r.respiros ? `${r.respiros} · ${r.tensao_antes ?? '–'} → ${r.tensao_depois ?? '–'}` : '–'}</td><td>${r.dias_movimento ?? 0} · ${r.dias_vida ?? 0} · ${r.dias_contato ?? 0} · ${r.noites ?? 0}</td></tr>`;
   }).join('');
   const duvidas = d.participantes.flatMap((p) => Object.values(d.semanas[p.id] || {})
     .filter((w) => w.duvida).map((w) => `<li><b>${esc(p.nome)}</b> (${esc(w.domingo)}): ${esc(w.duvida)}</li>`)).join('');
@@ -400,7 +427,7 @@ a.botao{display:inline-block;margin-top:8px;padding:10px 14px;background:#5b7f5a
 </style></head><body>
 <h1>Painel do piloto · ${d.participantes.length} participantes</h1>
 <p>Cada domingo mostra a nota de satisfação (0 a 10) · os dias de paz na semana (0 a 7). "!" marca quem relatou algo que fez mal ou ficou difícil. A tensão (0 a 10) é a média dada antes e depois do suspiro fisiológico.</p>
-${htmlDiaADia(d)}
+${htmlDiaADia(d, chave)}
 <h2>Semanas e totais</h2>
 <div class="tab"><table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Início (nota · dias de paz)</th>
 ${d.domingos.map((dom) => `<th>${esc(dom.slice(8, 10) + '/' + dom.slice(5, 7))}</th>`).join('')}<th>Dias praticados</th><th>Suspiros · tensão antes → depois</th><th>Dias: movimento · vida · gesto de carinho · noite</th></tr></thead>
@@ -409,6 +436,13 @@ ${d.domingos.map((dom) => `<th>${esc(dom.slice(8, 10) + '/' + dom.slice(5, 7))}<
 <h2>Dúvidas</h2><ul>${duvidas || '<li>Nenhuma.</li>'}</ul>
 <h2>Espaço livre (desabafos, agradecimentos)</h2><ul>${livres || '<li>Nada ainda.</li>'}</ul>
 <a class="botao" href="/bemviver/painel?chave=${encodeURIComponent(chave)}&formato=csv">Baixar planilha (CSV)</a>
+<h2 id="inscritas">Lista de inscritas</h2>
+<p>Cole aqui uma inscrita por linha, com o nome e o WhatsApp (ex.: <i>Maria Silva; 21 99999-0000</i>). Salvar troca a lista inteira. Hoje: ${d.inscritas.length} na lista.</p>
+<form method="post" action="/bemviver/painel/inscritas">
+<input type="hidden" name="chave" value="${esc(chave)}">
+<textarea name="lista" rows="8" style="width:100%;box-sizing:border-box;font-size:1rem;padding:10px">${esc(d.inscritas.map((x) => `${x.nome}; ${x.whatsapp}`).join('\n'))}</textarea>
+<button type="submit" class="botao" style="border:0;font-size:1rem">Salvar lista</button>
+</form>
 </body></html>`;
 }
 
@@ -434,12 +468,105 @@ ${errou ? '<p class="erro">Senha incorreta. Tente de novo.</p>' : ''}
 </form></body></html>`;
 }
 
+// "Nome; 21 99999-0000" (ou com traço, vírgula ou tab). Linhas sem WhatsApp válido são ignoradas.
+export function lerListaInscritas(textoLista) {
+  const vistas = new Map();
+  for (const linha of String(textoLista || '').split(/\r?\n/)) {
+    const m = linha.match(/^(.*?)[\s;,\t–-]*(\+?[\d\s().-]{10,})\s*$/);
+    if (!m) continue;
+    const whatsapp = m[2].trim();
+    const nome = m[1].replace(/[\s;,\t–-]+$/, '').trim().slice(0, 80);
+    if (!nome || soDigitos(whatsapp).length < 10) continue;
+    vistas.set(soDigitos(whatsapp), { nome, whatsapp: whatsapp.slice(0, 30) });
+  }
+  return [...vistas.values()];
+}
+
+async function salvarInscritas(request, env) {
+  const form = await request.formData();
+  const chave = String(form.get('chave') || '');
+  if (!chaveConfere(chave, env.ADMIN_KEY)) return new Response(htmlEntrar(true), { status: 401, headers: { 'content-type': 'text/html; charset=utf-8' } });
+  const lista = lerListaInscritas(form.get('lista'));
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM dia_inscritas'),
+    ...lista.map((x) => env.DB.prepare('INSERT INTO dia_inscritas (whatsapp, nome) VALUES (?, ?)').bind(x.whatsapp, x.nome)),
+  ]);
+  return Response.redirect(new URL(`/bemviver/painel?chave=${encodeURIComponent(chave)}#inscritas`, request.url).toString(), 303);
+}
+
+// ---------- Ficha de uma participante ----------
+
+async function dadosFicha(db, id) {
+  const p = await db.prepare('SELECT * FROM dia_participantes WHERE id = ?').bind(id).first();
+  if (!p) return null;
+  const [r, s] = await db.batch([
+    db.prepare('SELECT * FROM dia_registros WHERE participante = ? ORDER BY dia DESC').bind(id),
+    db.prepare('SELECT * FROM dia_semanas WHERE participante = ? ORDER BY domingo').bind(id),
+  ]);
+  return { p, registros: r.results, semanas: s.results };
+}
+
+function htmlFicha(f, chave) {
+  const { p } = f;
+  const porDia = Object.fromEntries(f.registros.map((x) => [x.dia, x]));
+  const dias = [...diasDoPiloto()].reverse();
+  const num = (v) => String(v).replace('.', ',');
+  const linhasDias = dias.map((dia) => {
+    const x = porDia[dia];
+    const feito = [];
+    if (x && x.respiros) feito.push(`🌬️ suspiro ${x.respiros}× (tensão ${num(x.tensao_antes ?? '–')} → ${num(x.tensao_depois ?? '–')})`);
+    if (x && x.movimento) feito.push(`🚶 movimento ${x.movimento} de 3`);
+    if (x && x.vida) feito.push('✨ coisa que dá vida');
+    if (x && x.contato) feito.push('💛 gesto de carinho');
+    if (x && x.noite) feito.push('🌙 noite');
+    const paz = x && x.paz === 1 ? 'sim' : x && x.paz === 0 ? 'não' : '–';
+    return `<tr${dia === hojeBrasilia() ? ' class="hoje"' : ''}><td>${diaDaSemana(dia)} ${dm(dia)}</td><td>${feito.length ? feito.join('<br>') : '<span class="vazio">nada marcado</span>'}</td><td>${paz}</td></tr>`;
+  }).join('');
+  const marcados = f.registros.filter((x) => x.dia >= INICIO_PILOTO && x.respiros + x.movimento + x.vida + x.contato + x.noite > 0).length;
+  const evolucao = [`<tr><td>Cadastro (${dm(p.criado_em.slice(0, 10))})</td><td>${p.nota_inicial ?? '–'}</td><td>${p.dias_paz_inicial ?? '–'}</td><td></td></tr>`,
+    ...f.semanas.map((w) => `<tr><td>Domingo ${dm(w.domingo)}</td><td>${w.nota ?? '–'}</td><td>${w.dias_paz ?? '–'}</td><td>${w.encontro ? `sim${w.encontro_com ? ` (${esc(w.encontro_com)})` : ''}` : 'não'}</td></tr>`)].join('');
+  const textos = f.semanas.flatMap((w) => [
+    w.efeito_ruim ? `<li class="alerta"><b>${dm(w.domingo)} · algo fez mal:</b> ${esc(w.efeito_texto || 'sem detalhe')}</li>` : '',
+    w.duvida ? `<li><b>${dm(w.domingo)} · dúvida:</b> ${esc(w.duvida)}</li>` : '',
+    w.livre ? `<li><b>${dm(w.domingo)} · espaço livre:</b> ${esc(w.livre).replace(/\n/g, '<br>')}</li>` : '',
+  ]).join('');
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>${esc(p.nome)} · painel</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:0;padding:16px;background:#faf8f3;color:#2b2a26;max-width:760px}
+h1{font-size:1.4rem;margin:12px 0 4px}h2{font-size:1.1rem;margin-top:26px}
+table{border-collapse:collapse;width:100%;background:#fff}th,td{border:1px solid #e3ded2;padding:8px 10px;text-align:left;vertical-align:top;font-size:.95rem}
+th{background:#efe9dc}.vazio{color:#aaa}.alerta{color:#b3261e}.hoje td{background:#f3f7ee}.suave{color:#6b675c}
+a{color:#3f6a3e}.voltar{display:inline-block;padding:8px 0;font-size:1.05rem}
+</style></head><body>
+<a class="voltar" href="/bemviver/painel?chave=${encodeURIComponent(chave)}">← Voltar ao painel</a>
+<h1>${esc(p.nome)}</h1>
+<p>WhatsApp: ${linkZap(p.whatsapp)} · no app desde ${dm(p.criado_em.slice(0, 10))} · marcou prática em <b>${marcados} de ${diasDoPiloto().length}</b> dias</p>
+<h2>Evolução</h2>
+<table><thead><tr><th>Quando</th><th>Satisfação<br>0 a 10</th><th>Dias de paz<br>0 a 7</th><th>Encontro</th></tr></thead><tbody>${evolucao}</tbody></table>
+<h2>Dia a dia</h2>
+<p class="suave">Só o que ela marcou no app. "Nada marcado" não quer dizer que não praticou. O que ela escreve na tela da Noite fica só no celular dela.</p>
+<table><thead><tr><th>Dia</th><th>O que marcou</th><th>Paz</th></tr></thead><tbody>${linhasDias || '<tr><td colspan="3">O piloto ainda não começou.</td></tr>'}</tbody></table>
+${textos ? `<h2>O que escreveu aos domingos</h2><ul>${textos}</ul>` : ''}
+</body></html>`;
+}
+
 async function painel(request, env) {
   const url = new URL(request.url);
+  if (url.pathname === '/bemviver/painel/inscritas' && request.method === 'POST') return salvarInscritas(request, env);
   const chave = url.searchParams.get('chave') || '';
   if (!chaveConfere(chave, env.ADMIN_KEY)) {
     return new Response(htmlEntrar(chave !== ''), {
       status: chave ? 401 : 200,
+      headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' },
+    });
+  }
+  const id = url.searchParams.get('p');
+  if (id) {
+    const f = ID.test(id) ? await dadosFicha(env.DB, id) : null;
+    if (!f) return new Response('Participante não encontrada.', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+    return new Response(htmlFicha(f, chave), {
       headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' },
     });
   }
