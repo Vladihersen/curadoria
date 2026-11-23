@@ -250,3 +250,10 @@ details[open] > summary::after { content: ' ▴'; }
 .letra p:last-child { margin-bottom: 0; }
 .letra .letra-titulo { font-size: 1rem; font-weight: 600; margin-bottom: 0.6rem; }
 .aviso-cancao { font-size: 1rem; padding: .7rem .9rem; border-left: 4px solid var(--linha); background: var(--fundo); border-radius: 8px; }
+
+/* Jardim da turma */
+.jardim-desenho { display: block; width: 100%; height: auto; margin: 10px 0 14px; border-radius: var(--raio); }
+.jardim .marco { background: var(--verde-claro); border-radius: 10px; padding: 10px 12px; font-weight: 600; }
+.jardim .canteiro { margin-top: 18px; }
+.jardim .canteiro h3 { margin: 0 0 2px; }
+.jardim .canteiro .suave { margin: 0; }

@@ -12,6 +12,19 @@ experimentar o suspiro sem contar nos resultados) e a aba Domingo só explica o 
 O link do email pode trazer o nome e o WhatsApp preenchidos:
 `/bemviver/?nome=...&whatsapp=...` (no MailerLite, com os campos de personalização).
 
+## Jardim da turma
+
+Mural coletivo e anônimo, no primeiro item da aba Hoje. Cada participante que marca ao menos
+uma prática no dia (suspiro, movimento, a coisa que dá vida, gesto de carinho ou noite; a mesma
+regra do ✓ do painel) planta uma flor. O jardim é cumulativo: cada semana ganha um canteiro novo com as flores do tema (Corpo: girassóis; Pessoas: flores rosadas; Encantamento: lilases e azuis; Sentido: margaridas), e nada se apaga.
+A API `/bemviver/api/mural` devolve só totais: flores de cada semana, flores desde 23/11, o último
+marco da turma (50, 100, 200...) e quantas praticaram hoje, este só a partir de 3 pessoas.
+Nunca nomes, nunca quem faltou, nunca "de quantas". Depois de 20/12 o jardim fica parado.
+
+## Testes
+
+`npm test` (Node 22 ou mais novo; usa SQLite em memória no lugar do D1, sem instalar nada).
+
 ## Áudios
 
 Os seis áudios aprovados ficam em `public/bemviver/audio/`, em MP3:
