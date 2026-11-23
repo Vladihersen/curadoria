@@ -181,6 +181,55 @@ async function semana(request, env) {
   return json({ ok: true });
 }
 
+// ---------- Jardim da turma (mural coletivo e anônimo) ----------
+// Cada participante que marca ao menos uma prática num dia planta uma flor naquele dia
+// (a mesma regra do "✓" do painel). O app só recebe totais da turma: nunca nomes,
+// nunca quem praticou ou deixou de praticar, nunca o total de cadastradas (o "de 16"
+// convida a contar quem faltou). O jardim é da semana (recomeça na segunda) e só cresce.
+
+// Abaixo deste número, o total de hoje não aparece: de manhã o número é sempre baixo,
+// e "1 pessoa" desanima em vez de animar.
+const MINIMO_HOJE = 3;
+// Marcos da turma inteira, desde 23/11. Celebrados uma vez, sem meta individual.
+const MARCOS = [50, 100, 200, 300, 400, 500];
+
+// contagens: [{ dia, n }] com quantas participantes praticaram em cada dia.
+export function resumoMural(contagens, hoje) {
+  if (hoje < INICIO_PILOTO) return { fase: 'antes' };
+  const fim = hoje > FIM_PILOTO;
+  const ate = fim ? FIM_PILOTO : hoje;
+  const porDia = {};
+  for (const c of contagens || []) {
+    if (DATA.test(c.dia || '') && c.dia >= INICIO_PILOTO && c.dia <= ate) porDia[c.dia] = Number(c.n) || 0;
+  }
+  const semanaDe = (dia) => Math.floor((Date.parse(dia + 'T12:00:00Z') - Date.parse(INICIO_PILOTO + 'T12:00:00Z')) / 86400000 / 7) + 1;
+  const semana = Math.min(4, semanaDe(ate));
+  let total = 0, daSemana = 0;
+  for (const [dia, n] of Object.entries(porDia)) {
+    total += n;
+    if (semanaDe(dia) === semana) daSemana += n;
+  }
+  const marco = [...MARCOS].reverse().find((m) => total >= m) || null;
+  if (fim) return { fase: 'fim', semana: 4, flores_semana: daSemana, flores_total: total, marco };
+  const nHoje = porDia[hoje] || 0;
+  return {
+    fase: 'durante', semana, flores_semana: daSemana, flores_total: total, marco,
+    hoje: nHoje >= MINIMO_HOJE ? nHoje : null,
+  };
+}
+
+export async function mural(request, env, hoje = hojeBrasilia()) {
+  const c = await lerCorpo(request);
+  if (!c) return json({ erro: 'corpo inválido' }, 400);
+  if (!(await participanteExiste(env.DB, c.id))) return json({ erro: 'participante desconhecida' }, 404);
+  const { results } = await env.DB.prepare(
+    `SELECT dia, COUNT(DISTINCT participante) AS n FROM dia_registros
+     WHERE dia >= ? AND dia <= ? AND respiros + movimento + vida + contato + noite > 0
+     GROUP BY dia`
+  ).bind(INICIO_PILOTO, hoje < FIM_PILOTO ? hoje : FIM_PILOTO).all();
+  return json(resumoMural(results, hoje));
+}
+
 // ---------- Painel ----------
 
 function esc(v) {
@@ -419,6 +468,7 @@ export default {
         if (rota === '/bemviver/api/voltar') return await voltar(request, env);
         if (rota === '/bemviver/api/registro') return await registro(request, env);
         if (rota === '/bemviver/api/semana') return await semana(request, env);
+        if (rota === '/bemviver/api/mural') return await mural(request, env);
         return json({ erro: 'rota desconhecida' }, 404);
       }
     } catch (e) {

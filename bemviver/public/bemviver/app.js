@@ -664,6 +664,7 @@ function telaHoje() {
   const abrir = (cartao, nome) => () => subtela(nome, cartao);
   const vezesMov = reg.movimento ? `${reg.movimento} de 3` : '';
   const itens = [
+    itemJardim(),
     itemMenu('☀️', 'O começo do dia', '', false, abrir(cManha, 'O começo do dia')),
     itemMenu('🌬️', 'Suspiro fisiológico', reg.respiros.length ? `${reg.respiros.length} ${reg.respiros.length === 1 ? 'vez' : 'vezes'} hoje` : '', reg.respiros.length > 0, abrir(cRespiro, 'Suspiro fisiológico')),
     itemMenu('🚶', 'Três minutos de movimento', vezesMov, reg.movimento > 0, abrir(cCorpo, 'Movimento')),
@@ -1317,6 +1318,122 @@ function cartaoEvolucao() {
     vPaz ? el('p', { class: 'resultado' }, `Agora: paz em ${ultimo.dias_paz} de 7 dias, ${vPaz}.`) : null,
     pontos.length > 1 ? el('p', { class: 'suave' }, 'Semanas difíceis acontecem e fazem parte. O que conta é a direção ao longo das quatro semanas.') : null,
   );
+}
+
+// ---------- Jardim da turma (mural coletivo e anônimo) ----------
+// Cada participante que marca ao menos uma prática no dia planta uma flor. O servidor só
+// devolve totais da turma (nunca nomes, nunca quem faltou, nunca "de quantas"). O jardim
+// é da semana, recomeça na segunda e só cresce: não há meta individual nem dia "perdido".
+
+function textoFlores(n) { return n === 1 ? '1 flor' : `${n} flores`; }
+
+async function buscarMural() {
+  try {
+    const m = await enviar('mural', { id: ler('id') });
+    gravar('mural', { ...m, visto_em: hoje() });
+    return m;
+  } catch {
+    return null;
+  }
+}
+
+function detalheJardim(m) {
+  if (!m || m.fase === 'antes') return '';
+  if (m.fase === 'fim') return `${textoFlores(m.flores_total)} em 4 semanas`;
+  return m.flores_semana ? `${textoFlores(m.flores_semana)} nesta semana` : 'Começa a semana';
+}
+
+function itemJardim() {
+  const item = itemMenu('🌸', 'Jardim da turma', detalheJardim(ler('mural')), false, telaJardim);
+  buscarMural().then((m) => {
+    if (!m || !item.isConnected) return;
+    const rotulo = item.querySelector('.rotulo');
+    const d = detalheJardim(m);
+    rotulo.replaceChildren('Jardim da turma', d ? el('small', {}, d) : '');
+  });
+  return item;
+}
+
+// Posições "sorteadas" sempre do mesmo jeito: a flor 7 fica sempre no mesmo lugar,
+// então o jardim cresce em vez de se embaralhar a cada abertura.
+function sorteio(i, k) {
+  const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+const CORES_FLOR = ['#e79bb1', '#f2c14e', '#c4a3df', '#f0a07f', '#8fbfe6', '#fffaf0', '#e5726f'];
+
+function desenhoJardim(flores) {
+  const n = Math.max(0, Math.min(flores, 600));
+  const raio = Math.max(3, 9 - n / 25);
+  const s = svg('svg', { viewBox: '0 0 320 200', class: 'jardim-desenho', role: 'img', 'aria-label': n ? `Jardim com ${textoFlores(flores)}` : 'Jardim ainda sem flores' });
+  s.append(
+    svg('rect', { x: 0, y: 0, width: 320, height: 200, rx: 14, fill: '#eaf3f6' }),
+    svg('path', { d: 'M0 70 Q80 52 160 64 T320 58 V200 H0 Z', fill: '#cfe3c0' }),
+    svg('path', { d: 'M0 110 Q90 96 170 108 T320 102 V200 H0 Z', fill: '#bcd9a8' }),
+  );
+  const pos = [];
+  for (let i = 0; i < n; i++) pos.push({ i, x: 14 + sorteio(i, 1) * 292, y: 78 + sorteio(i, 2) * 110 });
+  pos.sort((a, b) => a.y - b.y); // as de trás primeiro
+  for (const { i, x, y } of pos) {
+    const r = raio * (0.85 + sorteio(i, 3) * 0.3);
+    const g = svg('g', {});
+    g.append(svg('line', { x1: x, y1: y, x2: x, y2: y + r * 1.8, stroke: '#5b7f5a', 'stroke-width': Math.max(1, r / 4), 'stroke-linecap': 'round' }));
+    const cor = CORES_FLOR[Math.floor(sorteio(i, 4) * CORES_FLOR.length)];
+    for (let p = 0; p < 5; p++) {
+      const a = (p / 5) * Math.PI * 2 + sorteio(i, 5);
+      g.append(svg('circle', { cx: x + Math.cos(a) * r * 0.6, cy: y + Math.sin(a) * r * 0.6, r: r * 0.5, fill: cor, stroke: 'rgba(0,0,0,.12)', 'stroke-width': 0.5 }));
+    }
+    g.append(svg('circle', { cx: x, cy: y, r: r * 0.32, fill: '#c98a1b' }));
+    s.append(g);
+  }
+  return s;
+}
+
+let marcoDaVez = null;
+
+function conteudoJardim(m, semInternet) {
+  const explica = el('p', { class: 'suave' }, 'Cada pessoa que marca ao menos uma prática no dia planta uma flor. Ninguém aparece pelo nome e ninguém vê quem praticou. O jardim recomeça toda segunda-feira e só cresce durante a semana.');
+  if (!m) {
+    return el('section', { class: 'cartao jardim' },
+      el('h2', {}, 'O jardim da turma'),
+      el('p', {}, 'Para ver o jardim, abra o app com internet.'),
+      explica);
+  }
+  const aviso = semInternet ? el('p', { class: 'suave' }, 'Sem internet agora: este é o jardim da última vez que o app conseguiu ver.') : null;
+  if (m.fase === 'fim') {
+    return el('section', { class: 'cartao jardim' },
+      el('p', { class: 'pilar' }, 'Piloto de 23/11 a 20/12'),
+      el('h2', {}, `Em quatro semanas, a turma plantou ${textoFlores(m.flores_total)}`),
+      desenhoJardim(m.flores_total),
+      el('p', {}, 'Cada flor é um dia em que alguém parou para cuidar de si e de quem ama. Obrigado por cuidar deste jardim.'),
+      el('p', { class: 'frase' }, 'Que todos os seres sejam felizes.'),
+      aviso);
+  }
+  const minha = praticou(registroDe(hoje()));
+  // O marco é celebrado na primeira abertura depois de alcançado (e continua na tela até sair dela).
+  if (m.marco && m.marco > ler('marcoVisto', 0)) { marcoDaVez = m.marco; gravar('marcoVisto', m.marco); }
+  const celebrar = m.marco && m.marco === marcoDaVez;
+  return el('section', { class: 'cartao jardim' },
+    el('p', { class: 'pilar' }, `Semana ${m.semana} de 4 · jardim da turma`),
+    el('h2', {}, m.flores_semana ? `${textoFlores(m.flores_semana)} nesta semana` : 'O jardim desta semana está começando'),
+    desenhoJardim(m.flores_semana),
+    celebrar ? el('p', { class: 'marco' }, `🎉 A turma passou de ${m.marco} flores desde 23/11!`) : null,
+    el('p', { class: 'resultado' }, m.hoje ? `Hoje, ${m.hoje} pessoas da turma já praticaram.` : 'O dia está começando no jardim.'),
+    el('p', {}, minha ? 'A sua flor de hoje já está no jardim. 🌸' : 'Quando você marca uma prática, a sua flor entra no jardim.'),
+    m.flores_total > m.flores_semana ? el('p', { class: 'suave' }, `Desde 23/11, a turma já plantou ${textoFlores(m.flores_total)}.`) : null,
+    explica,
+    aviso);
+}
+
+function telaJardim() {
+  marcoDaVez = null;
+  const lugar = el('div', {}, conteudoJardim(ler('mural'), false));
+  subtela('Jardim da turma', lugar);
+  buscarMural().then((m) => {
+    if (!lugar.isConnected) return;
+    lugar.replaceChildren(conteudoJardim(m || ler('mural'), !m));
+  });
 }
 
 // ---------- Cuidados ----------
