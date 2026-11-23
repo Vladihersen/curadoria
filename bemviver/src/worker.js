@@ -358,7 +358,7 @@ function htmlDiaADia(d, chave) {
   const listaSumidas = sumidas.map((x) => `<li><b>${linkFicha(x.p, chave)}</b> · ${linkZap(x.whatsapp)} · ${x.ultimo ? `última prática marcada em ${esc(x.ultimo.slice(8, 10) + '/' + x.ultimo.slice(5, 7))}` : 'ainda não marcou nenhuma prática'}</li>`).join('');
   return `<h2>Dia a dia</h2>
 ${resumo}
-<p>✓ = marcou ao menos uma prática no app naquele dia (suspiro, movimento, a coisa que dá vida, gesto de carinho ou noite). Sem ✓ não quer dizer que não praticou: a pessoa pode ter praticado sem tocar no botão.</p>
+<p>✓ = marcou ao menos uma prática no app naquele dia (suspiro, movimento, a coisa que dá vida, gesto de carinho ou noite). Sem ✓ não quer dizer que não praticou: a pessoa pode ter praticado sem tocar no botão. Toque no nome para ver a ficha da pessoa.</p>
 ${d.dias.length ? `<div class="tab"><table class="grade"><thead><tr><th class="nome">Nome</th>${cab}<th>Total</th></tr></thead>
 <tbody>${linhas || `<tr><td colspan="${d.dias.length + 2}">Ninguém entrou ainda.</td></tr>`}</tbody></table></div>` : ''}
 ${sumidas.length || (d.dias.length >= 4 && hojeNoPiloto) ? `<h3>Sem marcar nada nos últimos 3 dias</h3>
