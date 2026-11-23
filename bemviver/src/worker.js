@@ -48,6 +48,10 @@ async function garantirTabelas(db) {
 }
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
+
+// Piloto de 23/11 a 20/12/2026. Mesma data de início do app (INICIO_PILOTO em app.js).
+const INICIO_PILOTO = '2026-11-23';
+const FIM_PILOTO = '2026-12-20';
 const ID = /^[a-f0-9]{32}$/;
 
 function json(dados, status = 200) {
@@ -193,7 +197,7 @@ function chaveConfere(fornecida, esperada) {
 }
 
 async function dadosPainel(db) {
-  const [p, r, s] = await db.batch([
+  const [p, r, s, pd] = await db.batch([
     db.prepare('SELECT * FROM dia_participantes ORDER BY criado_em'),
     db.prepare(
       `SELECT participante, COUNT(*) AS dias,
@@ -207,17 +211,90 @@ async function dadosPainel(db) {
        FROM dia_registros GROUP BY participante`
     ),
     db.prepare('SELECT * FROM dia_semanas ORDER BY domingo'),
+    db.prepare(
+      `SELECT participante, dia FROM dia_registros
+       WHERE dia >= ? AND dia <= ? AND respiros + movimento + vida + contato + noite > 0`
+    ).bind(INICIO_PILOTO, FIM_PILOTO),
   ]);
   const registros = Object.fromEntries(r.results.map((x) => [x.participante, x]));
   const domingos = [...new Set(s.results.map((x) => x.domingo))].sort();
   const semanas = {};
   for (const x of s.results) (semanas[x.participante] ||= {})[x.domingo] = x;
-  return { participantes: p.results, registros, domingos, semanas };
+  const praticas = {};
+  for (const x of pd.results) (praticas[x.participante] ||= new Set()).add(x.dia);
+  return { participantes: p.results, registros, domingos, semanas, praticas, dias: diasDoPiloto(), hoje: hojeBrasilia() };
+}
+
+// ---------- Dia a dia ----------
+
+// Data de hoje no horário de Brasília (o painel é lido no Brasil; o servidor roda em UTC).
+function hojeBrasilia() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+}
+
+function somarDias(iso, n) {
+  const d = new Date(iso + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+// Dias do piloto de 23/11 até hoje (ou até 20/12, depois que o piloto acabar).
+function diasDoPiloto() {
+  const ate = hojeBrasilia() < FIM_PILOTO ? hojeBrasilia() : FIM_PILOTO;
+  const dias = [];
+  for (let d = INICIO_PILOTO; d <= ate; d = somarDias(d, 1)) dias.push(d);
+  return dias;
+}
+
+const SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+function diaDaSemana(iso) { return SEMANA[new Date(iso + 'T12:00:00Z').getUTCDay()]; }
+
+// Quem não marcou nenhuma prática nos 3 dias anteriores a hoje (hoje ainda não acabou).
+// Só a partir do 4º dia do piloto, para ninguém aparecer aqui no começo.
+function semMarcarHa3Dias(d) {
+  const tres = [1, 2, 3].map((n) => somarDias(d.hoje, -n));
+  if (tres[2] < INICIO_PILOTO) return [];
+  return d.participantes
+    .filter((p) => !tres.some((dia) => d.praticas[p.id]?.has(dia)))
+    .map((p) => {
+      const feitos = [...(d.praticas[p.id] || [])].sort();
+      return { nome: p.nome, whatsapp: p.whatsapp, ultimo: feitos.length ? feitos[feitos.length - 1] : null };
+    });
+}
+
+function htmlDiaADia(d) {
+  const total = d.participantes.length;
+  const hojeNoPiloto = d.hoje >= INICIO_PILOTO && d.hoje <= FIM_PILOTO;
+  const praticaramHoje = d.participantes.filter((p) => d.praticas[p.id]?.has(d.hoje)).length;
+  const sumidas = semMarcarHa3Dias(d);
+  // Dia mais recente primeiro: no celular, hoje aparece sem precisar arrastar a tabela.
+  const recentes = [...d.dias].reverse();
+  const cab = recentes.map((dia) => `<th class="dia${dia === d.hoje ? ' hoje' : ''}">${diaDaSemana(dia)}<br>${esc(dia.slice(8, 10) + '/' + dia.slice(5, 7))}</th>`).join('');
+  const linhas = d.participantes.map((p) => {
+    const feitos = d.praticas[p.id] || new Set();
+    const celulas = recentes.map((dia) => (feitos.has(dia)
+      ? `<td class="dia sim${dia === d.hoje ? ' hoje' : ''}">✓</td>`
+      : `<td class="dia nao${dia === d.hoje ? ' hoje' : ''}">·</td>`)).join('');
+    return `<tr><th class="nome">${esc(p.nome)}</th>${celulas}<td>${feitos.size} de ${d.dias.length}</td></tr>`;
+  }).join('');
+  const resumo = hojeNoPiloto
+    ? `<p class="destaque">Hoje, ${esc(diaDaSemana(d.hoje))} ${esc(d.hoje.slice(8, 10) + '/' + d.hoje.slice(5, 7))}: <b>${praticaramHoje} de ${total}</b> já marcaram alguma prática.</p>`
+    : d.hoje < INICIO_PILOTO ? '<p class="destaque">O piloto começa em 23/11.</p>' : '<p class="destaque">O piloto terminou em 20/12.</p>';
+  const listaSumidas = sumidas.map((x) => `<li><b>${esc(x.nome)}</b> · ${esc(x.whatsapp)} · ${x.ultimo ? `última prática marcada em ${esc(x.ultimo.slice(8, 10) + '/' + x.ultimo.slice(5, 7))}` : 'ainda não marcou nenhuma prática'}</li>`).join('');
+  return `<h2>Dia a dia</h2>
+${resumo}
+<p>✓ = marcou ao menos uma prática no app naquele dia (suspiro, movimento, a coisa que dá vida, gesto de carinho ou noite). Sem ✓ não quer dizer que não praticou: a pessoa pode ter praticado sem tocar no botão.</p>
+${d.dias.length ? `<div class="tab"><table class="grade"><thead><tr><th class="nome">Nome</th>${cab}<th>Total</th></tr></thead>
+<tbody>${linhas || `<tr><td colspan="${d.dias.length + 2}">Ninguém entrou ainda.</td></tr>`}</tbody></table></div>` : ''}
+${sumidas.length || (d.dias.length >= 4 && hojeNoPiloto) ? `<h3>Sem marcar nada nos últimos 3 dias</h3>
+<p class="suave">Para uma mensagem de cuidado no individual, nunca no grupo.</p>
+<ul>${listaSumidas || '<li>Ninguém.</li>'}</ul>` : ''}`;
 }
 
 function csv(d) {
   const cab = ['nome', 'whatsapp', 'entrou_em', 'nota_inicial', 'dias_paz_inicial', 'dias_praticados', 'respiros', 'tensao_antes_media',
     'tensao_depois_media', 'dias_movimento', 'dias_vida', 'dias_contato', 'noites', 'dias_paz_marcados',
+    ...d.dias.map((dia) => `pratica_${dia}`),
     ...d.domingos.flatMap((dom) => [`nota_${dom}`, `dias_paz_${dom}`, `encontro_${dom}`, `encontro_com_${dom}`, `efeito_ruim_${dom}`, `efeito_texto_${dom}`, `duvida_${dom}`, `espaco_livre_${dom}`])];
   const linhas = d.participantes.map((p) => {
     const r = d.registros[p.id] || {};
@@ -225,6 +302,7 @@ function csv(d) {
     return [p.nome, p.whatsapp, p.criado_em.slice(0, 10), p.nota_inicial, p.dias_paz_inicial ?? '', r.dias_praticados ?? 0,
       r.respiros ?? 0, r.tensao_antes ?? '', r.tensao_depois ?? '', r.dias_movimento ?? 0, r.dias_vida ?? 0,
       r.dias_contato ?? 0, r.noites ?? 0, r.dias_paz_marcados ?? 0,
+      ...d.dias.map((dia) => (d.praticas[p.id]?.has(dia) ? 'sim' : '')),
       ...d.domingos.flatMap((dom) => {
         const w = sem[dom] || {};
         return [w.nota ?? '', w.dias_paz ?? '', w.encontro ? 'sim' : '', w.encontro_com ?? '', w.efeito_ruim ? 'sim' : '', w.efeito_texto ?? '', w.duvida ?? '', w.livre ?? ''];
@@ -260,10 +338,18 @@ h1{font-size:1.4rem}h2{font-size:1.1rem;margin-top:28px}
 .tab{overflow-x:auto}table{border-collapse:collapse;min-width:100%;background:#fff}
 th,td{border:1px solid #e3ded2;padding:8px 10px;text-align:left;font-size:.95rem;white-space:nowrap}
 th{background:#efe9dc}.vazio{color:#aaa}.alerta{color:#b3261e}
+.destaque{font-size:1.1rem}.suave{color:#6b675c;margin-top:-4px}h3{font-size:1rem;margin-top:20px}
+.grade th.nome{position:sticky;left:0;background:#fff;z-index:1;font-weight:normal}
+.grade thead th.nome{background:#efe9dc}
+.grade .dia{text-align:center;padding:6px 8px;font-size:.85rem}
+.grade td.sim{color:#2f6b35;font-weight:bold;font-size:1.05rem}.grade td.nao{color:#bbb}
+.grade .hoje{background:#f3f7ee}.grade thead th.hoje{background:#dfe9d3}
 a.botao{display:inline-block;margin-top:8px;padding:10px 14px;background:#5b7f5a;color:#fff;border-radius:8px;text-decoration:none}
 </style></head><body>
 <h1>Painel do piloto · ${d.participantes.length} participantes</h1>
 <p>Cada domingo mostra a nota de satisfação (0 a 10) · os dias de paz na semana (0 a 7). "!" marca quem relatou algo que fez mal ou ficou difícil. A tensão (0 a 10) é a média dada antes e depois do suspiro fisiológico.</p>
+${htmlDiaADia(d)}
+<h2>Semanas e totais</h2>
 <div class="tab"><table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Início (nota · dias de paz)</th>
 ${d.domingos.map((dom) => `<th>${esc(dom.slice(8, 10) + '/' + dom.slice(5, 7))}</th>`).join('')}<th>Dias praticados</th><th>Suspiros · tensão antes → depois</th><th>Dias: movimento · vida · gesto de carinho · noite</th></tr></thead>
 <tbody>${linhas || '<tr><td colspan="6">Ninguém entrou ainda.</td></tr>'}</tbody></table></div>
