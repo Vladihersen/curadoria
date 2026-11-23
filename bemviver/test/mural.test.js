@@ -41,7 +41,7 @@ test('antes de 23/11 o jardim não aparece', () => {
   assert.deepEqual(resumoMural([{ dia: '2026-11-20', n: 5 }], '2026-11-22'), { fase: 'antes' });
 });
 
-test('conta flores da semana e do piloto, e recomeça o jardim na segunda', () => {
+test('jardim cumulativo: um canteiro por semana, nada se apaga', () => {
   const contagens = [
     { dia: '2026-11-23', n: 10 }, { dia: '2026-11-29', n: 8 }, // semana 1
     { dia: '2026-11-30', n: 7 }, { dia: '2026-12-01', n: 5 }, // semana 2
@@ -51,6 +51,7 @@ test('conta flores da semana e do piloto, e recomeça o jardim na segunda', () =
   assert.equal(r.semana, 2);
   assert.equal(r.flores_semana, 12);
   assert.equal(r.flores_total, 30);
+  assert.deepEqual(r.por_semana, [18, 12]);
   assert.equal(r.hoje, 5);
 });
 
@@ -62,7 +63,7 @@ test('o total de hoje só aparece a partir de 3 pessoas', () => {
 
 test('nunca devolve nomes, ids nem o total de cadastradas', () => {
   const r = resumoMural([{ dia: '2026-11-24', n: 9 }], '2026-11-24');
-  assert.deepEqual(Object.keys(r).sort(), ['flores_semana', 'flores_total', 'fase', 'hoje', 'marco', 'semana'].sort());
+  assert.deepEqual(Object.keys(r).sort(), ['flores_semana', 'flores_total', 'fase', 'hoje', 'marco', 'por_semana', 'semana'].sort());
 });
 
 test('marcos da turma: o maior já alcançado', () => {
@@ -76,6 +77,7 @@ test('depois de 20/12 o jardim fica parado e ignora dias fora do piloto', () => 
   assert.equal(r.fase, 'fim');
   assert.equal(r.flores_total, 10);
   assert.equal(r.flores_semana, 10);
+  assert.deepEqual(r.por_semana, [0, 0, 0, 10]);
   assert.equal(r.hoje, undefined);
 });
 

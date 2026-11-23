@@ -254,3 +254,6 @@ details[open] > summary::after { content: ' ▴'; }
 /* Jardim da turma */
 .jardim-desenho { display: block; width: 100%; height: auto; margin: 10px 0 14px; border-radius: var(--raio); }
 .jardim .marco { background: var(--verde-claro); border-radius: 10px; padding: 10px 12px; font-weight: 600; }
+.jardim .canteiro { margin-top: 18px; }
+.jardim .canteiro h3 { margin: 0 0 2px; }
+.jardim .canteiro .suave { margin: 0; }

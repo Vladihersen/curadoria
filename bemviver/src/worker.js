@@ -185,7 +185,8 @@ async function semana(request, env) {
 // Cada participante que marca ao menos uma prática num dia planta uma flor naquele dia
 // (a mesma regra do "✓" do painel). O app só recebe totais da turma: nunca nomes,
 // nunca quem praticou ou deixou de praticar, nunca o total de cadastradas (o "de 16"
-// convida a contar quem faltou). O jardim é da semana (recomeça na segunda) e só cresce.
+// convida a contar quem faltou). O jardim é cumulativo: cada semana do piloto ganha um
+// canteiro novo, com as flores do tema da semana, e nada é apagado.
 
 // Abaixo deste número, o total de hoje não aparece: de manhã o número é sempre baixo,
 // e "1 pessoa" desanima em vez de animar.
@@ -204,16 +205,18 @@ export function resumoMural(contagens, hoje) {
   }
   const semanaDe = (dia) => Math.floor((Date.parse(dia + 'T12:00:00Z') - Date.parse(INICIO_PILOTO + 'T12:00:00Z')) / 86400000 / 7) + 1;
   const semana = Math.min(4, semanaDe(ate));
-  let total = 0, daSemana = 0;
+  const porSemana = Array(semana).fill(0);
+  let total = 0;
   for (const [dia, n] of Object.entries(porDia)) {
     total += n;
-    if (semanaDe(dia) === semana) daSemana += n;
+    porSemana[Math.min(4, semanaDe(dia)) - 1] += n;
   }
+  const daSemana = porSemana[semana - 1];
   const marco = [...MARCOS].reverse().find((m) => total >= m) || null;
-  if (fim) return { fase: 'fim', semana: 4, flores_semana: daSemana, flores_total: total, marco };
+  if (fim) return { fase: 'fim', semana: 4, flores_semana: daSemana, flores_total: total, por_semana: porSemana, marco };
   const nHoje = porDia[hoje] || 0;
   return {
-    fase: 'durante', semana, flores_semana: daSemana, flores_total: total, marco,
+    fase: 'durante', semana, flores_semana: daSemana, flores_total: total, por_semana: porSemana, marco,
     hoje: nHoje >= MINIMO_HOJE ? nHoje : null,
   };
 }

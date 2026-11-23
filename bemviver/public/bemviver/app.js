@@ -1322,8 +1322,9 @@ function cartaoEvolucao() {
 
 // ---------- Jardim da turma (mural coletivo e anônimo) ----------
 // Cada participante que marca ao menos uma prática no dia planta uma flor. O servidor só
-// devolve totais da turma (nunca nomes, nunca quem faltou, nunca "de quantas"). O jardim
-// é da semana, recomeça na segunda e só cresce: não há meta individual nem dia "perdido".
+// devolve totais da turma (nunca nomes, nunca quem faltou, nunca "de quantas"). O jardim é
+// cumulativo: cada semana ganha um canteiro novo com as flores do tema da semana, e nada se
+// apaga. Não há meta individual nem dia "perdido".
 
 function textoFlores(n) { return n === 1 ? '1 flor' : `${n} flores`; }
 
@@ -1340,7 +1341,7 @@ async function buscarMural() {
 function detalheJardim(m) {
   if (!m || m.fase === 'antes') return '';
   if (m.fase === 'fim') return `${textoFlores(m.flores_total)} em 4 semanas`;
-  return m.flores_semana ? `${textoFlores(m.flores_semana)} nesta semana` : 'Começa a semana';
+  return m.flores_total ? `${textoFlores(m.flores_total)} no jardim` : 'O jardim está começando';
 }
 
 function itemJardim() {
@@ -1355,45 +1356,65 @@ function itemJardim() {
 }
 
 // Posições "sorteadas" sempre do mesmo jeito: a flor 7 fica sempre no mesmo lugar,
-// então o jardim cresce em vez de se embaralhar a cada abertura.
+// então o canteiro cresce em vez de se embaralhar a cada abertura.
 function sorteio(i, k) {
   const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453;
   return x - Math.floor(x);
 }
 
-const CORES_FLOR = ['#e79bb1', '#f2c14e', '#c4a3df', '#f0a07f', '#8fbfe6', '#fffaf0', '#e5726f'];
+// Uma flor para o tema de cada semana (mesma ordem de FOCOS).
+const FLORES_DA_SEMANA = [
+  { tema: 'Corpo', flor: 'girassóis', cores: ['#f2c14e', '#f0a43a', '#f5d25c'], miolo: '#7a4b1c', petalas: 9, fina: true, ceu: '#eaf3f6', campo: ['#d4e6bf', '#c0dba8'] },
+  { tema: 'Pessoas', flor: 'flores rosadas', cores: ['#e79bb1', '#e5726f', '#f2a7b8'], miolo: '#f2c14e', petalas: 5, fina: false, ceu: '#f6eef0', campo: ['#d1e5c2', '#bdd9ab'] },
+  { tema: 'Encantamento', flor: 'flores lilases e azuis', cores: ['#c4a3df', '#8fbfe6', '#a7b8f0'], miolo: '#fffaf0', petalas: 6, fina: false, ceu: '#eeeaf6', campo: ['#cfe3c6', '#b9d6ae'] },
+  { tema: 'Sentido', flor: 'margaridas', cores: ['#fffaf0', '#f8eec8'], miolo: '#c98a1b', petalas: 12, fina: true, ceu: '#f7f1e3', campo: ['#d6e4bd', '#c3d8a6'] },
+];
 
-function desenhoJardim(flores) {
-  const n = Math.max(0, Math.min(flores, 600));
-  const raio = Math.max(3, 9 - n / 25);
-  const s = svg('svg', { viewBox: '0 0 320 200', class: 'jardim-desenho', role: 'img', 'aria-label': n ? `Jardim com ${textoFlores(flores)}` : 'Jardim ainda sem flores' });
+function desenhoCanteiro(flores, semana) {
+  const e = FLORES_DA_SEMANA[semana - 1];
+  const n = Math.max(0, Math.min(flores, 400));
+  const raio = Math.max(3.5, 9.5 - n / 22);
+  const s = svg('svg', { viewBox: '0 0 320 170', class: 'jardim-desenho', role: 'img', 'aria-label': n ? `Canteiro da semana ${semana}, ${e.tema}, com ${textoFlores(flores)}` : `Canteiro da semana ${semana}, ${e.tema}, ainda sem flores` });
   s.append(
-    svg('rect', { x: 0, y: 0, width: 320, height: 200, rx: 14, fill: '#eaf3f6' }),
-    svg('path', { d: 'M0 70 Q80 52 160 64 T320 58 V200 H0 Z', fill: '#cfe3c0' }),
-    svg('path', { d: 'M0 110 Q90 96 170 108 T320 102 V200 H0 Z', fill: '#bcd9a8' }),
+    svg('rect', { x: 0, y: 0, width: 320, height: 170, rx: 14, fill: e.ceu }),
+    svg('path', { d: 'M0 52 Q80 36 160 46 T320 42 V170 H0 Z', fill: e.campo[0] }),
+    svg('path', { d: 'M0 92 Q90 80 170 90 T320 86 V170 H0 Z', fill: e.campo[1] }),
   );
   const pos = [];
-  for (let i = 0; i < n; i++) pos.push({ i, x: 14 + sorteio(i, 1) * 292, y: 78 + sorteio(i, 2) * 110 });
+  for (let i = 0; i < n; i++) pos.push({ i, x: 14 + sorteio(i + semana * 1000, 1) * 292, y: 60 + sorteio(i + semana * 1000, 2) * 96 });
   pos.sort((a, b) => a.y - b.y); // as de trás primeiro
   for (const { i, x, y } of pos) {
-    const r = raio * (0.85 + sorteio(i, 3) * 0.3);
+    const k = i + semana * 1000;
+    const r = raio * (0.85 + sorteio(k, 3) * 0.3);
     const g = svg('g', {});
     g.append(svg('line', { x1: x, y1: y, x2: x, y2: y + r * 1.8, stroke: '#5b7f5a', 'stroke-width': Math.max(1, r / 4), 'stroke-linecap': 'round' }));
-    const cor = CORES_FLOR[Math.floor(sorteio(i, 4) * CORES_FLOR.length)];
-    for (let p = 0; p < 5; p++) {
-      const a = (p / 5) * Math.PI * 2 + sorteio(i, 5);
-      g.append(svg('circle', { cx: x + Math.cos(a) * r * 0.6, cy: y + Math.sin(a) * r * 0.6, r: r * 0.5, fill: cor, stroke: 'rgba(0,0,0,.12)', 'stroke-width': 0.5 }));
+    const cor = e.cores[Math.floor(sorteio(k, 4) * e.cores.length)];
+    for (let p = 0; p < e.petalas; p++) {
+      const a = (p / e.petalas) * Math.PI * 2 + sorteio(k, 5);
+      if (e.fina) {
+        g.append(svg('ellipse', { cx: x + Math.cos(a) * r * 0.62, cy: y + Math.sin(a) * r * 0.62, rx: r * 0.42, ry: r * 0.17, transform: `rotate(${(a * 180) / Math.PI} ${x + Math.cos(a) * r * 0.62} ${y + Math.sin(a) * r * 0.62})`, fill: cor, stroke: 'rgba(0,0,0,.15)', 'stroke-width': 0.4 }));
+      } else {
+        g.append(svg('circle', { cx: x + Math.cos(a) * r * 0.6, cy: y + Math.sin(a) * r * 0.6, r: r * 0.5, fill: cor, stroke: 'rgba(0,0,0,.12)', 'stroke-width': 0.5 }));
+      }
     }
-    g.append(svg('circle', { cx: x, cy: y, r: r * 0.32, fill: '#c98a1b' }));
+    g.append(svg('circle', { cx: x, cy: y, r: r * (e.fina ? 0.38 : 0.32), fill: e.miolo }));
     s.append(g);
   }
   return s;
 }
 
+function canteiro(semana, flores, atual) {
+  const e = FLORES_DA_SEMANA[semana - 1];
+  return el('div', { class: 'canteiro' },
+    el('h3', {}, `Semana ${semana} · ${e.tema}`),
+    el('p', { class: 'suave' }, `${e.flor[0].toUpperCase() + e.flor.slice(1)} · ${textoFlores(flores)}${atual ? ', crescendo' : ''}`),
+    desenhoCanteiro(flores, semana));
+}
+
 let marcoDaVez = null;
 
 function conteudoJardim(m, semInternet) {
-  const explica = el('p', { class: 'suave' }, 'Cada pessoa que marca ao menos uma prática no dia planta uma flor. Ninguém aparece pelo nome e ninguém vê quem praticou. O jardim recomeça toda segunda-feira e só cresce durante a semana.');
+  const explica = el('p', { class: 'suave' }, 'Cada pessoa que marca ao menos uma prática no dia planta uma flor. A cada semana o jardim ganha um canteiro novo, com as flores do tema da semana, e nenhuma flor se apaga. Ninguém aparece pelo nome e ninguém vê quem praticou.');
   if (!m) {
     return el('section', { class: 'cartao jardim' },
       el('h2', {}, 'O jardim da turma'),
@@ -1401,11 +1422,12 @@ function conteudoJardim(m, semInternet) {
       explica);
   }
   const aviso = semInternet ? el('p', { class: 'suave' }, 'Sem internet agora: este é o jardim da última vez que o app conseguiu ver.') : null;
+  const porSemana = m.por_semana || [];
   if (m.fase === 'fim') {
     return el('section', { class: 'cartao jardim' },
       el('p', { class: 'pilar' }, 'Piloto de 23/11 a 20/12'),
       el('h2', {}, `Em quatro semanas, a turma plantou ${textoFlores(m.flores_total)}`),
-      desenhoJardim(m.flores_total),
+      ...[1, 2, 3, 4].map((w) => canteiro(w, porSemana[w - 1] || 0, false)),
       el('p', {}, 'Cada flor é um dia em que alguém parou para cuidar de si e de quem ama. Obrigado por cuidar deste jardim.'),
       el('p', { class: 'frase' }, 'Que todos os seres sejam felizes.'),
       aviso);
@@ -1414,14 +1436,17 @@ function conteudoJardim(m, semInternet) {
   // O marco é celebrado na primeira abertura depois de alcançado (e continua na tela até sair dela).
   if (m.marco && m.marco > ler('marcoVisto', 0)) { marcoDaVez = m.marco; gravar('marcoVisto', m.marco); }
   const celebrar = m.marco && m.marco === marcoDaVez;
+  const proxima = FLORES_DA_SEMANA[m.semana];
+  const canteiros = [];
+  for (let w = m.semana; w >= 1; w--) canteiros.push(canteiro(w, w === m.semana ? m.flores_semana : porSemana[w - 1] || 0, w === m.semana));
   return el('section', { class: 'cartao jardim' },
-    el('p', { class: 'pilar' }, `Semana ${m.semana} de 4 · jardim da turma`),
-    el('h2', {}, m.flores_semana ? `${textoFlores(m.flores_semana)} nesta semana` : 'O jardim desta semana está começando'),
-    desenhoJardim(m.flores_semana),
+    el('p', { class: 'pilar' }, `Semana ${m.semana} de 4 · ${FLORES_DA_SEMANA[m.semana - 1].tema}`),
+    el('h2', {}, m.flores_total ? `O jardim da turma já tem ${textoFlores(m.flores_total)}` : 'O jardim da turma está começando'),
     celebrar ? el('p', { class: 'marco' }, `🎉 A turma passou de ${m.marco} flores desde 23/11!`) : null,
     el('p', { class: 'resultado' }, m.hoje ? `Hoje, ${m.hoje} pessoas da turma já praticaram.` : 'O dia está começando no jardim.'),
     el('p', {}, minha ? 'A sua flor de hoje já está no jardim. 🌸' : 'Quando você marca uma prática, a sua flor entra no jardim.'),
-    m.flores_total > m.flores_semana ? el('p', { class: 'suave' }, `Desde 23/11, a turma já plantou ${textoFlores(m.flores_total)}.`) : null,
+    ...canteiros,
+    proxima ? el('p', { class: 'suave' }, `Na próxima segunda, o jardim ganha o canteiro do ${proxima.tema}, com ${proxima.flor}.`) : null,
     explica,
     aviso);
 }
