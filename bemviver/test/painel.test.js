@@ -10,7 +10,7 @@ test('lista de inscritas aceita ponto e vírgula, traço, vírgula e DDI', () =>
 });
 
 test('linhas sem WhatsApp são ignoradas e número repetido vale uma vez', () => {
-  const lista = lerListaInscritas('linha sem telefone\n\nAna; 21999000000\nAna Souza; (21) 99900-0000');
+  const lista = lerListaInscritas('linha sem telefone\n\nAna; 21999000000\nBia; (21) 99900-0001');
   assert.equal(lista.length, 2);
   assert.equal(lerListaInscritas('Ana; 21999000000\nAna de novo; 21999000000').length, 1);
 });
