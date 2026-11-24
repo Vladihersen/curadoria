@@ -2,8 +2,9 @@
 # ritmo de cada fase, sobre um acorde claro de Sol maior que respira em volume, mais
 # o tempo final de observação. Substitui a taça tibetana (24/11/2026).
 #
-#   1ª inspiração : três toques subindo (Sol4, Si4, Ré5)
-#   2ª inspiração : um toque mais agudo (Sol5), o "mais um pouquinho, por cima"
+#   1ª inspiração : um toque só, longo e calmo (Sol4), enquanto o fundo cresce
+#   2ª inspiração : um "tim-tim" rápido e mais brilhante (Ré5 e Sol5 colados), o
+#                   "mais um pouquinho, por cima": o ritmo diferente separa as duas
 #   expiração     : quatro toques descendo devagar (Ré5, Si4, Lá4, Sol4), cada vez mais
 #                   suaves, terminando sempre na nota de repouso
 # Nada de grave contínuo, de notas desafinadas entre si ou de tom que desliza de altura
@@ -26,8 +27,8 @@ OBSERVAR = 30.0          # depois do último ciclo: observar-se e reconhecer a m
 G3, A3, B3, D4, G4, A4, B4, D5, G5 = 196.0, 220.0, 246.94, 293.66, 392.0, 440.0, 493.88, 587.33, 783.99
 # (momento dentro da fase, em fração da fase, nota)
 MELODIA = {
-    "inspira":  [(0.0, G4), (0.33, B4), (0.66, D5)],
-    "inspira2": [(0.0, G5)],
+    "inspira":  [(0.0, G4)],
+    "inspira2": [(0.0, D5), (0.12, G5)],
     "solta":    [(0.0, D5), (0.22, B4), (0.44, A4), (0.66, G4)],
 }
 
@@ -78,9 +79,9 @@ def trilha(ciclos):
                 if nome == "solta":
                     a = 0.9 - 0.45 * k / (len(notas) - 1); dur = 2.4 if k < len(notas) - 1 else 3.5
                 elif nome == "inspira2":
-                    a, dur = 1.0, 1.8
+                    a, dur = (0.8, 1.2) if k == 0 else (1.0, 1.8)
                 else:
-                    a = 0.6 + 0.25 * k / (len(notas) - 1); dur = 1.8
+                    a, dur = 0.7, 2.8
                 soma(toque(f, dur, a), t + frac * d)
             t += d
     # Fim da respiração: um acorde longo e macio abre o tempo de observação.
