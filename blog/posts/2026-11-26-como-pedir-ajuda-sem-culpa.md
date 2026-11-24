@@ -13,7 +13,7 @@ relacionados: sindrome-do-cuidador, como-ter-mais-paciencia
 1. De 0 a 10, quanto pesa o que você está carregando hoje? Guarde esse número.
 2. Escolha uma tarefa que você poderia passar para alguém nesta semana.
 3. Mande uma mensagem pedindo, com nome, tarefa, dia e hora. Por exemplo: "Mariana, você pode buscar a mãe na fisioterapia na quinta, às cinco?"
-4. Depois de enviar, dê a nota de novo.
+4. Depois de enviar, pergunte a si mesmo outra vez: de 0 a 10, quanto pesa agora? Compare com o primeiro número. Se baixou, mesmo um pouco, você sentiu o alívio de dividir o peso.
 
 É quinta-feira, sete da noite. A pia está cheia, o relatório ainda não saiu, a consulta do pai é amanhã cedo e ninguém sabe quem vai levar. Seu irmão mandou um "qualquer coisa me avisa" no grupo da família na semana passada. Você leu, agradeceu e não avisou. Mais fácil fazer sozinho do que explicar.
 
@@ -42,7 +42,7 @@ Leva um minuto para escrever. O difícil é apertar "enviar", e é só isso que 
 3. **Escolha uma pessoa só.** Pedido no grupo da família vira pedido para ninguém. Fale com um nome.
 4. **Escreva com as três partes: quem, o que, quando.** "Você pode levar o pai ao médico amanhã às oito?" funciona. "Se puder, me ajuda com o pai qualquer dia" não funciona, porque deixa todo o trabalho de entender para o outro.
 5. **Não peça desculpas na frase.** Um "obrigado" no fim basta.
-6. **Envie e dê a nota de novo.**
+6. **Envie. Depois, pergunte de novo: de 0 a 10, quanto pesa agora?** Compare com o número do começo. É assim que você percebe, no próprio corpo, que pedir ajuda alivia.
 
 Se a pessoa disser não, tudo bem. Um não claro é melhor do que um "qualquer coisa me avisa" que nunca vira nada. Você tentou, e o próximo pedido vai pesar menos.
 
