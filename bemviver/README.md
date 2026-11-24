@@ -63,3 +63,20 @@ algo em `bemviver/` muda na `main`. O Worker se chama `metodo-bem-viver`.
 Depois da primeira publicação, definir a chave do painel uma vez, no painel da
 Cloudflare: Workers e Pages, `metodo-bem-viver`, Configurações, Variáveis e segredos,
 Adicionar, tipo Segredo, nome `ADMIN_KEY`. (Ou, no terminal: `npx wrangler secret put ADMIN_KEY`.)
+
+## JEV (TypeSafe), base instalada
+
+O Worker já sabe chamar o JEV (`src/jev.js`), mas nenhuma tela do app usa ainda. As perguntas
+ficam em `src/jev-perguntas.js`, junto com a tabela que decide o que fazer com as respostas.
+
+Para ligar:
+
+1. Crie a chave no painel da TypeSafe.
+2. Guarde como secret do Worker (no terminal, dentro de `bemviver/`):
+   `npx wrangler secret put TYPESAFE_API_KEY` e cole a chave quando ele pedir.
+   Também dá para fazer no painel da Cloudflare: Workers → metodo-bem-viver → Settings →
+   Variables and Secrets → Add → tipo Secret, nome `TYPESAFE_API_KEY`.
+3. Abra `vladimirhersen.com.br/bemviver/painel/jev?chave=SUA_CHAVE_DO_PAINEL`. Ele manda um texto
+   inventado ao JEV e mostra as respostas. `"ok": true` quer dizer que está funcionando.
+
+A chave nunca vai no código, no `wrangler.toml` nem no app do celular.
