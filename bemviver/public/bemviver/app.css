@@ -283,3 +283,5 @@ details[open] > summary::after { content: ' ▴'; }
 .jardim .mini-canteiro .jardim-desenho { margin: 0 0 4px; border-radius: 10px; }
 .jardim .mini-canteiro.aberto { grid-column: 1 / -1; }
 .jardim .dica-mini { margin: 6px 0 14px; font-size: .85rem; }
+.jardim .legenda-jardim { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 14px 0 4px; font-size: .9rem; color: var(--suave); }
+.jardim .legenda-jardim span { display: inline-flex; align-items: center; gap: 4px; }
