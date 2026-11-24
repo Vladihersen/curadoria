@@ -654,29 +654,41 @@ function telaHoje() {
     todas[dia] = amanha.value;
     gravar('amanha', todas);
   });
-  const cNoite = el('section', { class: 'cartao' + (reg.noite ? ' feito' : '') },
-    el('p', { class: 'pilar' }, 'Bem ver e Bem querer · noite'),
-    el('h2', {}, 'Três coisas boas e desejar o bem'),
-    el('p', {}, 'Lembre três coisas boas do dia e por que aconteceram. Escolha uma e fique um minuto com ela, saboreando. Depois deseje o bem a quem você ama, e a você.'),
+  // Noite (24/11, pedido do Vladimir): primeiro a prática guiada, em destaque;
+  // depois, se a pessoa quiser, ela escreve; por fim amanhã, paz e a canção.
+  const cNoite = el('section', { class: 'cartao destaque' + (reg.noite ? ' feito' : '') },
+    el('p', { class: 'pilar' }, 'Noite · primeiro, a prática'),
+    el('h2', {}, 'Prática da noite com o Vladimir'),
+    el('p', {}, 'Sentada ou deitada, do jeito que for mais confortável. Toque no botão e deixe o Vladimir guiar. São uns 4 minutos.'),
+    audio(AUDIOS.noite, 'a prática da noite'),
+    el('p', { class: 'suave' }, 'Sem o áudio? Lembre três coisas boas do dia, fique um minuto com uma delas e deseje o bem:'),
+    el('p', { class: 'frase' }, 'Que você esteja em paz. Que você tenha saúde. Que você seja feliz.'),
+    el('p', { class: 'frase' }, 'Que eu esteja em paz. Que eu tenha saúde. Que eu seja feliz.'),
+    el('p', { class: 'frase' }, 'Que todos os seres sejam felizes.'),
+    botaoMarcar('Fiz a prática da noite', reg.noite, (v) => { reg.noite = v; salvarRegistro(dia, reg); marcar(cNoite, v); }),
+  );
+  const cEscrever = el('section', { class: 'cartao' },
+    el('p', { class: 'pilar' }, 'Bem ver e Bem querer · se quiser'),
+    el('h2', {}, 'Depois, escreva'),
+    el('p', {}, 'Três coisas boas do dia e por que aconteceram: uma sua, uma que veio de alguém, uma que você fez.'),
     ...campos,
     el('label', { for: 'escrita' }, 'Escrita livre'),
     el('p', { class: 'suave dica-campo' }, 'Um espaço só seu. Escreva à vontade, sem regra e sem tamanho certo.'),
     escrita,
     el('p', { class: 'suave' }, 'Tudo o que você escreve aqui fica só no seu celular.'),
-    el('p', { class: 'frase' }, 'Que você esteja em paz. Que você tenha saúde. Que você seja feliz.'),
-    el('p', { class: 'frase' }, 'Que eu esteja em paz. Que eu tenha saúde. Que eu seja feliz.'),
-    el('p', { class: 'frase' }, 'Que todos os seres sejam felizes.'),
+  );
+  const cFecho = el('section', { class: 'cartao' },
+    el('label', { for: 'amanha' }, 'Amanhã, a coisa que vai me dar vida'), amanha,
+    el('label', {}, 'Hoje teve um momento de paz?'),
+    simNao(reg.paz, (v) => { reg.paz = v; salvarRegistro(dia, reg); }),
+  );
+  const cCancaoNoite = el('section', { class: 'cartao' },
     el('p', {}, 'Para fechar o dia, uma canção:'),
     audio(AUDIOS.cancao, 'a canção "O amor precisa viver"'),
     el('p', { class: 'suave' }, 'Canção devocional de autoria desconhecida, na voz de Pedro e Christiane.'),
     letraCancao(),
-    el('label', { for: 'amanha' }, 'Amanhã, a coisa que vai me dar vida'), amanha,
-    el('p', { class: 'suave' }, 'Prefere ser guiado pelo Vladimir?'),
-    audio(AUDIOS.noite, 'a prática da noite'),
-    botaoMarcar('Fiz a prática da noite', reg.noite, (v) => { reg.noite = v; salvarRegistro(dia, reg); marcar(cNoite, v); }),
-    el('label', {}, 'Hoje teve um momento de paz?'),
-    simNao(reg.paz, (v) => { reg.paz = v; salvarRegistro(dia, reg); }),
   );
+  const telaNoite = [cNoite, cEscrever, cFecho, cCancaoNoite];
 
   const cEncontro = el('section', { class: 'cartao' },
     el('p', { class: 'pilar' }, `Bem querer · semana ${semana} de 4`),
@@ -703,7 +715,7 @@ function telaHoje() {
     itemMenu('🚶', 'Três minutos de movimento', vezesMov, reg.movimento > 0, abrir(cCorpo, 'Movimento')),
     itemMenu('✨', 'A coisa que me dá vida', '', !!reg.vida, abrir(cVida, 'A coisa que me dá vida')),
     itemMenu('💛', 'Um gesto de carinho', '', !!reg.contato, abrir(cContato, 'Um gesto de carinho')),
-    itemMenu('🌙', 'Noite: três coisas boas', '', !!reg.noite, abrir(cNoite, 'Noite')),
+    itemMenu('🌙', 'Noite: prática guiada', '', !!reg.noite, abrir(telaNoite, 'Noite')),
     itemMenu('🤝', 'Encontro de Verdade da semana', '', false, abrir(cEncontro, 'Encontro de Verdade')),
   ];
   if (ler('aberturaVista', 0) < semana) return mostrar(cFoco);

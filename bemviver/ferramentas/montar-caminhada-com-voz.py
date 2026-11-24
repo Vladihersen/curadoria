@@ -20,11 +20,18 @@ V_FIM = TACA_FIM + 2.2
 TOTAL = V_FIM + len(FIM) / SR + 4.0
 N = int(TOTAL * SR); T = np.arange(N) / SR
 pais = np.zeros((2, N)); p = ler(PAIS, 2); n = min(N, p.shape[1]); pais[:, :n] = p[:, :n]
-def pim(f=523.25, dur=6.0):
-    # Um "pim" limpo e longo, como um sininho: tom puro, sem o batimento da taça.
+def pim(f=523.25, dur=6.0, queda=1.7):
+    # Um "pim" limpo, como um sininho: tom puro, sem o batimento da taça.
+    # queda = quanto tempo o som leva para sumir (menor = mais curto).
     t = np.arange(int(SR * dur)) / SR
     x = np.sin(2 * np.pi * f * t) + 0.18 * np.exp(-t / 0.6) * np.sin(2 * np.pi * 2 * f * t) + 0.06 * np.exp(-t / 0.3) * np.sin(2 * np.pi * 3.01 * f * t)
-    return x * np.exp(-t / 1.7) * np.minimum(t / 0.004, 1)
+    fim = np.clip((dur - t) / 0.15, 0, 1)  # termina sem estalo
+    return x * np.exp(-t / queda) * np.minimum(t / 0.004, 1) * fim
+
+# 24/11: o pim do início ficou longo demais (soava uns 5 s). Agora ele é curto,
+# some em pouco mais de 1 s; o pim do fim continua longo, fechando a caminhada.
+PIM_INICIO = dict(dur=1.4, queda=0.30)
+PIM_FIM = dict(dur=6.0, queda=1.7)
 
 def longe(x):
     # som ao longe: tira o brilho (agudos) e um pouco do grave
@@ -35,8 +42,7 @@ def montar(nome, fundo):
     env = np.interp(T, [0, V_INI, TACA_INI, TACA_INI + 2.5, TACA_FIM, V_FIM - 0.3, V_FIM + len(FIM) / SR, TOTAL],
                     [0, 0.30, 0.35, 1.0, 1.0, 0.35, 0.30, 0])
     out = g.nivel(fundo, 0.018) * env
-    s = pim()
-    for quando in (TACA_INI, TACA_FIM):
+    for quando, s in ((TACA_INI, pim(**PIM_INICIO)), (TACA_FIM, pim(**PIM_FIM))):
         i = int(quando * SR); b = min(N, i + len(s)); out[:, i:b] += s[:b - i] * 0.36
     vrms = 0.20
     for quando, v in ((V_INI, INI), (V_FIM, FIM)):
@@ -54,4 +60,4 @@ def montar(nome, fundo):
 mar = g.mare(np.random.default_rng(21))
 mar = mar[:, :N] if mar.shape[1] >= N else np.pad(mar, ((0, 0), (0, N - mar.shape[1])))
 mar = np.vstack([g.filtro(c, 'lowpass', 900, 4) for c in mar])
-montar('caminhada-E3-pim-grave-paisagem-mais-baixa.mp3', longe(g.nivel(pais, 0.08) + g.nivel(mar, 0.018)))
+montar('6-caminhada-1-minuto.mp3', longe(g.nivel(pais, 0.08) + g.nivel(mar, 0.018)))
