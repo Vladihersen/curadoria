@@ -52,7 +52,7 @@ Nos valores humanos, servir é uma das formas mais altas de amor. Mas quase ning
 
 Pedir ajuda não é deixar de ser forte. É deixar de exigir que você aguente tudo sozinho, e deixar que o amor ande nos dois sentidos.
 
-E pedir de verdade inclui aceitar um não. Quem pede achando que o outro é obrigado a dizer sim ainda quer que tudo seja do seu jeito, só que agora pelas mãos de outra pessoa. Um pedido é um convite, não uma ordem: o outro tem a vida dele, os limites dele, os cansaços dele. Quando o não vier, agradeça e procure outra pessoa. Aceitar o não também é amor: é respeitar o outro do jeito que você gostaria de ser respeitado nos dias em que não pode.
+Isso também vale para o outro lado: quem pede de verdade aceita ouvir um não. O outro também tem os seus limites, e respeitar isso é parte do mesmo amor.
 
 ## Um cuidado importante
 
