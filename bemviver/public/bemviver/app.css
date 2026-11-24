@@ -271,3 +271,4 @@ details[open] > summary::after { content: ' ▴'; }
 }
 .aviso-flor[hidden] { display: none; }
 .aviso-flor button { margin: 0; width: auto; min-height: 44px; padding: 0 14px; background: #fff; color: #3f5c3e; border-color: #fff; white-space: nowrap; }
+.jardim .canteiro .nota-desenho { margin: 6px 0 14px; }

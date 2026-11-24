@@ -1475,13 +1475,14 @@ function canteiro(semana, flores, atual) {
   return el('div', { class: 'canteiro' },
     el('h3', {}, `Semana ${semana} · ${e.tema}`),
     el('p', { class: 'suave' }, `${e.flor[0].toUpperCase() + e.flor.slice(1)} · ${textoFlores(flores)}${atual ? ', crescendo' : ''}`),
-    desenhoCanteiro(flores, semana));
+    desenhoCanteiro(flores, semana),
+    flores > MAX_DESENHADAS ? el('p', { class: 'suave nota-desenho' }, `As ${MAX_DESENHADAS} flores do desenho representam todas as ${flores} plantadas.`) : null);
 }
 
 let marcoDaVez = null;
 
 function conteudoJardim(m, semInternet) {
-  const explica = el('p', { class: 'suave' }, `Cada pessoa que marca ao menos uma prática no dia planta uma flor, e toda flor é contada. A cada semana o jardim ganha um canteiro novo, com as flores do tema da semana, e nenhuma flor se apaga. Quando o canteiro enche, o desenho mostra ${MAX_DESENHADAS} flores e o número conta todas. Ninguém aparece pelo nome e ninguém vê quem praticou.`);
+  const explica = el('p', { class: 'suave' }, `Cada pessoa que marca ao menos uma prática no dia planta uma flor, e toda flor é contada. A cada semana o jardim ganha um canteiro novo, com as flores do tema da semana, e nenhuma flor se apaga. Ninguém aparece pelo nome e ninguém vê quem praticou.`);
   if (!m) {
     return el('section', { class: 'cartao jardim' },
       el('h2', {}, 'O jardim da turma'),
