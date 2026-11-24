@@ -13,7 +13,7 @@ relacionados: sindrome-do-cuidador, como-ter-mais-paciencia
 1. De 0 a 10, quanto pesa o que você está carregando hoje? Guarde esse número.
 2. Escolha uma tarefa que você poderia passar para alguém nesta semana.
 3. Mande uma mensagem pedindo, com nome, tarefa, dia e hora. Por exemplo: "Mariana, você pode buscar a mãe na fisioterapia na quinta, às cinco?"
-4. Depois de enviar, pergunte a si mesmo outra vez: de 0 a 10, quanto pesa agora? Compare com o primeiro número. Se baixou, mesmo um pouco, você sentiu o alívio de dividir o peso.
+4. Depois de enviar, pergunte-se outra vez: de 0 a 10, quanto pesa agora? Compare com o primeiro número. Se baixou, mesmo um pouco, você sentiu o alívio de dividir o peso.
 
 É quinta-feira, sete da noite. A pia está cheia, o relatório ainda não saiu, a consulta do pai é amanhã cedo e ninguém sabe quem vai levar. Seu irmão mandou um "qualquer coisa me avisa" no grupo da família na semana passada. Você leu, agradeceu e não avisou. Mais fácil fazer sozinho do que explicar.
 
