@@ -4,8 +4,8 @@
 #
 #   1ª inspiração (3,5 s): um acorde suave de Sol maior nasce do silêncio e sobe,
 #                   ficando mais forte e mais luminoso
-#   2ª inspiração (1,5 s): o som recua um instante e sobe de novo, mais alto e mais
-#                   brilhante, com uma segunda voz aguda por cima: "inspira novamente"
+#   2ª inspiração (1,5 s): o primeiro som recua quase até sumir e nasce um SEGUNDO som,
+#                   mais agudo e brilhante, que sobe: "inspira novamente"
 #   expiração (6 s): tudo desce devagar, escurecendo e se apagando até o silêncio
 #
 # Nos testes com o Vladimir: grave contínuo soou como "filme de terror", nota deslizando
@@ -50,32 +50,35 @@ def acorde(notas, n, brilho):
 
 
 def envelopes(n, ciclos):
-    """Volume da voz de base, da voz aguda e o brilho, amostra a amostra, em curvas suaves."""
+    """Duas vozes, cada uma com sua curva suave:
+    base  (acorde médio)  : sobe na 1ª inspiração e, no fim dela, recua rápido quase até
+                            sumir, deixando um respiro de silêncio
+    alta  (acorde agudo)  : nasce sozinha na 2ª inspiração, como um segundo som
+    na expiração as duas se juntam e descem devagar até o silêncio."""
     base = np.zeros(n); alta = np.zeros(n); luz = np.zeros(n)
     t = ENTRADA
     for _ in range(ciclos):
         for nome, d in FASES:
             i, j = int(t * SR), int((t + d) * SR)
             u = np.arange(j - i) / (j - i); tt = u * d
-            liso = 0.5 - 0.5 * np.cos(np.pi * u)            # começa e termina sem tranco
             if nome == "inspira":
-                base[i:j] = 0.65 * np.sin(np.pi / 2 * u) ** 1.4
-                luz[i:j] = 0.55 * u
+                sobe = np.sin(np.pi / 2 * np.minimum(tt / (d - 0.35), 1)) ** 1.4
+                cai = np.clip((d - tt) / 0.35, 0, 1) ** 1.5       # recua nos últimos 0,35 s
+                base[i:j] = 0.8 * sobe * (0.12 + 0.88 * cai)
+                luz[i:j] = 0.5 * u
             elif nome == "inspira2":
-                # recomeço: recua em 0,18 s e sobe de novo até o topo
-                recuo = 0.65 - 0.25 * np.sin(np.pi / 2 * np.minimum(tt / 0.18, 1))
-                sobe = 0.40 + 0.60 * (0.5 - 0.5 * np.cos(np.pi * np.clip((tt - 0.18) / (d - 0.18), 0, 1)))
-                base[i:j] = np.where(tt < 0.18, recuo, sobe)
-                alta[i:j] = 0.5 - 0.5 * np.cos(np.pi * np.clip((tt - 0.12) / (d - 0.12), 0, 1))
-                luz[i:j] = 0.55 + 0.45 * liso
+                liso = 0.5 - 0.5 * np.cos(np.pi * u)
+                alta[i:j] = liso
+                base[i:j] = 0.8 * 0.12 + 0.5 * liso ** 2           # a base volta só no fim, por baixo
+                luz[i:j] = 0.5 + 0.5 * liso
             else:
                 desce = 1 - (0.5 - 0.5 * np.cos(np.pi * u ** 0.85))
-                base[i:j] = desce
-                alta[i:j] = 1 - (0.5 - 0.5 * np.cos(np.pi * np.minimum(u / 0.6, 1)))
+                base[i:j] = (0.6 + 0.2 * np.minimum(u / 0.15, 1)) * desce
+                alta[i:j] = desce * (1 - 0.5 * u)
                 luz[i:j] = desce
             t += d
-    k = int(0.04 * SR)
-    base = np.convolve(base, np.ones(k) / k, 'same')
+    k = int(0.03 * SR)
+    base = np.convolve(base, np.ones(k) / k, 'same'); alta = np.convolve(alta, np.ones(k) / k, 'same')
     return base, alta, luz, t
 
 
@@ -135,8 +138,8 @@ def trilha(ciclos):
     escuro = acorde([(D4, 0.7), (G4, 1.0), (B4, 0.6)], n, 0.15)
     claro = acorde([(D4, 0.7), (G4, 1.0), (B4, 0.6)], n, 0.55)
     voz_base = ((1 - luz) * escuro + luz * claro) * base ** 1.3
-    voz_alta = acorde([(D5, 0.8), (G5, 0.6)], n, 0.25) * alta ** 1.3
-    guia = filtro(voz_base + 0.55 * voz_alta, 'lowpass', 2500)
+    voz_alta = acorde([(B4, 0.5), (D5, 0.9), (G5, 0.7)], n, 0.3) * alta ** 1.2
+    guia = filtro(voz_base + 0.9 * voz_alta, 'lowpass', 2500)
     guia = eco(guia, rng, 2.2, 0.3)
     aves = passaros(n, rng)
     fade = np.clip(tt / 2.0, 0, 1) * np.clip((total + 1 - tt) / 8, 0, 1)
