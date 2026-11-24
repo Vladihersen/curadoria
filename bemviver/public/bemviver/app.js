@@ -1431,30 +1431,45 @@ const FLORES_DA_SEMANA = [
   { tema: 'Sentido', de: 'do Sentido', flor: 'margaridas', cores: ['#ffffff', '#fbf3d6'], miolo: '#e0a526', petalas: 14, fina: true, ceu: '#f7f1e3', campo: ['#d6e4bd', '#c3d8a6'] },
 ];
 
-// Canteiros multicoloridos: cada canteiro tem 36 lugares, 9 para cada semana do piloto.
-// Na semana 1 os canteiros recebem girassóis; nas semanas seguintes, os mesmos canteiros
-// ganham as flores rosadas, as lilases e azuis e as margaridas, e vão ficando cheios e
-// coloridos. Uma flor desenhada é sempre uma flor plantada. Cada lugar tem posição fixa:
-// o jardim nunca se embaralha, só ganha flores.
-const VAGAS_POR_SEMANA = 9;
-const LUGARES = VAGAS_POR_SEMANA * 4;
+// Canteiros multicoloridos de 18 lugares, dimensionados para uma turma que encolhe (a evasão
+// é comum). Semana 1: os girassóis enchem um canteiro de 6 em 6 (um terço); os canteiros que existirem no fim
+// da semana 1 são o jardim. Semanas 2 a 4: as flores novas são distribuídas uma a uma entre
+// esses mesmos canteiros, que vão ficando cheios e coloridos mesmo se a turma diminuir.
+// Cada canteiro tem 18 lugares em posições fixas e espalhadas, ocupados na ordem em que as
+// flores nascem: o jardim nunca se embaralha, só ganha flores. Uma flor desenhada é uma flor
+// plantada.
+const SEMANA1_POR_CANTEIRO = 6;
+const LUGARES = 18;
 
-// porSemana = [flores da semana 1, da semana 2, ...] -> canteiros, cada um com as flores de cada semana.
+// porSemana = [flores da semana 1, da semana 2, ...] -> canteiros; cada canteiro é a lista
+// das semanas de suas flores, na ordem em que nasceram.
 function montarCanteiros(porSemana) {
-  const total = Math.max(1, ...porSemana.map((n) => Math.ceil((n || 0) / VAGAS_POR_SEMANA)));
-  return Array.from({ length: total }, (_, b) =>
-    porSemana.map((n) => Math.min(VAGAS_POR_SEMANA, Math.max(0, (n || 0) - b * VAGAS_POR_SEMANA))));
+  const n1 = porSemana[0] || 0;
+  const base = Math.max(1, Math.ceil(n1 / SEMANA1_POR_CANTEIRO));
+  const camas = Array.from({ length: base }, () => []);
+  for (let j = 0; j < n1; j++) camas[Math.floor(j / SEMANA1_POR_CANTEIRO)].push(1);
+  for (let w = 2; w <= porSemana.length; w++) {
+    let extra = null;
+    for (let j = 0; j < (porSemana[w - 1] || 0); j++) {
+      const cama = camas[j % base];
+      if (cama.length < LUGARES) { cama.push(w); continue; }
+      // Canteiro cheio (só se a turma crescer muito): a flor vai para um canteiro novo.
+      if (!extra || extra.length >= LUGARES) { extra = []; camas.push(extra); }
+      extra.push(w);
+    }
+  }
+  return camas;
 }
 
-// Os 36 lugares de um canteiro: 3 fileiras de 12, um pouco tortas, numa ordem própria de cada
-// canteiro, para as flores de cada semana ficarem espalhadas pelo canteiro inteiro.
+// Os 18 lugares de um canteiro: 3 fileiras de 6, um pouco tortas, numa ordem própria de cada
+// canteiro, para que cada semana se espalhe pelo canteiro inteiro.
 function lugaresDoCanteiro(numero) {
-  const ordem = Array.from({ length: LUGARES }, (_, k) => k).sort((a, b) => sorteio(a + numero * 50, 9) - sorteio(b + numero * 50, 9));
+  const ordem = Array.from({ length: LUGARES }, (_, k) => k).sort((a, b) => sorteio(a + numero * 60, 9) - sorteio(b + numero * 60, 9));
   return ordem.map((c) => {
-    const col = c % 12, fila = Math.floor(c / 12);
+    const col = c % 6, fila = Math.floor(c / 6);
     return {
-      x: 18 + col * 25.8 + (sorteio(c + numero * 50, 1) - 0.5) * 14,
-      y: 74 + fila * 30 + (sorteio(c + numero * 50, 2) - 0.5) * 16,
+      x: 32 + col * 51 + (fila % 2) * 12 + (sorteio(c + numero * 60, 1) - 0.5) * 16,
+      y: 72 + fila * 30 + (sorteio(c + numero * 60, 2) - 0.5) * 10,
     };
   });
 }
@@ -1476,31 +1491,26 @@ function desenharFlor(g, x, y, r, semana, k) {
   g.append(svg('circle', { cx: x, cy: y, r: r * (e.larga ? 0.34 : e.fina ? 0.3 : 0.32), fill: e.miolo }));
 }
 
-function desenhoCanteiro(flores, numero) {
-  const total = flores.reduce((t, n) => t + n, 0);
-  const s = svg('svg', { viewBox: '0 0 320 170', class: 'jardim-desenho', role: 'img', 'aria-label': `Canteiro ${numero}, com ${textoFlores(total)}` });
+function desenhoCanteiro(semanas, numero) {
+  const s = svg('svg', { viewBox: '0 0 320 170', class: 'jardim-desenho', role: 'img', 'aria-label': `Canteiro ${numero}, com ${textoFlores(semanas.length)}` });
   s.append(
     svg('rect', { x: 0, y: 0, width: 320, height: 170, rx: 14, fill: '#eef4f2' }),
-    svg('path', { d: 'M0 52 Q80 36 160 46 T320 42 V170 H0 Z', fill: '#d2e5c0' }),
-    svg('path', { d: 'M0 92 Q90 80 170 90 T320 86 V170 H0 Z', fill: '#bfdaa9' }),
+    svg('path', { d: 'M0 46 Q80 30 160 40 T320 36 V170 H0 Z', fill: '#d2e5c0' }),
+    svg('path', { d: 'M0 96 Q90 84 170 94 T320 90 V170 H0 Z', fill: '#bfdaa9' }),
   );
   const lugares = lugaresDoCanteiro(numero);
-  const plantas = [];
-  flores.forEach((n, w) => {
-    for (let j = 0; j < n; j++) plantas.push({ semana: w + 1, k: numero * 1000 + w * 100 + j, ...lugares[j * 4 + w] });
-  });
+  const plantas = semanas.map((w, k) => ({ semana: w, k: numero * 1000 + k, ...lugares[k] }));
   plantas.sort((a, b) => a.y - b.y); // as de trás primeiro
   for (const f of plantas) {
     const g = svg('g', {});
-    desenharFlor(g, f.x, f.y, 11 * (0.9 + sorteio(f.k, 3) * 0.2), f.semana, f.k);
+    desenharFlor(g, f.x, f.y, 15 * (0.9 + sorteio(f.k, 3) * 0.2), f.semana, f.k);
     s.append(g);
   }
   return s;
 }
 
-function textoCanteiro(numero, flores, crescendo) {
-  const total = flores.reduce((t, n) => t + n, 0);
-  return `Canteiro ${numero} · ${textoFlores(total)}${crescendo ? ', crescendo' : ''}`;
+function textoCanteiro(numero, semanas, crescendo) {
+  return `Canteiro ${numero} · ${textoFlores(semanas.length)}${crescendo ? ', crescendo' : ''}`;
 }
 
 // Canteiro recolhido: miniatura com todas as flores. Um toque abre grande; outro recolhe.
@@ -1529,9 +1539,17 @@ function legendaJardim(ate) {
 
 function canteirosDoJardim(porSemana, semanaAtual) {
   const camas = montarCanteiros(porSemana);
-  // O canteiro que está recebendo as flores desta semana fica grande; os outros, recolhidos.
-  const nAtual = semanaAtual ? porSemana[semanaAtual - 1] || 0 : 0;
-  const crescendo = semanaAtual ? Math.max(0, Math.ceil(nAtual / VAGAS_POR_SEMANA) - 1) : -1;
+  // O canteiro que recebeu a flor mais recente fica grande; os outros, recolhidos.
+  let crescendo = -1;
+  if (semanaAtual) {
+    crescendo = 0;
+    camas.forEach((c, b) => { if (c.length && c[c.length - 1] === semanaAtual) crescendo = b; });
+    const nAtual = porSemana[semanaAtual - 1] || 0;
+    if (semanaAtual > 1 && nAtual) {
+      const base = Math.max(1, Math.ceil((porSemana[0] || 0) / SEMANA1_POR_CANTEIRO));
+      if (camas[(nAtual - 1) % base].length < LUGARES) crescendo = (nAtual - 1) % base;
+    }
+  }
   const grande = crescendo >= 0
     ? el('div', { class: 'canteiro' }, el('p', { class: 'suave' }, textoCanteiro(crescendo + 1, camas[crescendo], true)), desenhoCanteiro(camas[crescendo], crescendo + 1))
     : null;
@@ -1546,7 +1564,7 @@ function canteirosDoJardim(porSemana, semanaAtual) {
 let marcoDaVez = null;
 
 function conteudoJardim(m, semInternet) {
-  const explica = el('p', { class: 'suave' }, 'Cada pessoa que marca ao menos uma prática no dia planta uma flor, e toda flor é contada e desenhada. A cada semana, os canteiros ganham as flores do tema da semana e vão ficando coloridos; quando faltar lugar, nasce um canteiro novo. Nenhuma flor se apaga. Ninguém aparece pelo nome e ninguém vê quem praticou.');
+  const explica = el('p', { class: 'suave' }, 'Cada pessoa que marca ao menos uma prática no dia planta uma flor, e toda flor é contada e desenhada. A cada semana, os mesmos canteiros ganham as flores do tema da semana e vão ficando cheios e coloridos. Nenhuma flor se apaga. Ninguém aparece pelo nome e ninguém vê quem praticou.');
   if (!m) {
     return el('section', { class: 'cartao jardim' },
       el('h2', {}, 'O jardim da turma'),
