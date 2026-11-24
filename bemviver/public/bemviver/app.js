@@ -1484,26 +1484,32 @@ function quadroCanteiro(semana, numero, flores, crescendo) {
     desenhoCanteiro(flores, semana, numero));
 }
 
-// Uma semana do jardim. Na semana atual, o canteiro que está crescendo fica à vista e os
-// cheios ficam num botão "Ver". Nas semanas passadas, o primeiro canteiro fica à vista e
-// os demais num botão, para a tela não ficar comprida demais.
+// Canteiro recolhido: miniatura do canteiro inteiro, com todas as flores. Um toque abre
+// o canteiro em tamanho grande; outro toque recolhe de novo.
+function miniCanteiro(semana, numero, flores) {
+  const b = el('button', { type: 'button', class: 'mini-canteiro', 'aria-expanded': 'false', 'aria-label': `Canteiro ${numero}, ${textoFlores(flores)}. Toque para ver grande.` },
+    desenhoCanteiro(flores, semana, numero),
+    el('span', {}, `Canteiro ${numero} · ${textoFlores(flores)}`));
+  b.addEventListener('click', () => {
+    const aberto = b.classList.toggle('aberto');
+    b.setAttribute('aria-expanded', String(aberto));
+  });
+  return b;
+}
+
+// Uma semana do jardim. O canteiro que está crescendo fica grande; os canteiros cheios e
+// as semanas passadas ficam recolhidos em miniaturas, visíveis, que abrem com um toque.
 function semanaDoJardim(semana, flores, atual) {
   const e = FLORES_DA_SEMANA[semana - 1];
   const camas = canteirosDaSemana(flores);
   const titulo = el('h3', {}, `Semana ${semana} · ${e.tema}`);
   const resumo = el('p', { class: 'suave' }, `${e.flor[0].toUpperCase() + e.flor.slice(1)} · ${textoFlores(flores)}${camas.length > 1 ? ` em ${camas.length} canteiros` : ''}`);
-  const quadros = camas.map((n, k) => quadroCanteiro(semana, k + 1, n, atual && k === camas.length - 1));
-  if (atual) {
-    const ultimo = quadros.pop();
-    const cheios = quadros.length
-      ? el('details', {}, el('summary', {}, quadros.length === 1 ? 'Ver o canteiro cheio desta semana' : `Ver os ${quadros.length} canteiros cheios desta semana`), ...quadros.reverse())
-      : null;
-    return el('div', { class: 'semana-jardim' }, titulo, resumo, ultimo, cheios);
-  }
-  // Semana que já passou: o primeiro canteiro à vista, os demais num botão.
-  const [primeiro, ...outros] = quadros;
-  return el('div', { class: 'semana-jardim' }, titulo, resumo, primeiro,
-    outros.length ? el('details', {}, el('summary', {}, outros.length === 1 ? 'Ver o outro canteiro desta semana' : `Ver os outros ${outros.length} canteiros desta semana`), ...outros) : null);
+  const crescendo = atual ? quadroCanteiro(semana, camas.length, camas[camas.length - 1], true) : null;
+  const recolhidos = (atual ? camas.slice(0, -1) : camas).map((n, k) => miniCanteiro(semana, k + 1, n));
+  if (atual && recolhidos.length) recolhidos.reverse(); // o cheio mais recente primeiro
+  return el('div', { class: 'semana-jardim' }, titulo, resumo, crescendo,
+    recolhidos.length ? el('div', { class: 'minis' }, ...recolhidos) : null,
+    recolhidos.length ? el('p', { class: 'suave dica-mini' }, atual ? 'Canteiros cheios desta semana. Toque num deles para ver grande.' : 'Toque num canteiro para ver grande.') : null);
 }
 
 let marcoDaVez = null;

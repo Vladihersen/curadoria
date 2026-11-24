@@ -275,4 +275,11 @@ details[open] > summary::after { content: ' ▴'; }
 .jardim .semana-jardim h3 { margin: 0 0 2px; }
 .jardim .semana-jardim > .suave { margin: 0 0 4px; }
 .jardim .canteiro { margin-top: 10px; }
-.jardim .semana-jardim details { margin-bottom: 14px; }
+.jardim .minis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.jardim .mini-canteiro {
+  margin: 0; padding: 0; min-height: 0; width: 100%; background: transparent; border: 0;
+  color: var(--suave); font-size: .85rem; font-weight: 600; text-align: left; display: block;
+}
+.jardim .mini-canteiro .jardim-desenho { margin: 0 0 4px; border-radius: 10px; }
+.jardim .mini-canteiro.aberto { grid-column: 1 / -1; }
+.jardim .dica-mini { margin: 6px 0 14px; font-size: .85rem; }
