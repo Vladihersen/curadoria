@@ -1,6 +1,9 @@
 // App do Método Bem Viver (piloto): API das participantes e painel do Vladimir.
 // As telas do app são estáticas (public/bemviver/). Este Worker só atende /bemviver/api/* e /bemviver/painel.
 
+import { perguntarJev, JevErro } from './jev.js';
+import { PERGUNTAS_DOMINGO, decidirDomingo, TEXTO_EXEMPLO } from './jev-perguntas.js';
+
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS dia_participantes (
      id TEXT PRIMARY KEY,
@@ -552,6 +555,21 @@ ${textos ? `<h2>O que escreveu aos domingos</h2><ul>${textos}</ul>` : ''}
 </body></html>`;
 }
 
+// ---------- Teste do JEV (só no painel, com a chave) ----------
+// Manda um texto inventado ao JEV e mostra as respostas. Serve para conferir
+// que a chave TYPESAFE_API_KEY está instalada. Não lê nem envia dados das participantes.
+export async function testeJev(env, fetchFn = fetch) {
+  const cab = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' };
+  try {
+    const r = await perguntarJev(env, { state: { texto: TEXTO_EXEMPLO }, questions: PERGUNTAS_DOMINGO }, fetchFn);
+    return new Response(JSON.stringify({ ok: true, modelo: r.model, texto: TEXTO_EXEMPLO, decisao: decidirDomingo(r.answers), respostas: r.answers }, null, 2), { headers: cab });
+  } catch (e) {
+    if (!(e instanceof JevErro)) throw e;
+    console.error('metodo-bem-viver jev', e.status, e.message);
+    return new Response(JSON.stringify({ ok: false, erro: e.message, status: e.status, detalhe: e.detalhe }, null, 2), { status: 502, headers: cab });
+  }
+}
+
 async function painel(request, env) {
   const url = new URL(request.url);
   if (url.pathname === '/bemviver/painel/inscritas' && request.method === 'POST') return salvarInscritas(request, env);
@@ -562,6 +580,7 @@ async function painel(request, env) {
       headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' },
     });
   }
+  if (url.pathname === '/bemviver/painel/jev') return testeJev(env);
   const id = url.searchParams.get('p');
   if (id) {
     const f = ID.test(id) ? await dadosFicha(env.DB, id) : null;
