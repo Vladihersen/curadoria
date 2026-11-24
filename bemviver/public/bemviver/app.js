@@ -1033,9 +1033,9 @@ function fazerRespiro(segundos) {
 const CONDUCAO = {
   entrada: 4,
   fases: [
-    { texto: 'Inspire pelo nariz, devagar', s: 2.4, escala: 0.9 },
+    { texto: 'Inspire pelo nariz, devagar', s: 3.5, escala: 0.9 },
     { texto: 'Inspire mais um pouquinho, por cima', s: 1.5, escala: 1 },
-    { texto: 'Solte todo o ar pelo nariz, bem devagar', s: 5.5, escala: 0.55 },
+    { texto: 'Solte todo o ar pelo nariz, bem devagar', s: 6, escala: 0.55 },
   ],
   observar: 30,
   frasesObservar: [
@@ -1046,7 +1046,7 @@ const CONDUCAO = {
     [24, 'Compare com o começo. O que mudou em você?'],
   ],
 };
-const TRILHAS = { 60: { src: '/bemviver/audio/guia-1-minuto.mp3', ciclos: 6 }, 300: { src: '/bemviver/audio/guia-5-minutos.mp3', ciclos: 32 } };
+const TRILHAS = { 60: { src: '/bemviver/audio/guia-1-minuto.mp3', ciclos: 6 }, 300: { src: '/bemviver/audio/guia-5-minutos.mp3', ciclos: 27 } };
 
 function telaPausa(segundos, aoTerminar) {
   abas.hidden = true;

@@ -2,11 +2,11 @@
 # (sem toques, sem degraus e sem nota que desliza de altura), com passarinhos baixinho,
 # ao longe, mais o tempo final de observação. Substitui a taça tibetana (24/11/2026).
 #
-#   1ª inspiração : um acorde suave de Sol maior nasce do silêncio e cresce devagar
-#   2ª inspiração : por cima dele entra uma segunda voz, mais aguda e luminosa, e o som
-#                   cresce mais um pouco: o "mais um pouquinho, por cima"
-#   expiração     : as duas vozes se apagam juntas, bem devagar, durante os 5,5 s,
-#                   primeiro a aguda e por último o acorde, até o silêncio
+#   1ª inspiração (3,5 s): um acorde suave de Sol maior nasce do silêncio e sobe,
+#                   ficando mais forte e mais luminoso
+#   2ª inspiração (1,5 s): o som recua um instante e sobe de novo, mais alto e mais
+#                   brilhante, com uma segunda voz aguda por cima: "inspira novamente"
+#   expiração (6 s): tudo desce devagar, escurecendo e se apagando até o silêncio
 #
 # Nos testes com o Vladimir: grave contínuo soou como "filme de terror", nota deslizando
 # como "sirene", e toques em escada deixaram a respiração "picotada". Por isso aqui só o
@@ -22,7 +22,7 @@ from scipy.signal import butter, sosfilt, fftconvolve
 
 SR = 44100
 ENTRADA = 4.0            # sente-se, deixe o corpo pesar
-FASES = [("inspira", 2.4), ("inspira2", 1.5), ("solta", 5.5)]  # 9,4 s por ciclo
+FASES = [("inspira", 3.5), ("inspira2", 1.5), ("solta", 6.0)]  # 11 s por ciclo
 CICLO = sum(d for _, d in FASES)
 OBSERVAR = 30.0          # depois do último ciclo: observar-se e reconhecer a mudança
 
@@ -50,24 +50,33 @@ def acorde(notas, n, brilho):
 
 
 def envelopes(n, ciclos):
-    """Volume da voz de base e da voz aguda, amostra a amostra, com curvas suaves."""
-    base = np.zeros(n); alta = np.zeros(n)
+    """Volume da voz de base, da voz aguda e o brilho, amostra a amostra, em curvas suaves."""
+    base = np.zeros(n); alta = np.zeros(n); luz = np.zeros(n)
     t = ENTRADA
     for _ in range(ciclos):
         for nome, d in FASES:
             i, j = int(t * SR), int((t + d) * SR)
-            u = np.arange(j - i) / (j - i)
+            u = np.arange(j - i) / (j - i); tt = u * d
             liso = 0.5 - 0.5 * np.cos(np.pi * u)            # começa e termina sem tranco
             if nome == "inspira":
-                base[i:j] = 0.75 * liso
+                base[i:j] = 0.65 * np.sin(np.pi / 2 * u) ** 1.4
+                luz[i:j] = 0.55 * u
             elif nome == "inspira2":
-                base[i:j] = 0.75 + 0.25 * liso
-                alta[i:j] = liso
+                # recomeço: recua em 0,18 s e sobe de novo até o topo
+                recuo = 0.65 - 0.25 * np.sin(np.pi / 2 * np.minimum(tt / 0.18, 1))
+                sobe = 0.40 + 0.60 * (0.5 - 0.5 * np.cos(np.pi * np.clip((tt - 0.18) / (d - 0.18), 0, 1)))
+                base[i:j] = np.where(tt < 0.18, recuo, sobe)
+                alta[i:j] = 0.5 - 0.5 * np.cos(np.pi * np.clip((tt - 0.12) / (d - 0.12), 0, 1))
+                luz[i:j] = 0.55 + 0.45 * liso
             else:
-                base[i:j] = 1 - (0.5 - 0.5 * np.cos(np.pi * u ** 0.8))   # se apaga até o fim do ar
-                alta[i:j] = 1 - (0.5 - 0.5 * np.cos(np.pi * np.minimum(u / 0.7, 1)))
+                desce = 1 - (0.5 - 0.5 * np.cos(np.pi * u ** 0.85))
+                base[i:j] = desce
+                alta[i:j] = 1 - (0.5 - 0.5 * np.cos(np.pi * np.minimum(u / 0.6, 1)))
+                luz[i:j] = desce
             t += d
-    return base, alta, t
+    k = int(0.04 * SR)
+    base = np.convolve(base, np.ones(k) / k, 'same')
+    return base, alta, luz, t
 
 
 # ---------- Passarinhos ao longe (mesma síntese da caminhada) ----------
@@ -103,40 +112,42 @@ def passaros(n, rng):
     t0 = rng.uniform(1.0, 2.5)
     while t0 < n / SR - 2:
         canto = tipos[rng.integers(len(tipos))](rng)
-        distancia = rng.uniform(0.5, 1.0)                    # sempre um pouco longe
-        canto = filtro(canto, 'lowpass', 7000 - 3000 * distancia) * (0.9 - 0.55 * distancia)
+        distancia = rng.uniform(0.75, 1.0)                   # sempre longe
+        canto = filtro(canto, 'lowpass', 6000 - 3000 * distancia) * (0.9 - 0.55 * distancia)
         pan = rng.uniform(0.15, 0.85)
         i = int(t0 * SR); b = min(i + len(canto), n)
         out[0, i:b] += canto[:b - i] * np.sqrt(1 - pan)
         out[1, i:b] += canto[:b - i] * np.sqrt(pan)
         t0 += rng.uniform(3.0, 7.0)
-    return np.stack([eco(c, rng, 2.5, 0.45) for c in out])
+    return np.stack([eco(c, rng, 3.0, 0.6) for c in out])
 
 
 def trilha(ciclos):
     total = ENTRADA + ciclos * CICLO + OBSERVAR
     n = int(SR * (total + 1))
     rng = np.random.default_rng(21)
-    base, alta, fim = envelopes(n, ciclos)
+    base, alta, luz, fim = envelopes(n, ciclos)
     # depois do último ciclo, o acorde volta uma vez, longo, e abre a observação
     tt = np.arange(n) / SR
     k = tt >= fim + 0.3
     u = tt[k] - (fim + 0.3)
     base[k] = np.minimum(u / 2.5, 1) ** 2 * np.exp(-np.maximum(u - 2.5, 0) / 3.0) * 0.8
-    voz_base = acorde([(D4, 0.7), (G4, 1.0), (B4, 0.6)], n, 0.35) * base ** 1.3
+    escuro = acorde([(D4, 0.7), (G4, 1.0), (B4, 0.6)], n, 0.15)
+    claro = acorde([(D4, 0.7), (G4, 1.0), (B4, 0.6)], n, 0.55)
+    voz_base = ((1 - luz) * escuro + luz * claro) * base ** 1.3
     voz_alta = acorde([(D5, 0.8), (G5, 0.6)], n, 0.25) * alta ** 1.3
     guia = filtro(voz_base + 0.55 * voz_alta, 'lowpass', 2500)
     guia = eco(guia, rng, 2.2, 0.3)
     aves = passaros(n, rng)
     fade = np.clip(tt / 2.0, 0, 1) * np.clip((total + 1 - tt) / 8, 0, 1)
-    mix = np.stack([guia, guia]) / np.max(np.abs(guia)) + aves / np.max(np.abs(aves)) * 0.16
+    mix = np.stack([guia, guia]) / np.max(np.abs(guia)) + aves / np.max(np.abs(aves)) * 0.08
     mix *= fade
     return mix / np.max(np.abs(mix)) * 0.8, total
 
 
 aqui = os.path.dirname(os.path.abspath(__file__))
 destino = os.path.join(aqui, '..', 'public', 'bemviver', 'audio')
-for nome, ciclos in (("guia-1-minuto", 6), ("guia-5-minutos", 32)):
+for nome, ciclos in (("guia-1-minuto", 6), ("guia-5-minutos", 27)):
     sinal, total = trilha(ciclos)
     with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
         w = wave.open(tmp.name, 'wb'); w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)
