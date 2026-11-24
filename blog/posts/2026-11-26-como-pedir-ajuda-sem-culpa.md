@@ -52,6 +52,8 @@ Nos valores humanos, servir é uma das formas mais altas de amor. Mas quase ning
 
 Pedir ajuda não é deixar de ser forte. É deixar de exigir que você aguente tudo sozinho, e deixar que o amor ande nos dois sentidos.
 
+E pedir de verdade inclui aceitar um não. Quem pede achando que o outro é obrigado a dizer sim ainda quer que tudo seja do seu jeito, só que agora pelas mãos de outra pessoa. Um pedido é um convite, não uma ordem: o outro tem a vida dele, os limites dele, os cansaços dele. Quando o não vier, agradeça e procure outra pessoa. Aceitar o não também é amor: é respeitar o outro do jeito que você gostaria de ser respeitado nos dias em que não pode.
+
 ## Um cuidado importante
 
 Se o cansaço já virou tristeza que não passa, choro fácil, sono ruim por semanas ou a sensação de que não aguenta mais, o pedido de ajuda mais importante é para um médico ou um psicólogo. Se em algum momento pensar em desistir de tudo, ligue 188, o CVV, que atende de graça, 24 horas.
