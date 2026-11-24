@@ -1026,8 +1026,8 @@ function fazerRespiro(segundos) {
   });
 }
 
-// Suspiro fisiológico guiado, com um som próprio para cada fase (inspira, inspira de novo,
-// solta) e passarinhos ao longe (trilhas geradas por ferramentas/gerar-guia.py, com os
+// Suspiro fisiológico guiado, com a taça tibetana marcando cada fase, sem paisagem
+// sonora (trilhas geradas por ferramentas/gerar-guia.py, com os
 // MESMOS tempos de CONDUCAO). A tela segue o relógio da trilha; sem som, segue o relógio
 // do celular. No fim, um tempo para a pessoa se observar e reconhecer a mudança.
 const CONDUCAO = {
@@ -1062,7 +1062,7 @@ function telaPausa(segundos, aoTerminar) {
   const aviso = el('p', { class: 'suave' }, 'A respiração é suave, nunca forçada. Se sentir tontura, pare, volte a respirar normal e, se estiver de pé, sente-se. Nunca pratique dirigindo.');
   const botao = el('button', { type: 'button', class: 'secundario' }, 'Parar e voltar ao início');
   let comSom = ler('somGuia', true);
-  const som = el('button', { type: 'button', class: 'som', 'aria-pressed': String(comSom) }, comSom ? 'Som-guia: ligado' : 'Som-guia: desligado');
+  const som = el('button', { type: 'button', class: 'som', 'aria-pressed': String(comSom) }, comSom ? 'Som da taça: ligado' : 'Som da taça: desligado');
 
   const guia = new Audio(trilha.src);
   guia.preload = 'auto';
@@ -1084,7 +1084,7 @@ function telaPausa(segundos, aoTerminar) {
   som.addEventListener('click', () => {
     comSom = !comSom; gravar('somGuia', comSom); guia.muted = !comSom;
     som.setAttribute('aria-pressed', String(comSom));
-    som.textContent = comSom ? 'Som-guia: ligado' : 'Som-guia: desligado';
+    som.textContent = comSom ? 'Som da taça: ligado' : 'Som da taça: desligado';
   });
 
   const atualizar = () => {
