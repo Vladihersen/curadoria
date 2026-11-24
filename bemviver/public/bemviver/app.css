@@ -260,3 +260,6 @@ details[open] > summary::after { content: ' ▴'; }
 .jardim .canteiro { margin-top: 18px; }
 .jardim .canteiro h3 { margin: 0 0 2px; }
 .jardim .canteiro .suave { margin: 0; }
+/* Noite (24/11): a prática guiada vem primeiro e com o botão de ouvir bem grande. */
+.cartao.destaque h2 { font-size: 1.45rem; }
+.cartao.destaque button.ouvir { width: 100%; font-size: 1.3rem; padding: 22px 16px; margin: 6px 0 14px; }
