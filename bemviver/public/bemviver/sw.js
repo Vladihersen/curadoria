@@ -10,7 +10,7 @@
 //   VERSAO_AUDIOS muda. Trocou um áudio? Suba VERSAO_AUDIOS (a1 → a2) e publique.
 
 const VERSAO = '__VERSAO__';
-const VERSAO_AUDIOS = 'a8'; // a8 (24/11): pim do início da caminhada mais curto
+const VERSAO_AUDIOS = 'a9'; // a9 (24/11): suspiro guiado com toques de kalimba no lugar da taça
 const CACHE = 'bemviver-app-' + VERSAO;
 const CACHE_AUDIOS = 'bemviver-audios-' + VERSAO_AUDIOS;
 

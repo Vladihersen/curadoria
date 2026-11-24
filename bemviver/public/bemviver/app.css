@@ -197,7 +197,7 @@ summary { cursor: pointer; color: var(--verde-escuro); font-weight: 600; min-hei
 .passo-a-passo ol { margin: 0; padding-left: 22px; }
 .passo-a-passo li { margin: 4px 0; }
 
-/* Liga e desliga o som da taça no suspiro guiado */
+/* Liga e desliga o som-guia no suspiro guiado */
 button.som { background: transparent; border-color: transparent; color: var(--suave); min-height: 44px; font-size: .95rem; }
 
 a.botao { display: block; box-sizing: border-box; text-decoration: none; line-height: 1.5; }
