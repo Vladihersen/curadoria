@@ -1,6 +1,6 @@
 // App do Método Bem Viver: as práticas do dia e a nota de domingo do piloto.
 // Tudo fica guardado no celular (localStorage) e é enviado para /bemviver/api/ quando há internet.
-// As "três coisas boas" escritas à noite nunca saem do celular.
+// As "três coisas boas" e a escrita livre da noite nunca saem do celular.
 'use strict';
 
 // ---------- Só na cópia de teste (*.workers.dev): simular a data ----------
@@ -98,6 +98,30 @@ function ler(chave, padrao) {
   } catch {
     return padrao;
   }
+}
+
+// Caixa de texto que cresce sozinha conforme a pessoa escreve (nada fica cortado).
+const observarTamanho = typeof ResizeObserver === 'function'
+  ? new ResizeObserver((itens) => {
+    for (const it of itens) {
+      const t = it.target;
+      const largura = Math.round(it.contentRect.width);
+      if (largura && largura !== t._largura) { t._largura = largura; ajustarAltura(t); }
+    }
+  })
+  : null;
+
+function ajustarAltura(t) {
+  if (!t.isConnected || !t.offsetWidth) return;
+  t.style.height = 'auto';
+  t.style.height = (t.scrollHeight + 4) + 'px';
+}
+
+function textoQueCresce(atributos, valor) {
+  const t = el('textarea', { class: 'cresce', ...atributos }, valor || '');
+  t.addEventListener('input', () => ajustarAltura(t));
+  if (observarTamanho) observarTamanho.observe(t);
+  return t;
 }
 
 function gravar(chave, valor) {
@@ -610,13 +634,19 @@ function telaHoje() {
   const minhas = boas[dia] || ['', '', ''];
   const dicas = ['1. Algo bom de hoje, e por quê', '2. Algo bom que veio de uma pessoa', '3. Algo bom que eu fiz'];
   const campos = minhas.map((t, i) => {
-    const c = el('input', { type: 'text', value: t, 'aria-label': `Coisa boa ${i + 1}`, placeholder: dicas[i] });
+    const c = textoQueCresce({ 'aria-label': `Coisa boa ${i + 1}`, placeholder: dicas[i], rows: '1' }, t);
     c.addEventListener('input', () => {
       const todas = ler('boas', {});
       todas[dia] = campos.map((x) => x.value);
       gravar('boas', todas);
     });
     return c;
+  });
+  const escrita = textoQueCresce({ id: 'escrita', rows: '4', maxlength: '5000', placeholder: 'Escreva o que quiser sobre o seu dia: o que sentiu, o que aprendeu, o que ficou no coração.' }, ler('escrita', {})[dia] || '');
+  escrita.addEventListener('input', () => {
+    const todas = ler('escrita', {});
+    todas[dia] = escrita.value;
+    gravar('escrita', todas);
   });
   const amanha = el('input', { type: 'text', id: 'amanha', maxlength: '120', value: ler('amanha', {})[dia] || '', placeholder: 'Ex.: ligar para a minha irmã' });
   amanha.addEventListener('input', () => {
@@ -629,7 +659,10 @@ function telaHoje() {
     el('h2', {}, 'Três coisas boas e desejar o bem'),
     el('p', {}, 'Lembre três coisas boas do dia e por que aconteceram. Escolha uma e fique um minuto com ela, saboreando. Depois deseje o bem a quem você ama, e a você.'),
     ...campos,
-    el('p', { class: 'suave' }, 'O que você escreve aqui fica só no seu celular.'),
+    el('label', { for: 'escrita' }, 'Escrita livre'),
+    el('p', { class: 'suave dica-campo' }, 'Um espaço só seu. Escreva à vontade, sem regra e sem tamanho certo.'),
+    escrita,
+    el('p', { class: 'suave' }, 'Tudo o que você escreve aqui fica só no seu celular.'),
     el('p', { class: 'frase' }, 'Que você esteja em paz. Que você tenha saúde. Que você seja feliz.'),
     el('p', { class: 'frase' }, 'Que eu esteja em paz. Que eu tenha saúde. Que eu seja feliz.'),
     el('p', { class: 'frase' }, 'Que todos os seres sejam felizes.'),

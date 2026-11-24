@@ -111,6 +111,9 @@ input[type="text"], input[type="tel"], textarea, select {
   padding: 12px; min-height: 52px;
 }
 textarea { min-height: 96px; resize: vertical; }
+textarea.cresce { min-height: 52px; resize: none; overflow: hidden; line-height: 1.4; display: block; margin-bottom: 8px; }
+textarea#escrita { min-height: 150px; }
+.dica-campo { margin: 0 0 8px; }
 .consentimento { display: flex; gap: 12px; align-items: flex-start; font-weight: 400; }
 .consentimento input { width: 26px; height: 26px; flex: 0 0 26px; margin-top: 3px; accent-color: var(--verde); }
 
