@@ -1027,7 +1027,7 @@ function fazerRespiro(segundos) {
 }
 
 // Suspiro fisiológico guiado, com toques suaves de kalimba marcando cada fase e um fundo
-// claro de Sol maior que respira em volume (trilhas geradas por ferramentas/gerar-guia.py, com os
+// de Sol maior bem baixinho, ao longe (trilhas geradas por ferramentas/gerar-guia.py, com os
 // MESMOS tempos de CONDUCAO). A tela segue o relógio da trilha; sem som, segue o relógio
 // do celular. No fim, um tempo para a pessoa se observar e reconhecer a mudança.
 const CONDUCAO = {

@@ -1,5 +1,5 @@
 # Gera as trilhas do suspiro fisiológico guiado do app: toques suaves de kalimba no
-# ritmo de cada fase, sobre um acorde claro de Sol maior que respira em volume, mais
+# ritmo de cada fase, sobre um acorde de Sol maior bem baixinho, ao longe, mais
 # o tempo final de observação. Substitui a taça tibetana (24/11/2026).
 #
 #   1ª inspiração : um toque só, longo e calmo (Sol4), enquanto o fundo cresce
@@ -16,7 +16,7 @@
 # A tela do app lê o mesmo roteiro (CONDUCAO em app.js): se mudar um tempo aqui,
 # mude lá também.
 import numpy as np, subprocess, tempfile, os, wave
-from scipy.signal import butter, sosfilt
+from scipy.signal import butter, sosfilt, fftconvolve
 
 SR = 44100
 ENTRADA = 4.0            # sente-se, deixe o corpo pesar
@@ -48,16 +48,20 @@ def toque(f, dur, a=1.0):
 
 
 def fundo_claro(b):
-    """Acorde aberto de Sol maior, afinação limpa (sem batimentos). Mais cheio quando o
-    ar entra, mais leve quando sai, com um sopro agudo e baixinho."""
+    """Fundo ao longe: acorde de Sol maior (Ré4, Sol4, Si4) sem grave, abafado e espalhado
+    por um eco suave, como se viesse de outra sala. Varia pouco com o ar, para não pulsar."""
     n = len(b); t = np.arange(n) / SR
-    base = np.zeros(n); brilho = np.zeros(n)
-    for f, a in ((G3, 0.45), (D4, 0.7), (G4, 0.8), (B4, 0.55), (D5, 0.35)):
-        base += a * np.sin(2 * np.pi * f * t)
-        brilho += a * 0.18 * np.sin(2 * np.pi * 2 * f * t)
-    s = (base + brilho * b) * (0.45 + 0.55 * b)
-    ar = hp(lp(np.random.default_rng(5).standard_normal(n), 4000), 900)
-    return s / np.max(np.abs(s)) + ar / np.std(ar) * (0.02 + 0.05 * b)
+    s = np.zeros(n)
+    for f, a in ((D4, 0.6), (G4, 0.8), (B4, 0.5)):
+        s += a * np.sin(2 * np.pi * f * t)
+    s = lp(s * (0.8 + 0.2 * b), 900)
+    # eco: resposta de sala de 3 s, ruído que se apaga devagar
+    k = np.arange(int(3.0 * SR)) / SR
+    ir = np.random.default_rng(2).standard_normal(len(k)) * np.exp(-k / 0.7)
+    ir = lp(ir, 1500)
+    s = 0.25 * s + fftconvolve(s, ir)[:n] / np.sqrt(np.sum(ir ** 2)) * 0.9
+    ar = hp(lp(np.random.default_rng(5).standard_normal(n), 2500), 600)
+    return s / np.max(np.abs(s)) + ar / np.std(ar) * 0.012
 
 
 def trilha(ciclos):
@@ -90,7 +94,7 @@ def trilha(ciclos):
     toques = out / np.max(np.abs(out))
     tt = np.arange(n) / SR
     fade = np.clip(tt / 2.0, 0, 1) * np.clip((total + 1 - tt) / 8, 0, 1)
-    mix = (toques + fundo_claro(b) * 0.18) * fade
+    mix = (toques + fundo_claro(b) * 0.07) * fade
     return mix / np.max(np.abs(mix)) * 0.8, total
 
 
