@@ -8,7 +8,12 @@ resumo: "Você segura tudo sozinho porque pedir ajuda parece incomodar? Os estud
 relacionados: sindrome-do-cuidador, como-ter-mais-paciencia
 ---
 
-> **Se você só tem 1 minuto, faça isto.** Pense numa tarefa que está pesando esta semana. Escreva um pedido em uma frase, com três partes: **quem**, **o que exatamente** e **quando**. Exemplo: "Mariana, você pode buscar a mãe na fisioterapia na quinta às cinco?". Antes, dê uma nota de 0 a 10 para o peso que você carrega hoje. Envie a mensagem. Dê a nota de novo.
+**Se você só tem 1 minuto, faça isto:**
+
+1. De 0 a 10, quanto pesa o que você está carregando hoje? Guarde esse número.
+2. Escolha uma tarefa que você poderia passar para alguém nesta semana.
+3. Mande uma mensagem pedindo, com nome, tarefa, dia e hora. Por exemplo: "Mariana, você pode buscar a mãe na fisioterapia na quinta, às cinco?"
+4. Depois de enviar, dê a nota de novo.
 
 É quinta-feira, sete da noite. A pia está cheia, o relatório ainda não saiu, a consulta do pai é amanhã cedo e ninguém sabe quem vai levar. Seu irmão mandou um "qualquer coisa me avisa" no grupo da família na semana passada. Você leu, agradeceu e não avisou. Mais fácil fazer sozinho do que explicar.
 
