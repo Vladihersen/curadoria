@@ -10,7 +10,7 @@
 //   VERSAO_AUDIOS muda. Trocou um áudio? Suba VERSAO_AUDIOS (a1 → a2) e publique.
 
 const VERSAO = '__VERSAO__';
-const VERSAO_AUDIOS = 'a9'; // a9 (24/11): suspiro guiado com som liso e passarinhos no lugar da taça
+const VERSAO_AUDIOS = 'a9'; // a9 (24/11): suspiro guiado com um som por fase e passarinhos no lugar da taça
 const CACHE = 'bemviver-app-' + VERSAO;
 const CACHE_AUDIOS = 'bemviver-audios-' + VERSAO_AUDIOS;
 

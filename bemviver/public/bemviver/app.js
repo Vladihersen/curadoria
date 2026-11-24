@@ -1026,8 +1026,8 @@ function fazerRespiro(segundos) {
   });
 }
 
-// Suspiro fisiológico guiado, com um som liso que cresce nas duas inspirações e se apaga
-// na expiração, e passarinhos ao longe (trilhas geradas por ferramentas/gerar-guia.py, com os
+// Suspiro fisiológico guiado, com um som próprio para cada fase (inspira, inspira de novo,
+// solta) e passarinhos ao longe (trilhas geradas por ferramentas/gerar-guia.py, com os
 // MESMOS tempos de CONDUCAO). A tela segue o relógio da trilha; sem som, segue o relógio
 // do celular. No fim, um tempo para a pessoa se observar e reconhecer a mudança.
 const CONDUCAO = {
