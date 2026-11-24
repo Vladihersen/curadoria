@@ -327,12 +327,27 @@ function controlesTelaBloqueada(player, titulo) {
 // Player que dá lugar a um aviso enquanto o áudio não existir.
 // Só um áudio toca por vez; enquanto toca, a tela fica acesa.
 const audioExiste = {};
+
+// 24/11: no iPhone a caminhada parava antes do fim na 2ª e 3ª vez. O player pede o
+// arquivo aos pedaços enquanto toca; com o celular bloqueado ou no bolso, o iPhone
+// congela o app e o pedaço seguinte não chega, então o som para. Agora o áudio
+// inteiro vai para a memória assim que a tela abre, e o player toca dessa cópia:
+// não precisa pedir mais nada no meio. Se a cópia não ficar pronta a tempo, toca
+// do jeito antigo.
+const audioNaMemoria = {};
+function prepararNaMemoria(src) {
+  audioNaMemoria[src] ??= fetch(src)
+    .then((r) => (r.ok ? r.blob() : null))
+    .then((b) => (b && b.size ? URL.createObjectURL(b) : null))
+    .catch(() => null);
+  audioNaMemoria[src].then((url) => { audioNaMemoria[src + '#pronto'] = url; });
+}
 let playerAtivo = null;
 function audio(src, titulo = 'Método Bem Viver') {
   const caixa = el('div');
   const emBreve = () => caixa.replaceChildren(el('p', { class: 'suave' }, 'Este áudio chega em breve.'));
   const tocar = () => {
-    const player = el('audio', { controls: true, preload: 'none', src });
+    const player = el('audio', { controls: true, preload: 'auto', src: audioNaMemoria[src + '#pronto'] || src });
     player.addEventListener('play', () => {
       if (playerAtivo && playerAtivo !== player) playerAtivo.pause();
       playerAtivo = player;
@@ -356,6 +371,13 @@ function audio(src, titulo = 'Método Bem Viver') {
   caixa.replaceChildren(botao);
   audioExiste[src] ??= fetch(src, { method: 'HEAD' }).then((r) => r.ok).catch(() => null);
   audioExiste[src].then((ok) => { if (ok === false) emBreve(); });
+  // Só guarda na memória o áudio da tela que a pessoa abriu (não todos de uma vez).
+  if ('IntersectionObserver' in window) {
+    const olho = new IntersectionObserver((vistos) => {
+      if (vistos.some((v) => v.isIntersecting)) { olho.disconnect(); prepararNaMemoria(src); }
+    });
+    olho.observe(botao);
+  }
   return caixa;
 }
 
