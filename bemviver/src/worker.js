@@ -20,6 +20,7 @@ const SCHEMA = [
      vida INTEGER NOT NULL DEFAULT 0,
      contato INTEGER NOT NULL DEFAULT 0,
      noite INTEGER NOT NULL DEFAULT 0,
+     encontro INTEGER NOT NULL DEFAULT 0,
      paz INTEGER,
      atualizado_em TEXT NOT NULL,
      PRIMARY KEY (participante, dia)
@@ -50,6 +51,9 @@ let schemaPronto = false;
 async function garantirTabelas(db) {
   if (schemaPronto) return;
   await db.batch(SCHEMA.map((sql) => db.prepare(sql)));
+  // 26/11: coluna nova "encontro" (Encontro de Verdade marcado no dia). A tabela já existe
+  // no banco do piloto, então a coluna entra por ALTER TABLE; se já existir, o erro é ignorado.
+  try { await db.prepare('ALTER TABLE dia_registros ADD COLUMN encontro INTEGER NOT NULL DEFAULT 0').run(); } catch { /* já existe */ }
   schemaPronto = true;
 }
 
@@ -154,13 +158,13 @@ async function registro(request, env) {
   const movimento = inteiro(c.movimento, 0, 3) ?? 0;
   const paz = c.paz === true ? 1 : c.paz === false ? 0 : null;
   await env.DB.prepare(
-    `INSERT INTO dia_registros (participante, dia, respiros, tensao_antes, tensao_depois, movimento, vida, contato, noite, paz, atualizado_em)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO dia_registros (participante, dia, respiros, tensao_antes, tensao_depois, movimento, vida, contato, noite, encontro, paz, atualizado_em)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (participante, dia) DO UPDATE SET
        respiros = excluded.respiros, tensao_antes = excluded.tensao_antes, tensao_depois = excluded.tensao_depois,
        movimento = excluded.movimento, vida = excluded.vida, contato = excluded.contato,
-       noite = excluded.noite, paz = excluded.paz, atualizado_em = excluded.atualizado_em`
-  ).bind(c.id, c.dia, respiros, antes, depois, movimento, c.vida ? 1 : 0, c.contato ? 1 : 0, c.noite ? 1 : 0, paz,
+       noite = excluded.noite, encontro = excluded.encontro, paz = excluded.paz, atualizado_em = excluded.atualizado_em`
+  ).bind(c.id, c.dia, respiros, antes, depois, movimento, c.vida ? 1 : 0, c.contato ? 1 : 0, c.noite ? 1 : 0, c.encontro ? 1 : 0, paz,
     new Date().toISOString()).run();
   return json({ ok: true });
 }
@@ -233,7 +237,7 @@ export async function mural(request, env, hoje = hojeBrasilia()) {
   if (!(await participanteExiste(env.DB, c.id))) return json({ erro: 'participante desconhecida' }, 404);
   const { results } = await env.DB.prepare(
     `SELECT dia, COUNT(DISTINCT participante) AS n FROM dia_registros
-     WHERE dia >= ? AND dia <= ? AND respiros + movimento + vida + contato + noite > 0
+     WHERE dia >= ? AND dia <= ? AND respiros + movimento + vida + contato + noite + encontro > 0
      GROUP BY dia`
   ).bind(INICIO_PILOTO, hoje < FIM_PILOTO ? hoje : FIM_PILOTO).all();
   return json(resumoMural(results, hoje));
@@ -263,15 +267,15 @@ async function dadosPainel(db) {
               ROUND(SUM(tensao_antes * respiros) / NULLIF(SUM(CASE WHEN tensao_antes IS NULL THEN 0 ELSE respiros END), 0), 1) AS tensao_antes,
               ROUND(SUM(tensao_depois * respiros) / NULLIF(SUM(CASE WHEN tensao_depois IS NULL THEN 0 ELSE respiros END), 0), 1) AS tensao_depois,
               SUM(CASE WHEN movimento > 0 THEN 1 ELSE 0 END) AS dias_movimento,
-              SUM(vida) AS dias_vida, SUM(contato) AS dias_contato, SUM(noite) AS noites,
+              SUM(vida) AS dias_vida, SUM(contato) AS dias_contato, SUM(noite) AS noites, SUM(encontro) AS encontros,
               SUM(CASE WHEN paz = 1 THEN 1 ELSE 0 END) AS dias_paz_marcados,
-              SUM(CASE WHEN respiros + movimento + vida + contato + noite > 0 THEN 1 ELSE 0 END) AS dias_praticados
+              SUM(CASE WHEN respiros + movimento + vida + contato + noite + encontro > 0 THEN 1 ELSE 0 END) AS dias_praticados
        FROM dia_registros GROUP BY participante`
     ),
     db.prepare('SELECT * FROM dia_semanas ORDER BY domingo'),
     db.prepare(
       `SELECT participante, dia FROM dia_registros
-       WHERE dia >= ? AND dia <= ? AND respiros + movimento + vida + contato + noite > 0`
+       WHERE dia >= ? AND dia <= ? AND respiros + movimento + vida + contato + noite + encontro > 0`
     ).bind(INICIO_PILOTO, FIM_PILOTO),
     db.prepare('SELECT nome, whatsapp FROM dia_inscritas ORDER BY nome'),
   ]);
@@ -358,7 +362,7 @@ function htmlDiaADia(d, chave) {
   const listaSumidas = sumidas.map((x) => `<li><b>${linkFicha(x.p, chave)}</b> · ${linkZap(x.whatsapp)} · ${x.ultimo ? `última prática marcada em ${esc(x.ultimo.slice(8, 10) + '/' + x.ultimo.slice(5, 7))}` : 'ainda não marcou nenhuma prática'}</li>`).join('');
   return `<h2>Dia a dia</h2>
 ${resumo}
-<p>✓ = marcou ao menos uma prática no app naquele dia (suspiro, movimento, a coisa que dá vida, gesto de carinho ou noite). Sem ✓ não quer dizer que não praticou: a pessoa pode ter praticado sem tocar no botão. Toque no nome para ver a ficha da pessoa.</p>
+<p>✓ = marcou ao menos uma prática no app naquele dia (suspiro, movimento, a coisa que dá vida, gesto de carinho, noite ou Encontro de Verdade). Sem ✓ não quer dizer que não praticou: a pessoa pode ter praticado sem tocar no botão. Toque no nome para ver a ficha da pessoa.</p>
 ${d.dias.length ? `<div class="tab"><table class="grade"><thead><tr><th class="nome">Nome</th>${cab}<th>Total</th></tr></thead>
 <tbody>${linhas || `<tr><td colspan="${d.dias.length + 2}">Ninguém entrou ainda.</td></tr>`}</tbody></table></div>` : ''}
 ${sumidas.length || (d.dias.length >= 4 && hojeNoPiloto) ? `<h3>Sem marcar nada nos últimos 3 dias</h3>
@@ -372,7 +376,7 @@ ${d.inscritas.length
 
 function csv(d) {
   const cab = ['nome', 'whatsapp', 'entrou_em', 'nota_inicial', 'dias_paz_inicial', 'dias_praticados', 'respiros', 'tensao_antes_media',
-    'tensao_depois_media', 'dias_movimento', 'dias_vida', 'dias_contato', 'noites', 'dias_paz_marcados',
+    'tensao_depois_media', 'dias_movimento', 'dias_vida', 'dias_contato', 'noites', 'encontros_marcados', 'dias_paz_marcados',
     ...d.dias.map((dia) => `pratica_${dia}`),
     ...d.domingos.flatMap((dom) => [`nota_${dom}`, `dias_paz_${dom}`, `encontro_${dom}`, `encontro_com_${dom}`, `efeito_ruim_${dom}`, `efeito_texto_${dom}`, `duvida_${dom}`, `espaco_livre_${dom}`])];
   const linhas = d.participantes.map((p) => {
@@ -380,7 +384,7 @@ function csv(d) {
     const sem = d.semanas[p.id] || {};
     return [p.nome, p.whatsapp, p.criado_em.slice(0, 10), p.nota_inicial, p.dias_paz_inicial ?? '', r.dias_praticados ?? 0,
       r.respiros ?? 0, r.tensao_antes ?? '', r.tensao_depois ?? '', r.dias_movimento ?? 0, r.dias_vida ?? 0,
-      r.dias_contato ?? 0, r.noites ?? 0, r.dias_paz_marcados ?? 0,
+      r.dias_contato ?? 0, r.noites ?? 0, r.encontros ?? 0, r.dias_paz_marcados ?? 0,
       ...d.dias.map((dia) => (d.praticas[p.id]?.has(dia) ? 'sim' : '')),
       ...d.domingos.flatMap((dom) => {
         const w = sem[dom] || {};
@@ -401,7 +405,7 @@ function htmlPainel(d, chave) {
       if (w.efeito_ruim) alertas.push({ nome: p.nome, whatsapp: p.whatsapp, dom, texto: w.efeito_texto });
       return `<td>${w.nota ?? '–'} · ${w.dias_paz ?? '–'}d${w.efeito_ruim ? ' <b class="alerta">!</b>' : ''}</td>`;
     }).join('');
-    return `<tr><td>${linkFicha(p, chave)}</td><td>${linkZap(p.whatsapp)}</td><td>${p.nota_inicial ?? '–'} · ${p.dias_paz_inicial ?? '–'}d</td>${celulas}<td>${r.dias_praticados ?? 0}</td><td>${r.respiros ? `${r.respiros} · ${r.tensao_antes ?? '–'} → ${r.tensao_depois ?? '–'}` : '–'}</td><td>${r.dias_movimento ?? 0} · ${r.dias_vida ?? 0} · ${r.dias_contato ?? 0} · ${r.noites ?? 0}</td></tr>`;
+    return `<tr><td>${linkFicha(p, chave)}</td><td>${linkZap(p.whatsapp)}</td><td>${p.nota_inicial ?? '–'} · ${p.dias_paz_inicial ?? '–'}d</td>${celulas}<td>${r.dias_praticados ?? 0}</td><td>${r.respiros ? `${r.respiros} · ${r.tensao_antes ?? '–'} → ${r.tensao_depois ?? '–'}` : '–'}</td><td>${r.dias_movimento ?? 0} · ${r.dias_vida ?? 0} · ${r.dias_contato ?? 0} · ${r.noites ?? 0} · ${r.encontros ?? 0}</td></tr>`;
   }).join('');
   const duvidas = d.participantes.flatMap((p) => Object.values(d.semanas[p.id] || {})
     .filter((w) => w.duvida).map((w) => `<li><b>${esc(p.nome)}</b> (${esc(w.domingo)}): ${esc(w.duvida)}</li>`)).join('');
@@ -430,7 +434,7 @@ a.botao{display:inline-block;margin-top:8px;padding:10px 14px;background:#5b7f5a
 ${htmlDiaADia(d, chave)}
 <h2>Semanas e totais</h2>
 <div class="tab"><table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Início (nota · dias de paz)</th>
-${d.domingos.map((dom) => `<th>${esc(dom.slice(8, 10) + '/' + dom.slice(5, 7))}</th>`).join('')}<th>Dias praticados</th><th>Suspiros · tensão antes → depois</th><th>Dias: movimento · vida · gesto de carinho · noite</th></tr></thead>
+${d.domingos.map((dom) => `<th>${esc(dom.slice(8, 10) + '/' + dom.slice(5, 7))}</th>`).join('')}<th>Dias praticados</th><th>Suspiros · tensão antes → depois</th><th>Dias: movimento · vida · gesto de carinho · noite · encontro</th></tr></thead>
 <tbody>${linhas || '<tr><td colspan="6">Ninguém entrou ainda.</td></tr>'}</tbody></table></div>
 <h2>Relatos de efeito ruim</h2><ul>${listaAlertas || '<li>Nenhum.</li>'}</ul>
 <h2>Dúvidas</h2><ul>${duvidas || '<li>Nenhuma.</li>'}</ul>
@@ -519,10 +523,11 @@ function htmlFicha(f, chave) {
     if (x && x.vida) feito.push('✨ coisa que dá vida');
     if (x && x.contato) feito.push('💛 gesto de carinho');
     if (x && x.noite) feito.push('🌙 noite');
+    if (x && x.encontro) feito.push('🤝 Encontro de Verdade');
     const paz = x && x.paz === 1 ? 'sim' : x && x.paz === 0 ? 'não' : '–';
     return `<tr${dia === hojeBrasilia() ? ' class="hoje"' : ''}><td>${diaDaSemana(dia)} ${dm(dia)}</td><td>${feito.length ? feito.join('<br>') : '<span class="vazio">nada marcado</span>'}</td><td>${paz}</td></tr>`;
   }).join('');
-  const marcados = f.registros.filter((x) => x.dia >= INICIO_PILOTO && x.respiros + x.movimento + x.vida + x.contato + x.noite > 0).length;
+  const marcados = f.registros.filter((x) => x.dia >= INICIO_PILOTO && x.respiros + x.movimento + x.vida + x.contato + x.noite + x.encontro > 0).length;
   const evolucao = [`<tr><td>Cadastro (${dm(p.criado_em.slice(0, 10))})</td><td>${p.nota_inicial ?? '–'}</td><td>${p.dias_paz_inicial ?? '–'}</td><td></td></tr>`,
     ...f.semanas.map((w) => `<tr><td>Domingo ${dm(w.domingo)}</td><td>${w.nota ?? '–'}</td><td>${w.dias_paz ?? '–'}</td><td>${w.encontro ? `sim${w.encontro_com ? ` (${esc(w.encontro_com)})` : ''}` : 'não'}</td></tr>`)].join('');
   const textos = f.semanas.flatMap((w) => [
