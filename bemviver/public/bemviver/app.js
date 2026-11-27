@@ -1307,6 +1307,13 @@ function telaDomingo() {
       el('h2', {}, `Semana que termina em ${dataCurta(domingo)}`),
       calendario,
       el('p', { class: 'suave' }, `Você praticou em ${diasFeitos} de 7 dias. • prática · ☼ momento de paz`),
+      // 27/11 (pedido do Vladimir): o Encontro de Verdade marcado aparece no resumo da semana.
+      (() => {
+        const d = diasSemana.find((x) => x.reg && x.reg.encontro);
+        return d
+          ? el('p', { class: 'resultado' }, `🤝 Encontro de Verdade: feito em ${dataCurta(d.iso)} (${d.nome}).`)
+          : el('p', { class: 'suave' }, '🤝 Encontro de Verdade: ainda não marcado nesta semana.');
+      })(),
       tensao ? el('p', { class: 'resultado' }, `${respirosSemana.length === 1 ? 'Na vez em que você fez o suspiro fisiológico' : `Nas ${respirosSemana.length} vezes em que você fez o suspiro fisiológico`} nesta semana, sua tensão foi em média de ${virgula(tensao.antes)} para ${virgula(tensao.depois)}.`) : null,
       diasFeitos < 7 ? el('p', {}, 'Teve dia em branco? Tudo bem. Recomeçar sem culpa faz parte do método.') : null,
       el('label', {}, 'De 0 a 10, qual é a sua satisfação com a sua vida hoje?'),
