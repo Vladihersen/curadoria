@@ -1004,6 +1004,25 @@ function cartaoLembrete() {
 }
 
 
+// Cores da nota de tensão: 0 azul (calma) indo aos poucos até 10 vermelho
+// (tensão máxima), para o olhar entender o sentido sem ler. O número continua
+// em cada botão e o texto troca entre claro e escuro para manter o contraste.
+// Só muda a aparência: o valor gravado continua 0 = sem tensão, 10 = muita.
+const CORES_TENSAO = [
+  ['#1e5aa0', '#fff'], ['#2c6fb6', '#fff'], ['#3a78b8', '#fff'], ['#7ea8d6', '#1d1e1b'],
+  ['#b4cbe0', '#1d1e1b'], ['#e6dcc4', '#1d1e1b'], ['#f2c39a', '#1d1e1b'], ['#ec9a6c', '#1d1e1b'],
+  ['#df6e4a', '#1d1e1b'], ['#c8402c', '#fff'], ['#a8231b', '#fff'],
+];
+
+function escalaTensao(aoEscolher) {
+  const caixa = escala(0, 10, null, aoEscolher, 'tensao');
+  caixa.querySelectorAll('button').forEach((b, i) => {
+    b.style.setProperty('--cor', CORES_TENSAO[i][0]);
+    b.style.setProperty('--cor-texto', CORES_TENSAO[i][1]);
+  });
+  return caixa;
+}
+
 // Nota de tensão de 0 a 10, pedida antes e depois de cada respiro.
 function telaTensao(momento, aoEscolher) {
   abas.hidden = true;
@@ -1011,8 +1030,10 @@ function telaTensao(momento, aoEscolher) {
   mostrar(botaoInicio(() => irPara('hoje')), el('section', { class: 'cartao' },
     el('h2', {}, momento === 'antes' ? 'Como está a sua tensão agora?' : 'Como está a sua tensão agora, depois do suspiro?'),
     el('p', { class: 'suave' }, 'O primeiro número que vier é o certo.'),
-    escala(0, 10, null, aoEscolher),
-    el('div', { class: 'escala-rotulos' }, el('span', {}, '0 nenhuma'), el('span', {}, '10 muita')),
+    escalaTensao(aoEscolher),
+    el('div', { class: 'escala-rotulos tensao' },
+      el('span', { class: 'calma' }, '0 = calma, sem tensão'),
+      el('span', { class: 'tensa' }, '10 = tensão máxima')),
     el('button', { type: 'button', class: 'secundario', onclick: () => irPara('hoje') }, 'Voltar ao início'),
   ));
 }

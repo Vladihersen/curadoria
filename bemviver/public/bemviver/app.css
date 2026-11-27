@@ -99,6 +99,19 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 }
 .escala button[aria-pressed="true"] { background: var(--verde); border-color: var(--verde); color: #fff; }
 .escala-rotulos { display: flex; justify-content: space-between; font-size: .8rem; color: var(--suave); margin-top: 4px; }
+/* Nota de tensão do suspiro: cada botão com a sua cor (de azul a vermelho). */
+.escala.tensao button, .escala.tensao button[aria-pressed="true"] {
+  background: var(--cor); border-color: var(--cor); color: var(--cor-texto);
+  font-size: 1.15rem; font-weight: 700;
+}
+.escala.tensao button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--cartao), 0 0 0 6px var(--texto); }
+.escala-rotulos.tensao { font-size: .92rem; font-weight: 700; margin-top: 8px; gap: 12px; }
+.escala-rotulos.tensao .calma { color: #1e5aa0; }
+.escala-rotulos.tensao .tensa { color: #a8231b; text-align: right; }
+@media (prefers-color-scheme: dark) {
+  .escala-rotulos.tensao .calma { color: #8fb8e6; }
+  .escala-rotulos.tensao .tensa { color: #f2a097; }
+}
 
 .opcoes { display: flex; gap: 10px; }
 .opcoes button { margin-top: 8px; background: transparent; color: var(--texto); border-color: var(--linha); }
