@@ -734,7 +734,106 @@ function telaHoje() {
     itemMenu('🤝', 'Encontro de Verdade da semana', '', false, abrir(cEncontro, 'Encontro de Verdade')),
   ];
   if (ler('aberturaVista', 0) < semana) return mostrar(cFoco);
-  mostrar(cFoco, el('nav', { class: 'menu', 'aria-label': 'Práticas de hoje' }, ...itens), ...itensPreparo());
+  mostrar(cFoco, el('nav', { class: 'menu', 'aria-label': 'Práticas de hoje' }, ...itens),
+    el('nav', { class: 'menu', 'aria-label': 'Dias anteriores' },
+      itemMenu('📅', 'Meus dias anteriores', 'ver o que fiz em cada dia', false, () => telaMeusDias())),
+    ...itensPreparo());
+}
+
+// ---------- Meus dias: consultar os dias anteriores (só leitura) ----------
+// 27/11, pedido do Vladimir: tocar num dia do calendário e ver o que fez e o que
+// deixou de fazer. Não dá para marcar nem mudar nada de um dia passado: é só para olhar.
+// Tudo vem do que está guardado neste celular.
+
+const FIM_PILOTO = '2026-12-20';
+const NOMES_DIA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const NOMES_CURTOS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+
+function diaPorExtenso(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  return `${NOMES_DIA[d.getDay()]}, ${dataCurta(iso)}`;
+}
+
+function telaMeusDias() {
+  const regs = ler('registros', {});
+  const hj = hoje();
+  const semanas = [];
+  for (let s = 0; s < 4; s++) {
+    const dias = [];
+    for (let k = 0; k < 7; k++) {
+      const d = new Date(INICIO_PILOTO + 'T12:00:00');
+      d.setDate(d.getDate() + s * 7 + k);
+      dias.push(isoLocal(d));
+    }
+    if (dias[0] > hj) break; // semanas que ainda não começaram não aparecem
+    semanas.push(dias);
+  }
+  const cabecalho = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'].map((n) => el('span', { class: 'cab', 'aria-hidden': 'true' }, n));
+  const blocos = semanas.map((dias, i) => el('div', { class: 'semana-meus-dias' },
+    el('h3', {}, `Semana ${i + 1} · ${FOCOS[i].nome}`),
+    el('div', { class: 'calendario meus-dias', role: 'list' }, ...cabecalho.map((c) => c.cloneNode(true)),
+      ...dias.map((iso) => {
+        const reg = regs[iso] ? { ...REGISTRO_VAZIO, ...regs[iso] } : null;
+        const feito = reg && praticou(reg);
+        const paz = reg && reg.paz === true;
+        const nome = NOMES_CURTOS[new Date(iso + 'T12:00:00').getDay()];
+        if (iso > hj) return el('span', { role: 'listitem', class: 'dia futuro', 'aria-label': `${dataCurta(iso)}: ainda não chegou` }, el('span', {}, iso.slice(8, 10)), el('b', {}, ''));
+        return el('button', {
+          type: 'button', role: 'listitem',
+          class: 'dia' + (feito ? ' feito' : '') + (paz ? ' paz' : '') + (iso === hj ? ' hoje' : ''),
+          'aria-label': `${nome} ${dataCurta(iso)}: ${feito ? 'praticou' : 'sem prática marcada'}${paz ? ', com momento de paz' : ''}. Toque para ver.`,
+          onclick: () => telaUmDia(iso),
+        }, el('span', {}, iso.slice(8, 10)), el('b', {}, paz ? '☼' : feito ? '•' : ''));
+      })),
+  ));
+  subtela('Meus dias', [
+    el('section', { class: 'cartao' },
+      el('h2', {}, 'Toque num dia para ver'),
+      el('p', {}, 'Veja o que você fez e o que ficou para trás em cada dia do piloto. É só para olhar: os dias que passaram não mudam.'),
+      ...blocos,
+      el('p', { class: 'suave' }, '• prática marcada · ☼ momento de paz'),
+      el('p', { class: 'suave' }, 'Mostra o que foi marcado neste celular.'),
+    ),
+  ]);
+}
+
+function telaUmDia(iso) {
+  const regs = ler('registros', {});
+  const reg = { ...REGISTRO_VAZIO, ...(regs[iso] || {}) };
+  const hj = iso === hoje();
+  const m = mediaTensao(reg.respiros);
+  const virgula = (n) => n.toFixed(1).replace('.', ',');
+  const linha = (feito, texto, detalhe) => el('li', { class: feito ? 'fiz' : 'nao-fiz' },
+    el('span', { class: 'marca-dia', 'aria-hidden': 'true' }, feito ? '✓' : '○'),
+    el('span', {}, el('span', { class: 'sr' }, feito ? 'Feito: ' : 'Não marcado: '), texto, detalhe ? el('small', {}, detalhe) : null));
+  const itens = [
+    linha(reg.respiros.length > 0, 'Suspiro fisiológico',
+      m ? `${reg.respiros.length} ${reg.respiros.length === 1 ? 'vez' : 'vezes'}, tensão de ${virgula(m.antes)} para ${virgula(m.depois)}` : ''),
+    linha(reg.movimento > 0, 'Três minutos de movimento', reg.movimento ? `${reg.movimento} de 3 minutos` : ''),
+    linha(!!reg.vida, 'A coisa que me dá vida'),
+    linha(!!reg.contato, 'Um gesto de carinho'),
+    linha(!!reg.noite, 'Prática da noite'),
+  ];
+  if (reg.encontro) itens.push(linha(true, 'Encontro de Verdade'));
+  const paz = reg.paz === true ? 'Sim' : reg.paz === false ? 'Não' : 'não respondido';
+  const boas = (ler('boas', {})[iso] || []).map((t) => (t || '').trim()).filter(Boolean);
+  const escrita = (ler('escrita', {})[iso] || '').trim();
+  const amanha = (ler('amanha', {})[iso] || '').trim();
+  const escritos = [];
+  if (boas.length) escritos.push(el('h3', {}, 'Três coisas boas'), el('ol', { class: 'texto-dia' }, ...boas.map((t) => el('li', {}, t))));
+  if (escrita) escritos.push(el('h3', {}, 'Escrita livre'), el('p', { class: 'texto-dia' }, escrita));
+  if (amanha) escritos.push(el('h3', {}, 'Para o dia seguinte, a coisa que daria vida'), el('p', { class: 'texto-dia' }, amanha));
+  subtela(diaPorExtenso(iso), [
+    el('section', { class: 'cartao' + (praticou(reg) ? ' feito' : '') },
+      el('h2', {}, hj ? 'Hoje, até agora' : 'O que você fez e o que ficou'),
+      el('ul', { class: 'lista-dia' }, ...itens),
+      el('p', {}, el('b', {}, 'Momento de paz: '), paz),
+      praticou(reg) ? null : el('p', {}, 'Nada marcado neste dia. Tudo bem: recomeçar sem culpa faz parte do método.'),
+      hj ? el('p', { class: 'suave' }, 'Para marcar o dia de hoje, volte ao início.') : el('p', { class: 'suave' }, 'Só para olhar: os dias que passaram não mudam.'),
+    ),
+    escritos.length ? el('section', { class: 'cartao' }, ...escritos, el('p', { class: 'suave' }, 'O que você escreveu fica só no seu celular.')) : null,
+    el('button', { type: 'button', class: 'secundario', onclick: () => telaMeusDias() }, '📅 Ver outro dia'),
+  ].filter(Boolean));
 }
 
 // ---------- Navegação: lista de botões e uma coisa por tela ----------
