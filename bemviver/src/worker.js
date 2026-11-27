@@ -191,8 +191,8 @@ async function semana(request, env) {
 // Cada participante que marca ao menos uma prática num dia planta uma flor naquele dia
 // (a mesma regra do "✓" do painel). O app só recebe totais da turma: nunca nomes,
 // nunca quem praticou ou deixou de praticar, nunca o total de cadastradas (o "de 16"
-// convida a contar quem faltou). O jardim é cumulativo: cada semana do piloto ganha um
-// canteiro novo, com as flores do tema da semana, e nada é apagado.
+// convida a contar quem faltou). O jardim é cumulativo: as flores de todas as semanas se
+// misturam nos mesmos 9 canteiros (o desenho fica no app), e nada é apagado.
 
 // Abaixo deste número, o total de hoje não aparece: de manhã o número é sempre baixo,
 // e "1 pessoa" desanima em vez de animar.
