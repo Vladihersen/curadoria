@@ -599,7 +599,7 @@ function telaHoje() {
     m ? el('p', { class: 'resultado' }, `Hoje: ${reg.respiros.length} ${reg.respiros.length === 1 ? 'vez' : 'vezes'}, tensão média de ${m.antes.toFixed(1).replace('.', ',')} para ${m.depois.toFixed(1).replace('.', ',')}.`) : null,
     el('button', { type: 'button', onclick: () => fazerRespiro(60) }, 'Começar: 1 minuto'),
     el('button', { type: 'button', class: 'secundario', onclick: () => fazerRespiro(300) }, 'Começar: 5 minutos'),
-    el('details', {}, el('summary', {}, 'Prefere ser guiado pela voz do Vladimir?'), audio(AUDIOS.respiro1, '1 minuto com o Vladimir'), audio(AUDIOS.respiro5, '5 minutos com o Vladimir')),
+    opcaoVoz(),
   );
 
   const passos = el('div', { class: 'pausas', role: 'group', 'aria-label': 'Minutos de movimento hoje' });
@@ -824,7 +824,7 @@ function telaPreparacao() {
     el('p', {}, 'Dê uma nota para a sua tensão, faça o suspiro e dê a nota de novo. Há duas versões: 1 minuto, para a hora do aperto, e 5 minutos, para quando houver tempo.'),
     el('button', { type: 'button', onclick: () => { gravar('experimentou', true); fazerRespiro(60); } }, 'Começar: 1 minuto'),
     el('button', { type: 'button', class: 'secundario', onclick: () => { gravar('experimentou', true); fazerRespiro(300); } }, 'Começar: 5 minutos'),
-    el('details', {}, el('summary', {}, 'Prefere ser guiado pela voz do Vladimir?'), audio(AUDIOS.respiro1, '1 minuto com o Vladimir'), audio(AUDIOS.respiro5, '5 minutos com o Vladimir')),
+    opcaoVoz(() => gravar('experimentou', true)),
   );
   const caminhada = el('section', { class: 'cartao' },
     el('h2', {}, 'Experimente a caminhada de 1 minuto'),
@@ -1038,9 +1038,11 @@ function telaTensao(momento, aoEscolher) {
   ));
 }
 
-function fazerRespiro(segundos) {
+// Os dois jeitos de fazer o suspiro (som da taça ou voz do Vladimir) passam pela
+// mesma nota de tensão antes e depois, e gravam do mesmo jeito.
+function fazerRespiro(segundos, comVoz = false) {
   telaTensao('antes', (antes) => {
-    telaPausa(segundos, () => {
+    (comVoz ? telaPausaVoz : telaPausa)(segundos, () => {
       telaTensao('depois', (depois) => {
         if (!antesDoInicio()) { // antes de 23/11 é só experiência: não entra nos resultados
           const dia = hoje();
@@ -1173,6 +1175,52 @@ function telaPausa(segundos, aoTerminar) {
   controlesTelaBloqueada(guia, titulo.textContent);
   guia.play().then(() => { tocando = true; }).catch(() => { tocando = false; }); // sem som, a tela segue sozinha
   intervalo = setInterval(atualizar, 100);
+}
+
+// Escolha da voz do Vladimir, dentro do cartão do suspiro. Leva à mesma nota de
+// tensão antes e depois do som da taça (antes, o áudio tocava solto e a nota não aparecia).
+function opcaoVoz(antesDeComecar = () => {}) {
+  const comecar = (seg) => () => { antesDeComecar(); fazerRespiro(seg, true); };
+  return el('details', {}, el('summary', {}, 'Prefere ser guiado pela voz do Vladimir?'),
+    el('p', { class: 'suave' }, 'Também com a nota da tensão antes e depois.'),
+    el('button', { type: 'button', class: 'ouvir', onclick: comecar(60) }, '▶  1 minuto com o Vladimir'),
+    el('button', { type: 'button', class: 'ouvir', onclick: comecar(300) }, '▶  5 minutos com o Vladimir'));
+}
+
+// Suspiro guiado pela voz do Vladimir: o áudio começa sozinho e, quando a pessoa
+// termina, um botão grande leva à nota de depois.
+function telaPausaVoz(segundos, aoTerminar) {
+  abas.hidden = true;
+  const cinco = segundos >= 300;
+  titulo.textContent = cinco ? 'Suspiro fisiológico, 5 minutos' : 'Suspiro fisiológico, 1 minuto';
+  const fase = el('p', { class: 'fase', 'aria-live': 'polite' }, 'Siga a voz do Vladimir. Se quiser, feche os olhos.');
+  const aviso = el('p', { class: 'suave' }, 'A respiração é suave, nunca forçada. Se sentir tontura, pare, volte a respirar normal e, se estiver de pé, sente-se. Nunca pratique dirigindo.');
+  const player = el('audio', { controls: true, preload: 'auto', src: cinco ? AUDIOS.respiro5 : AUDIOS.respiro1 });
+  let ativo = true;
+  const terminar = () => {
+    if (!ativo) return;
+    ativo = false;
+    player.pause();
+    manterTelaAcesa('pausa', false);
+    aoTerminar();
+  };
+  const botao = el('button', { type: 'button', onclick: terminar }, 'Terminei: dar a nota de agora');
+  // Se o áudio não tocar (sem internet, por exemplo), o suspiro segue com a taça.
+  const semAudio = el('div', { hidden: true },
+    el('p', { class: 'erro' }, 'Não consegui tocar a voz agora. Você pode fazer o suspiro com o som da taça.'),
+    el('button', { type: 'button', class: 'secundario', onclick: () => { ativo = false; telaPausa(segundos, aoTerminar); } }, 'Fazer com o som da taça'));
+  player.addEventListener('error', () => { semAudio.hidden = false; });
+  player.addEventListener('ended', () => {
+    manterTelaAcesa('pausa', false);
+    fase.textContent = 'Agora dê a sua nota de novo e veja o que mudou.';
+  });
+
+  mostrar(botaoInicio(() => { ativo = false; irPara('hoje'); }),
+    el('section', { class: 'cartao guia' }, fase, player, semAudio, aviso, botao));
+  manterTelaAcesa('pausa', true);
+  playerAtivo = player; // se a pessoa sair da tela, a voz para junto
+  controlesTelaBloqueada(player, cinco ? '5 minutos com o Vladimir' : '1 minuto com o Vladimir');
+  player.play().catch(() => {}); // se o celular não deixar tocar sozinho, a pessoa toca no play
 }
 
 // ---------- Domingo ----------
