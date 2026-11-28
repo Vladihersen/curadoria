@@ -298,3 +298,22 @@ details[open] > summary::after { content: ' ▴'; }
 .jardim .dica-mini { margin: 6px 0 14px; font-size: .85rem; }
 .jardim .legenda-jardim { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 14px 0 4px; font-size: .9rem; color: var(--suave); }
 .jardim .legenda-jardim span { display: inline-flex; align-items: center; gap: 4px; }
+
+/* Meus dias: calendário do piloto e o resumo de um dia (só leitura) */
+.semana-meus-dias h3 { margin: 16px 0 4px; }
+.calendario.meus-dias .cab { text-align: center; font-size: .8rem; color: var(--suave); }
+.calendario.meus-dias button.dia {
+  width: auto; margin: 0; padding: 0; font: inherit; font-size: 1rem; font-weight: 700;
+  background: var(--cartao); color: var(--texto); cursor: pointer;
+}
+.calendario.meus-dias button.dia.feito { background: var(--verde-claro); }
+.calendario.meus-dias .dia.hoje { outline: 3px solid var(--verde-escuro); outline-offset: 1px; }
+.calendario.meus-dias .dia.futuro { opacity: .45; border-style: dashed; }
+.lista-dia { list-style: none; padding: 0; margin: 8px 0 14px; }
+.lista-dia li { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--linha); font-size: 1.05rem; }
+.lista-dia li small { display: block; color: var(--suave); font-size: .9rem; }
+.lista-dia .marca-dia { font-size: 1.3rem; font-weight: 700; min-width: 1.4em; text-align: center; }
+.lista-dia .fiz .marca-dia { color: var(--verde-escuro); }
+.lista-dia .nao-fiz { color: var(--suave); }
+.texto-dia { white-space: pre-wrap; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
