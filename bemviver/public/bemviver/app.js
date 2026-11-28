@@ -611,7 +611,7 @@ function telaHoje() {
     m ? el('p', { class: 'resultado' }, `Hoje: ${reg.respiros.length} ${reg.respiros.length === 1 ? 'vez' : 'vezes'}, tensão média de ${m.antes.toFixed(1).replace('.', ',')} para ${m.depois.toFixed(1).replace('.', ',')}.`) : null,
     el('button', { type: 'button', onclick: () => fazerRespiro(60) }, 'Começar: 1 minuto'),
     el('button', { type: 'button', class: 'secundario', onclick: () => fazerRespiro(300) }, 'Começar: 5 minutos'),
-    el('details', {}, el('summary', {}, 'Prefere ser guiado pela voz do Vladimir?'), audio(AUDIOS.respiro1, '1 minuto com o Vladimir'), audio(AUDIOS.respiro5, '5 minutos com o Vladimir')),
+    opcaoVoz(),
   );
 
   const passos = el('div', { class: 'pausas', role: 'group', 'aria-label': 'Minutos de movimento hoje' });
@@ -857,7 +857,7 @@ function telaPreparacao() {
     el('p', {}, 'Dê uma nota para a sua tensão, faça o suspiro e dê a nota de novo. Há duas versões: 1 minuto, para a hora do aperto, e 5 minutos, para quando houver tempo.'),
     el('button', { type: 'button', onclick: () => { gravar('experimentou', true); fazerRespiro(60); } }, 'Começar: 1 minuto'),
     el('button', { type: 'button', class: 'secundario', onclick: () => { gravar('experimentou', true); fazerRespiro(300); } }, 'Começar: 5 minutos'),
-    el('details', {}, el('summary', {}, 'Prefere ser guiado pela voz do Vladimir?'), audio(AUDIOS.respiro1, '1 minuto com o Vladimir'), audio(AUDIOS.respiro5, '5 minutos com o Vladimir')),
+    opcaoVoz(() => gravar('experimentou', true)),
   );
   const caminhada = el('section', { class: 'cartao' },
     el('h2', {}, 'Experimente a caminhada de 1 minuto'),
@@ -1037,6 +1037,25 @@ function cartaoLembrete() {
 }
 
 
+// Cores da nota de tensão: 0 azul (calma) indo aos poucos até 10 vermelho
+// (tensão máxima), para o olhar entender o sentido sem ler. O número continua
+// em cada botão e o texto troca entre claro e escuro para manter o contraste.
+// Só muda a aparência: o valor gravado continua 0 = sem tensão, 10 = muita.
+const CORES_TENSAO = [
+  ['#1e5aa0', '#fff'], ['#2c6fb6', '#fff'], ['#3a78b8', '#fff'], ['#7ea8d6', '#1d1e1b'],
+  ['#b4cbe0', '#1d1e1b'], ['#e6dcc4', '#1d1e1b'], ['#f2c39a', '#1d1e1b'], ['#ec9a6c', '#1d1e1b'],
+  ['#df6e4a', '#1d1e1b'], ['#c8402c', '#fff'], ['#a8231b', '#fff'],
+];
+
+function escalaTensao(aoEscolher) {
+  const caixa = escala(0, 10, null, aoEscolher, 'tensao');
+  caixa.querySelectorAll('button').forEach((b, i) => {
+    b.style.setProperty('--cor', CORES_TENSAO[i][0]);
+    b.style.setProperty('--cor-texto', CORES_TENSAO[i][1]);
+  });
+  return caixa;
+}
+
 // Nota de tensão de 0 a 10, pedida antes e depois de cada respiro.
 function telaTensao(momento, aoEscolher) {
   abas.hidden = true;
@@ -1044,15 +1063,19 @@ function telaTensao(momento, aoEscolher) {
   mostrar(botaoInicio(() => irPara('hoje')), el('section', { class: 'cartao' },
     el('h2', {}, momento === 'antes' ? 'Como está a sua tensão agora?' : 'Como está a sua tensão agora, depois do suspiro?'),
     el('p', { class: 'suave' }, 'O primeiro número que vier é o certo.'),
-    escala(0, 10, null, aoEscolher),
-    el('div', { class: 'escala-rotulos' }, el('span', {}, '0 nenhuma'), el('span', {}, '10 muita')),
+    escalaTensao(aoEscolher),
+    el('div', { class: 'escala-rotulos tensao' },
+      el('span', { class: 'calma' }, '0 = calma, sem tensão'),
+      el('span', { class: 'tensa' }, '10 = tensão máxima')),
     el('button', { type: 'button', class: 'secundario', onclick: () => irPara('hoje') }, 'Voltar ao início'),
   ));
 }
 
-function fazerRespiro(segundos) {
+// Os dois jeitos de fazer o suspiro (som da taça ou voz do Vladimir) passam pela
+// mesma nota de tensão antes e depois, e gravam do mesmo jeito.
+function fazerRespiro(segundos, comVoz = false) {
   telaTensao('antes', (antes) => {
-    telaPausa(segundos, () => {
+    (comVoz ? telaPausaVoz : telaPausa)(segundos, () => {
       telaTensao('depois', (depois) => {
         if (!antesDoInicio()) { // antes de 23/11 é só experiência: não entra nos resultados
           const dia = hoje();
@@ -1185,6 +1208,52 @@ function telaPausa(segundos, aoTerminar) {
   controlesTelaBloqueada(guia, titulo.textContent);
   guia.play().then(() => { tocando = true; }).catch(() => { tocando = false; }); // sem som, a tela segue sozinha
   intervalo = setInterval(atualizar, 100);
+}
+
+// Escolha da voz do Vladimir, dentro do cartão do suspiro. Leva à mesma nota de
+// tensão antes e depois do som da taça (antes, o áudio tocava solto e a nota não aparecia).
+function opcaoVoz(antesDeComecar = () => {}) {
+  const comecar = (seg) => () => { antesDeComecar(); fazerRespiro(seg, true); };
+  return el('details', {}, el('summary', {}, 'Prefere ser guiado pela voz do Vladimir?'),
+    el('p', { class: 'suave' }, 'Também com a nota da tensão antes e depois.'),
+    el('button', { type: 'button', class: 'ouvir', onclick: comecar(60) }, '▶  1 minuto com o Vladimir'),
+    el('button', { type: 'button', class: 'ouvir', onclick: comecar(300) }, '▶  5 minutos com o Vladimir'));
+}
+
+// Suspiro guiado pela voz do Vladimir: o áudio começa sozinho e, quando a pessoa
+// termina, um botão grande leva à nota de depois.
+function telaPausaVoz(segundos, aoTerminar) {
+  abas.hidden = true;
+  const cinco = segundos >= 300;
+  titulo.textContent = cinco ? 'Suspiro fisiológico, 5 minutos' : 'Suspiro fisiológico, 1 minuto';
+  const fase = el('p', { class: 'fase', 'aria-live': 'polite' }, 'Siga a voz do Vladimir. Se quiser, feche os olhos.');
+  const aviso = el('p', { class: 'suave' }, 'A respiração é suave, nunca forçada. Se sentir tontura, pare, volte a respirar normal e, se estiver de pé, sente-se. Nunca pratique dirigindo.');
+  const player = el('audio', { controls: true, preload: 'auto', src: cinco ? AUDIOS.respiro5 : AUDIOS.respiro1 });
+  let ativo = true;
+  const terminar = () => {
+    if (!ativo) return;
+    ativo = false;
+    player.pause();
+    manterTelaAcesa('pausa', false);
+    aoTerminar();
+  };
+  const botao = el('button', { type: 'button', onclick: terminar }, 'Terminei: dar a nota de agora');
+  // Se o áudio não tocar (sem internet, por exemplo), o suspiro segue com a taça.
+  const semAudio = el('div', { hidden: true },
+    el('p', { class: 'erro' }, 'Não consegui tocar a voz agora. Você pode fazer o suspiro com o som da taça.'),
+    el('button', { type: 'button', class: 'secundario', onclick: () => { ativo = false; telaPausa(segundos, aoTerminar); } }, 'Fazer com o som da taça'));
+  player.addEventListener('error', () => { semAudio.hidden = false; });
+  player.addEventListener('ended', () => {
+    manterTelaAcesa('pausa', false);
+    fase.textContent = 'Agora dê a sua nota de novo e veja o que mudou.';
+  });
+
+  mostrar(botaoInicio(() => { ativo = false; irPara('hoje'); }),
+    el('section', { class: 'cartao guia' }, fase, player, semAudio, aviso, botao));
+  manterTelaAcesa('pausa', true);
+  playerAtivo = player; // se a pessoa sair da tela, a voz para junto
+  controlesTelaBloqueada(player, cinco ? '5 minutos com o Vladimir' : '1 minuto com o Vladimir');
+  player.play().catch(() => {}); // se o celular não deixar tocar sozinho, a pessoa toca no play
 }
 
 // ---------- Domingo ----------
@@ -1423,8 +1492,8 @@ function cartaoEvolucao() {
 // ---------- Jardim da turma (mural coletivo e anônimo) ----------
 // Cada participante que marca ao menos uma prática no dia planta uma flor. O servidor só
 // devolve totais da turma (nunca nomes, nunca quem faltou, nunca "de quantas"). O jardim é
-// cumulativo: cada semana ganha um canteiro novo com as flores do tema da semana, e nada se
-// apaga. Não há meta individual nem dia "perdido".
+// cumulativo: cada canteiro guarda espaço para as flores de cada semana, as cores se
+// misturam, e nada se apaga. Não há meta individual nem dia "perdido".
 
 function textoFlores(n) { return n === 1 ? '1 flor' : `${n} flores`; }
 
@@ -1471,34 +1540,51 @@ const FLORES_DA_SEMANA = [
   { tema: 'Sentido', de: 'do Sentido', flor: 'margaridas', cores: ['#ffffff', '#fbf3d6'], miolo: '#e0a526', petalas: 14, fina: true, ceu: '#f7f1e3', campo: ['#d6e4bd', '#c3d8a6'] },
 ];
 
-// Canteiros multicoloridos de 18 lugares, dimensionados para uma turma que encolhe (a evasão
-// é comum). Semana 1: os girassóis enchem um canteiro de 6 em 6 (um terço); os canteiros que existirem no fim
-// da semana 1 são o jardim. Semanas 2 a 4: as flores novas são distribuídas uma a uma entre
-// esses mesmos canteiros, que vão ficando cheios e coloridos mesmo se a turma diminuir.
-// Cada canteiro tem 18 lugares em posições fixas e espalhadas, ocupados na ordem em que as
-// flores nascem: o jardim nunca se embaralha, só ganha flores. Uma flor desenhada é uma flor
-// plantada.
-const SEMANA1_POR_CANTEIRO = 6;
+// Canteiros multicoloridos de 18 lugares, com espaço guardado para cada semana:
+// 6 girassóis (Corpo), 4 flores rosadas (Pessoas), 4 lilases e azuis (Encantamento) e
+// 4 margaridas (Sentido). O jardim começa com 12 canteiros.
+// - Semana 1: os girassóis enchem um canteiro de cada vez, de 6 em 6 (foi assim desde 23/11,
+//   e essas flores ficam exatamente onde estão).
+// - Semanas 2 a 4: cada flor vai para o canteiro com menos flores daquela semana (empate: o de
+//   número menor), então as cores se misturam em todos os canteiros.
+// - O que passar do espaço da semana em todos os canteiros vai para um canteiro novo, com o
+//   mesmo espaço por semana.
+// As flores entram numa ordem fixa (semana 1, depois 2...) e cada uma vai para um lugar que
+// nunca muda: o jardim nunca se embaralha, só ganha flores. Uma flor desenhada é uma flor plantada.
+const ESPACO_POR_SEMANA = [6, 4, 4, 4];
+const CANTEIROS_DO_JARDIM = 12;
 const LUGARES = 18;
 
-// porSemana = [flores da semana 1, da semana 2, ...] -> canteiros; cada canteiro é a lista
-// das semanas de suas flores, na ordem em que nasceram.
+// porSemana = [flores da semana 1, da semana 2, ...] -> { camas, ultima }: cada canteiro é a
+// lista das semanas de suas flores, na ordem em que nasceram (canteiros ainda vazios não
+// entram); ultima é o canteiro que recebeu a flor mais recente.
 function montarCanteiros(porSemana) {
-  const n1 = porSemana[0] || 0;
-  const base = Math.max(1, Math.ceil(n1 / SEMANA1_POR_CANTEIRO));
-  const camas = Array.from({ length: base }, () => []);
-  for (let j = 0; j < n1; j++) camas[Math.floor(j / SEMANA1_POR_CANTEIRO)].push(1);
-  for (let w = 2; w <= porSemana.length; w++) {
-    let extra = null;
-    for (let j = 0; j < (porSemana[w - 1] || 0); j++) {
-      const cama = camas[j % base];
-      if (cama.length < LUGARES) { cama.push(w); continue; }
-      // Canteiro cheio (só se a turma crescer muito): a flor vai para um canteiro novo.
-      if (!extra || extra.length >= LUGARES) { extra = []; camas.push(extra); }
-      extra.push(w);
+  const camas = Array.from({ length: CANTEIROS_DO_JARDIM }, () => []);
+  const daSemana = (cama, w) => cama.reduce((t, x) => t + (x === w), 0);
+  let ultima = -1;
+  porSemana.forEach((qtd, i) => {
+    const w = i + 1;
+    const espaco = ESPACO_POR_SEMANA[Math.min(i, ESPACO_POR_SEMANA.length - 1)];
+    for (let j = 0; j < (qtd || 0); j++) {
+      let b = -1;
+      if (w === 1) {
+        b = camas.findIndex((c) => daSemana(c, 1) < espaco);
+      } else {
+        let menor = Infinity;
+        camas.forEach((c, k) => {
+          const n = daSemana(c, w);
+          if (n < espaco && n < menor) { menor = n; b = k; }
+        });
+      }
+      if (b < 0) { camas.push([]); b = camas.length - 1; }
+      camas[b].push(w);
+      ultima = b;
     }
-  }
-  return camas;
+  });
+  const visiveis = camas.filter((c) => c.length);
+  if (!visiveis.length) visiveis.push([]);
+  // Os vazios só podem estar no fim da semana 1; antes de "ultima" não há canteiro vazio.
+  return { camas: visiveis, ultima: Math.min(ultima, visiveis.length - 1) };
 }
 
 // Os 18 lugares de um canteiro: 3 fileiras de 6, um pouco tortas, numa ordem própria de cada
@@ -1578,18 +1664,9 @@ function legendaJardim(ate) {
 }
 
 function canteirosDoJardim(porSemana, semanaAtual) {
-  const camas = montarCanteiros(porSemana);
-  // O canteiro que recebeu a flor mais recente fica grande; os outros, recolhidos.
-  let crescendo = -1;
-  if (semanaAtual) {
-    crescendo = 0;
-    camas.forEach((c, b) => { if (c.length && c[c.length - 1] === semanaAtual) crescendo = b; });
-    const nAtual = porSemana[semanaAtual - 1] || 0;
-    if (semanaAtual > 1 && nAtual) {
-      const base = Math.max(1, Math.ceil((porSemana[0] || 0) / SEMANA1_POR_CANTEIRO));
-      if (camas[(nAtual - 1) % base].length < LUGARES) crescendo = (nAtual - 1) % base;
-    }
-  }
+  const { camas, ultima } = montarCanteiros(porSemana);
+  // Durante o piloto, o canteiro que recebeu a flor mais recente fica grande; os outros, recolhidos.
+  const crescendo = semanaAtual ? Math.max(0, ultima) : -1;
   const grande = crescendo >= 0
     ? el('div', { class: 'canteiro' }, el('p', { class: 'suave' }, textoCanteiro(crescendo + 1, camas[crescendo], true)), desenhoCanteiro(camas[crescendo], crescendo + 1))
     : null;
