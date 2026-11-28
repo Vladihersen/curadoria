@@ -111,3 +111,14 @@ test('API: só participantes cadastradas veem o jardim', async () => {
   const g = await worker.fetch(new Request(URL_BASE + 'mural'), env);
   assert.equal(g.status, 405);
 });
+
+test('Encontro de Verdade marcado sozinho conta como prática e planta flor', async () => {
+  const env = await ambiente();
+  const id = await cadastrar(env, 'Encontro Teste', '21 98888-7777');
+  await marcar(env, id, '2026-11-26', { encontro: true });
+  const r = await mural(post('mural', { id }), env, '2026-11-26');
+  const m = await r.json();
+  assert.ok(m.flores_total >= 1);
+  const linha = await env.DB.prepare('SELECT encontro FROM dia_registros WHERE participante = ? AND dia = ?').bind(id, '2026-11-26').first();
+  assert.equal(linha.encontro, 1);
+});

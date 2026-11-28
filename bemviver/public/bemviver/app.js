@@ -515,7 +515,7 @@ function telaBoasVindas() {
 
 // ---------- Hoje ----------
 
-const REGISTRO_VAZIO = { respiros: [], movimento: 0, vida: false, contato: false, noite: false, paz: null };
+const REGISTRO_VAZIO = { respiros: [], movimento: 0, vida: false, contato: false, noite: false, encontro: false, paz: null };
 
 function registroDe(dia) {
   return { ...REGISTRO_VAZIO, ...(ler('registros', {})[dia] || {}) };
@@ -528,7 +528,19 @@ function mediaTensao(respiros) {
 }
 
 function praticou(reg) {
-  return reg.respiros.length > 0 || reg.movimento > 0 || reg.vida || reg.contato || reg.noite;
+  return reg.respiros.length > 0 || reg.movimento > 0 || reg.vida || reg.contato || reg.noite || reg.encontro;
+}
+
+// Dias de segunda a domingo da semana atual (a semana fecha no domingo).
+function diasDaSemanaAtual() {
+  const dom = new Date(domingoDaSemana() + 'T12:00:00');
+  return [6, 5, 4, 3, 2, 1, 0].map((k) => { const d = new Date(dom); d.setDate(d.getDate() - k); return isoLocal(d); });
+}
+
+// Dia desta semana em que a pessoa marcou o Encontro de Verdade (ou null).
+function diaDoEncontro() {
+  const regs = ler('registros', {});
+  return diasDaSemanaAtual().find((d) => regs[d] && regs[d].encontro) || null;
 }
 
 function salvarRegistro(dia, reg) {
@@ -542,7 +554,7 @@ function salvarRegistro(dia, reg) {
     respiros: reg.respiros.length,
     tensao_antes: m ? Math.round(m.antes * 10) / 10 : null,
     tensao_depois: m ? Math.round(m.depois * 10) / 10 : null,
-    movimento: reg.movimento, vida: reg.vida, contato: reg.contato, noite: reg.noite, paz: reg.paz,
+    movimento: reg.movimento, vida: reg.vida, contato: reg.contato, noite: reg.noite, encontro: reg.encontro, paz: reg.paz,
   });
   if (!jaTinhaFlor && praticou(reg) && dia === hoje() && !antesDoInicio()) avisarFlorPlantada(dia);
 }
@@ -712,6 +724,27 @@ function telaHoje() {
     el('p', { class: 'pergunta' }, `"${enc.pergunta}"`),
     el('p', { class: 'suave' }, enc.gesto),
   );
+  // 26/11 (pedido do Vladimir): marcar que o encontro aconteceu. É uma vez por semana,
+  // então o cartão fica marcado a semana toda, mesmo se foi feito em outro dia.
+  const notaEncontro = el('p', { class: 'resultado' });
+  const mostrarDiaEncontro = () => {
+    const d = diaDoEncontro();
+    notaEncontro.hidden = !d;
+    notaEncontro.textContent = d ? (d === dia ? 'Você marcou o encontro hoje. Que bom!' : `Você marcou o encontro em ${dataCurta(d)}. Que bom!`) : '';
+    marcar(cEncontro, !!d);
+  };
+  cEncontro.append(
+    notaEncontro,
+    botaoMarcar('Tive o Encontro de Verdade', !!diaDoEncontro(), (v) => {
+      const d = v ? dia : diaDoEncontro();
+      if (!d) return;
+      const r = d === dia ? reg : registroDe(d);
+      r.encontro = v;
+      salvarRegistro(d, r);
+      mostrarDiaEncontro();
+    }),
+  );
+  mostrarDiaEncontro();
 
   const cManha = el('section', { class: 'cartao' },
     el('p', { class: 'pilar' }, 'Manhã'),
@@ -731,7 +764,7 @@ function telaHoje() {
     itemMenu('✨', 'A coisa que me dá vida', '', !!reg.vida, abrir(cVida, 'A coisa que me dá vida')),
     itemMenu('💛', 'Um gesto de carinho', '', !!reg.contato, abrir(cContato, 'Um gesto de carinho')),
     itemMenu('🌙', 'Noite: prática guiada', '', !!reg.noite, abrir(telaNoite, 'Noite')),
-    itemMenu('🤝', 'Encontro de Verdade da semana', '', false, abrir(cEncontro, 'Encontro de Verdade')),
+    itemMenu('🤝', 'Encontro de Verdade da semana', diaDoEncontro() ? 'feito nesta semana' : '', !!diaDoEncontro(), abrir(cEncontro, 'Encontro de Verdade')),
   ];
   if (ler('aberturaVista', 0) < semana) return mostrar(cFoco);
   mostrar(cFoco, el('nav', { class: 'menu', 'aria-label': 'Práticas de hoje' }, ...itens), ...itensPreparo());
@@ -1238,7 +1271,7 @@ function telaDomingo() {
   const salvos = ler('semanas', {})[domingo] || {};
   const s = {
     nota: salvos.nota ?? null, dias_paz: salvos.dias_paz ?? null,
-    encontro: salvos.encontro ?? null, encontro_com: salvos.encontro_com || '',
+    encontro: salvos.encontro ?? (diaDoEncontro() ? true : null), encontro_com: salvos.encontro_com || '',
     efeito_ruim: salvos.efeito_ruim ?? null, efeito_texto: salvos.efeito_texto || '', duvida: salvos.duvida || '',
     livre: salvos.livre || '',
   };
@@ -1343,6 +1376,13 @@ function telaDomingo() {
       el('h2', {}, `Semana que termina em ${dataCurta(domingo)}`),
       calendario,
       el('p', { class: 'suave' }, `Você praticou em ${diasFeitos} de 7 dias. • prática · ☼ momento de paz`),
+      // 27/11 (pedido do Vladimir): o Encontro de Verdade marcado aparece no resumo da semana.
+      (() => {
+        const d = diasSemana.find((x) => x.reg && x.reg.encontro);
+        return d
+          ? el('p', { class: 'resultado' }, `🤝 Encontro de Verdade: feito em ${dataCurta(d.iso)} (${d.nome}).`)
+          : el('p', { class: 'suave' }, '🤝 Encontro de Verdade: ainda não marcado nesta semana.');
+      })(),
       tensao ? el('p', { class: 'resultado' }, `${respirosSemana.length === 1 ? 'Na vez em que você fez o suspiro fisiológico' : `Nas ${respirosSemana.length} vezes em que você fez o suspiro fisiológico`} nesta semana, sua tensão foi em média de ${virgula(tensao.antes)} para ${virgula(tensao.depois)}.`) : null,
       diasFeitos < 7 ? el('p', {}, 'Teve dia em branco? Tudo bem. Recomeçar sem culpa faz parte do método.') : null,
       el('label', {}, 'De 0 a 10, qual é a sua satisfação com a sua vida hoje?'),
