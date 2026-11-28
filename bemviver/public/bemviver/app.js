@@ -515,7 +515,7 @@ function telaBoasVindas() {
 
 // ---------- Hoje ----------
 
-const REGISTRO_VAZIO = { respiros: [], movimento: 0, vida: false, contato: false, noite: false, paz: null };
+const REGISTRO_VAZIO = { respiros: [], movimento: 0, vida: false, contato: false, noite: false, encontro: false, paz: null };
 
 function registroDe(dia) {
   return { ...REGISTRO_VAZIO, ...(ler('registros', {})[dia] || {}) };
@@ -528,7 +528,19 @@ function mediaTensao(respiros) {
 }
 
 function praticou(reg) {
-  return reg.respiros.length > 0 || reg.movimento > 0 || reg.vida || reg.contato || reg.noite;
+  return reg.respiros.length > 0 || reg.movimento > 0 || reg.vida || reg.contato || reg.noite || reg.encontro;
+}
+
+// Dias de segunda a domingo da semana atual (a semana fecha no domingo).
+function diasDaSemanaAtual() {
+  const dom = new Date(domingoDaSemana() + 'T12:00:00');
+  return [6, 5, 4, 3, 2, 1, 0].map((k) => { const d = new Date(dom); d.setDate(d.getDate() - k); return isoLocal(d); });
+}
+
+// Dia desta semana em que a pessoa marcou o Encontro de Verdade (ou null).
+function diaDoEncontro() {
+  const regs = ler('registros', {});
+  return diasDaSemanaAtual().find((d) => regs[d] && regs[d].encontro) || null;
 }
 
 function salvarRegistro(dia, reg) {
@@ -542,7 +554,7 @@ function salvarRegistro(dia, reg) {
     respiros: reg.respiros.length,
     tensao_antes: m ? Math.round(m.antes * 10) / 10 : null,
     tensao_depois: m ? Math.round(m.depois * 10) / 10 : null,
-    movimento: reg.movimento, vida: reg.vida, contato: reg.contato, noite: reg.noite, paz: reg.paz,
+    movimento: reg.movimento, vida: reg.vida, contato: reg.contato, noite: reg.noite, encontro: reg.encontro, paz: reg.paz,
   });
   if (!jaTinhaFlor && praticou(reg) && dia === hoje() && !antesDoInicio()) avisarFlorPlantada(dia);
 }
@@ -599,7 +611,7 @@ function telaHoje() {
     m ? el('p', { class: 'resultado' }, `Hoje: ${reg.respiros.length} ${reg.respiros.length === 1 ? 'vez' : 'vezes'}, tensão média de ${m.antes.toFixed(1).replace('.', ',')} para ${m.depois.toFixed(1).replace('.', ',')}.`) : null,
     el('button', { type: 'button', onclick: () => fazerRespiro(60) }, 'Começar: 1 minuto'),
     el('button', { type: 'button', class: 'secundario', onclick: () => fazerRespiro(300) }, 'Começar: 5 minutos'),
-    el('details', {}, el('summary', {}, 'Prefere ser guiado pela voz do Vladimir?'), audio(AUDIOS.respiro1, '1 minuto com o Vladimir'), audio(AUDIOS.respiro5, '5 minutos com o Vladimir')),
+    opcaoVoz(),
   );
 
   const passos = el('div', { class: 'pausas', role: 'group', 'aria-label': 'Minutos de movimento hoje' });
@@ -712,6 +724,27 @@ function telaHoje() {
     el('p', { class: 'pergunta' }, `"${enc.pergunta}"`),
     el('p', { class: 'suave' }, enc.gesto),
   );
+  // 26/11 (pedido do Vladimir): marcar que o encontro aconteceu. É uma vez por semana,
+  // então o cartão fica marcado a semana toda, mesmo se foi feito em outro dia.
+  const notaEncontro = el('p', { class: 'resultado' });
+  const mostrarDiaEncontro = () => {
+    const d = diaDoEncontro();
+    notaEncontro.hidden = !d;
+    notaEncontro.textContent = d ? (d === dia ? 'Você marcou o encontro hoje. Que bom!' : `Você marcou o encontro em ${dataCurta(d)}. Que bom!`) : '';
+    marcar(cEncontro, !!d);
+  };
+  cEncontro.append(
+    notaEncontro,
+    botaoMarcar('Tive o Encontro de Verdade', !!diaDoEncontro(), (v) => {
+      const d = v ? dia : diaDoEncontro();
+      if (!d) return;
+      const r = d === dia ? reg : registroDe(d);
+      r.encontro = v;
+      salvarRegistro(d, r);
+      mostrarDiaEncontro();
+    }),
+  );
+  mostrarDiaEncontro();
 
   const cManha = el('section', { class: 'cartao' },
     el('p', { class: 'pilar' }, 'Manhã'),
@@ -731,7 +764,7 @@ function telaHoje() {
     itemMenu('✨', 'A coisa que me dá vida', '', !!reg.vida, abrir(cVida, 'A coisa que me dá vida')),
     itemMenu('💛', 'Um gesto de carinho', '', !!reg.contato, abrir(cContato, 'Um gesto de carinho')),
     itemMenu('🌙', 'Noite: prática guiada', '', !!reg.noite, abrir(telaNoite, 'Noite')),
-    itemMenu('🤝', 'Encontro de Verdade da semana', '', false, abrir(cEncontro, 'Encontro de Verdade')),
+    itemMenu('🤝', 'Encontro de Verdade da semana', diaDoEncontro() ? 'feito nesta semana' : '', !!diaDoEncontro(), abrir(cEncontro, 'Encontro de Verdade')),
   ];
   if (ler('aberturaVista', 0) < semana) return mostrar(cFoco);
   mostrar(cFoco, el('nav', { class: 'menu', 'aria-label': 'Práticas de hoje' }, ...itens),
@@ -923,7 +956,7 @@ function telaPreparacao() {
     el('p', {}, 'Dê uma nota para a sua tensão, faça o suspiro e dê a nota de novo. Há duas versões: 1 minuto, para a hora do aperto, e 5 minutos, para quando houver tempo.'),
     el('button', { type: 'button', onclick: () => { gravar('experimentou', true); fazerRespiro(60); } }, 'Começar: 1 minuto'),
     el('button', { type: 'button', class: 'secundario', onclick: () => { gravar('experimentou', true); fazerRespiro(300); } }, 'Começar: 5 minutos'),
-    el('details', {}, el('summary', {}, 'Prefere ser guiado pela voz do Vladimir?'), audio(AUDIOS.respiro1, '1 minuto com o Vladimir'), audio(AUDIOS.respiro5, '5 minutos com o Vladimir')),
+    opcaoVoz(() => gravar('experimentou', true)),
   );
   const caminhada = el('section', { class: 'cartao' },
     el('h2', {}, 'Experimente a caminhada de 1 minuto'),
@@ -1137,9 +1170,11 @@ function telaTensao(momento, aoEscolher) {
   ));
 }
 
-function fazerRespiro(segundos) {
+// Os dois jeitos de fazer o suspiro (som da taça ou voz do Vladimir) passam pela
+// mesma nota de tensão antes e depois, e gravam do mesmo jeito.
+function fazerRespiro(segundos, comVoz = false) {
   telaTensao('antes', (antes) => {
-    telaPausa(segundos, () => {
+    (comVoz ? telaPausaVoz : telaPausa)(segundos, () => {
       telaTensao('depois', (depois) => {
         if (!antesDoInicio()) { // antes de 23/11 é só experiência: não entra nos resultados
           const dia = hoje();
@@ -1274,6 +1309,52 @@ function telaPausa(segundos, aoTerminar) {
   intervalo = setInterval(atualizar, 100);
 }
 
+// Escolha da voz do Vladimir, dentro do cartão do suspiro. Leva à mesma nota de
+// tensão antes e depois do som da taça (antes, o áudio tocava solto e a nota não aparecia).
+function opcaoVoz(antesDeComecar = () => {}) {
+  const comecar = (seg) => () => { antesDeComecar(); fazerRespiro(seg, true); };
+  return el('details', {}, el('summary', {}, 'Prefere ser guiado pela voz do Vladimir?'),
+    el('p', { class: 'suave' }, 'Também com a nota da tensão antes e depois.'),
+    el('button', { type: 'button', class: 'ouvir', onclick: comecar(60) }, '▶  1 minuto com o Vladimir'),
+    el('button', { type: 'button', class: 'ouvir', onclick: comecar(300) }, '▶  5 minutos com o Vladimir'));
+}
+
+// Suspiro guiado pela voz do Vladimir: o áudio começa sozinho e, quando a pessoa
+// termina, um botão grande leva à nota de depois.
+function telaPausaVoz(segundos, aoTerminar) {
+  abas.hidden = true;
+  const cinco = segundos >= 300;
+  titulo.textContent = cinco ? 'Suspiro fisiológico, 5 minutos' : 'Suspiro fisiológico, 1 minuto';
+  const fase = el('p', { class: 'fase', 'aria-live': 'polite' }, 'Siga a voz do Vladimir. Se quiser, feche os olhos.');
+  const aviso = el('p', { class: 'suave' }, 'A respiração é suave, nunca forçada. Se sentir tontura, pare, volte a respirar normal e, se estiver de pé, sente-se. Nunca pratique dirigindo.');
+  const player = el('audio', { controls: true, preload: 'auto', src: cinco ? AUDIOS.respiro5 : AUDIOS.respiro1 });
+  let ativo = true;
+  const terminar = () => {
+    if (!ativo) return;
+    ativo = false;
+    player.pause();
+    manterTelaAcesa('pausa', false);
+    aoTerminar();
+  };
+  const botao = el('button', { type: 'button', onclick: terminar }, 'Terminei: dar a nota de agora');
+  // Se o áudio não tocar (sem internet, por exemplo), o suspiro segue com a taça.
+  const semAudio = el('div', { hidden: true },
+    el('p', { class: 'erro' }, 'Não consegui tocar a voz agora. Você pode fazer o suspiro com o som da taça.'),
+    el('button', { type: 'button', class: 'secundario', onclick: () => { ativo = false; telaPausa(segundos, aoTerminar); } }, 'Fazer com o som da taça'));
+  player.addEventListener('error', () => { semAudio.hidden = false; });
+  player.addEventListener('ended', () => {
+    manterTelaAcesa('pausa', false);
+    fase.textContent = 'Agora dê a sua nota de novo e veja o que mudou.';
+  });
+
+  mostrar(botaoInicio(() => { ativo = false; irPara('hoje'); }),
+    el('section', { class: 'cartao guia' }, fase, player, semAudio, aviso, botao));
+  manterTelaAcesa('pausa', true);
+  playerAtivo = player; // se a pessoa sair da tela, a voz para junto
+  controlesTelaBloqueada(player, cinco ? '5 minutos com o Vladimir' : '1 minuto com o Vladimir');
+  player.play().catch(() => {}); // se o celular não deixar tocar sozinho, a pessoa toca no play
+}
+
 // ---------- Domingo ----------
 
 function telaDomingo() {
@@ -1289,7 +1370,7 @@ function telaDomingo() {
   const salvos = ler('semanas', {})[domingo] || {};
   const s = {
     nota: salvos.nota ?? null, dias_paz: salvos.dias_paz ?? null,
-    encontro: salvos.encontro ?? null, encontro_com: salvos.encontro_com || '',
+    encontro: salvos.encontro ?? (diaDoEncontro() ? true : null), encontro_com: salvos.encontro_com || '',
     efeito_ruim: salvos.efeito_ruim ?? null, efeito_texto: salvos.efeito_texto || '', duvida: salvos.duvida || '',
     livre: salvos.livre || '',
   };
@@ -1394,6 +1475,13 @@ function telaDomingo() {
       el('h2', {}, `Semana que termina em ${dataCurta(domingo)}`),
       calendario,
       el('p', { class: 'suave' }, `Você praticou em ${diasFeitos} de 7 dias. • prática · ☼ momento de paz`),
+      // 27/11 (pedido do Vladimir): o Encontro de Verdade marcado aparece no resumo da semana.
+      (() => {
+        const d = diasSemana.find((x) => x.reg && x.reg.encontro);
+        return d
+          ? el('p', { class: 'resultado' }, `🤝 Encontro de Verdade: feito em ${dataCurta(d.iso)} (${d.nome}).`)
+          : el('p', { class: 'suave' }, '🤝 Encontro de Verdade: ainda não marcado nesta semana.');
+      })(),
       tensao ? el('p', { class: 'resultado' }, `${respirosSemana.length === 1 ? 'Na vez em que você fez o suspiro fisiológico' : `Nas ${respirosSemana.length} vezes em que você fez o suspiro fisiológico`} nesta semana, sua tensão foi em média de ${virgula(tensao.antes)} para ${virgula(tensao.depois)}.`) : null,
       diasFeitos < 7 ? el('p', {}, 'Teve dia em branco? Tudo bem. Recomeçar sem culpa faz parte do método.') : null,
       el('label', {}, 'De 0 a 10, qual é a sua satisfação com a sua vida hoje?'),
